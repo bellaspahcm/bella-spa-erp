@@ -15,7 +15,7 @@ import {
   Sparkles,
   CheckCircle2
 } from 'lucide-react';
-import type { SessionBooking } from '../types';
+import type { TimelineSession } from '../../bookings/components/BookingsTimelineGrid';
 
 export interface MappedAppointment {
   id: string;
@@ -28,67 +28,39 @@ export interface MappedAppointment {
   ktvId: string | null;
   ktvName: string | null;
   status: 'completed' | 'in_progress' | 'confirmed' | 'pending' | 'cancelled';
-  rawBooking: SessionBooking;
+  rawSession: TimelineSession;
 }
 
-function getAppointmentsFromSessions(sessions: SessionBooking[]): MappedAppointment[] {
-  const result: MappedAppointment[] = [];
+function getAppointmentsFromSessions(sessions: TimelineSession[]): MappedAppointment[] {
+  return sessions.flatMap((session) => {
+    const booking = session.bookings;
+    const rawDate = session.assigned_date || session.completed_date || booking?.start_date || session.created_at?.slice(0, 10);
+    if (!rawDate) return [];
 
-  sessions.forEach(booking => {
-    const custName = booking.customers?.name_mother || 'Khách hàng';
-    const custPhone = booking.customers?.phone || '--';
-    const serviceName = booking.package_name || 'Liệu trình chăm sóc';
+    const dateStr = rawDate.slice(0, 10);
+    const timeStr = session.assigned_time || session.start_time || booking?.preferred_time || '09:00';
+    const assignedKtvId = booking?.assigned_ktv_id || null;
 
-    if (booking.session_logs && booking.session_logs.length > 0) {
-      booking.session_logs.forEach(log => {
-        const rawDate = log.assigned_date || log.completed_date || booking.next_session_date || booking.created_at?.slice(0, 10);
-        if (!rawDate) return;
-        const dateStr = rawDate.slice(0, 10);
-        const timeStr = log.assigned_time || log.start_time || '09:00';
-        
-        let st: MappedAppointment['status'] = 'confirmed';
-        if (log.status === 'completed') st = 'completed';
-        else if (log.status === 'in_progress') st = 'in_progress';
-        else if (log.status === 'cancelled') st = 'cancelled';
-        else if (!log.ktv?.id && !booking.assigned_ktv_id) st = 'pending';
+    let status: MappedAppointment['status'] = 'confirmed';
+    if (session.status === 'completed') status = 'completed';
+    else if (session.status === 'in_progress') status = 'in_progress';
+    else if (session.status === 'cancelled') status = 'cancelled';
+    else if (!assignedKtvId) status = 'pending';
 
-        result.push({
-          id: log.id || `${booking.id}-${log.session_number}`,
-          bookingId: booking.id,
-          dateStr,
-          timeStr,
-          customerName: custName,
-          customerPhone: custPhone,
-          serviceName,
-          ktvId: log.ktv?.id || booking.assigned_ktv_id || null,
-          ktvName: log.ktv?.full_name || booking.assigned_ktv_name || null,
-          status: st,
-          rawBooking: booking,
-        });
-      });
-    } else {
-      const rawDate = booking.next_session_date || booking.start_date || booking.created_at?.slice(0, 10);
-      if (rawDate) {
-        const dateStr = rawDate.slice(0, 10);
-        const st: MappedAppointment['status'] = booking.status === 'completed' ? 'completed' : booking.assigned_ktv_id ? 'confirmed' : 'pending';
-        result.push({
-          id: booking.id,
-          bookingId: booking.id,
-          dateStr,
-          timeStr: '09:00',
-          customerName: custName,
-          customerPhone: custPhone,
-          serviceName,
-          ktvId: booking.assigned_ktv_id || null,
-          ktvName: booking.assigned_ktv_name || null,
-          status: st,
-          rawBooking: booking,
-        });
-      }
-    }
+    return [{
+      id: session.id,
+      bookingId: session.booking_id,
+      dateStr,
+      timeStr,
+      customerName: booking?.customers?.name_mother || 'Khách hàng',
+      customerPhone: booking?.customers?.phone || '--',
+      serviceName: booking?.packages?.name || booking?.package_name || 'Liệu trình chăm sóc',
+      ktvId: assignedKtvId,
+      ktvName: booking?.assigned_ktv?.full_name || null,
+      status,
+      rawSession: session,
+    }];
   });
-
-  return result;
 }
 
 export function MonthCalendarView({
@@ -96,8 +68,8 @@ export function MonthCalendarView({
   onSelectBooking,
   onOpenBookingModal,
 }: {
-  sessions: SessionBooking[];
-  onSelectBooking: (booking: SessionBooking) => void;
+  sessions: TimelineSession[];
+  onSelectBooking: (booking: TimelineSession) => void;
   onOpenBookingModal?: () => void;
 }) {
   const today = useMemo(() => new Date(), []);
@@ -535,7 +507,7 @@ export function MonthCalendarView({
                     return (
                       <tr 
                         key={item.id} 
-                        onClick={() => onSelectBooking(item.rawBooking)}
+                        onClick={() => onSelectBooking(item.rawSession)}
                         className="hover:bg-slate-50/80 transition-colors cursor-pointer"
                       >
                         <td className="py-3 px-3 text-slate-900 whitespace-nowrap font-black">{item.timeStr}</td>
@@ -556,7 +528,7 @@ export function MonthCalendarView({
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
-                              onSelectBooking(item.rawBooking);
+                              onSelectBooking(item.rawSession);
                             }}
                             className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500"
                           >

@@ -18,7 +18,7 @@ import {
   Sparkles,
   AlertCircle
 } from 'lucide-react';
-import type { SessionBooking } from '../types';
+import type { TimelineSession } from '../../bookings/components/BookingsTimelineGrid';
 
 export interface KtvOption {
   id: string;
@@ -27,9 +27,9 @@ export interface KtvOption {
 }
 
 export interface TimelineKtvViewProps {
-  sessions: SessionBooking[];
+  sessions: TimelineSession[];
   ktvs?: KtvOption[];
-  onSelectBooking: (booking: SessionBooking) => void;
+  onSelectBooking: (booking: TimelineSession) => void;
   onOpenBookingModal?: () => void;
 }
 
@@ -45,6 +45,30 @@ function parseTimeMinutes(timeStr: string | null | undefined): number {
   const [h, m] = timeStr.split(':').map(Number);
   if (isNaN(h)) return 9 * 60;
   return h * 60 + (m || 0);
+}
+
+function getAssignedKtvId(session: TimelineSession): string | null {
+  return session.bookings?.assigned_ktv_id || null;
+}
+
+function getDisplayKtvId(session: TimelineSession): string | null {
+  return getAssignedKtvId(session);
+}
+
+function getAssignedKtvName(session: TimelineSession): string | null {
+  return session.bookings?.assigned_ktv?.full_name || null;
+}
+
+function getCustomerName(session: TimelineSession): string {
+  return session.bookings?.customers?.name_mother || 'Khách hàng';
+}
+
+function getCustomerPhone(session: TimelineSession): string {
+  return session.bookings?.customers?.phone || '';
+}
+
+function getPackageName(session: TimelineSession): string {
+  return session.bookings?.packages?.name || session.bookings?.package_name || 'Liệu trình';
 }
 
 export function TimelineKtvView({
@@ -112,10 +136,12 @@ export function TimelineKtvView({
       }
     });
 
-    // Add KTVs found in sessions
+    // Add KTVs found in calendar sessions
     sessions.forEach((s) => {
-      if (s.assigned_ktv_id && s.assigned_ktv_name) {
-        map.set(s.assigned_ktv_id, { id: s.assigned_ktv_id, name: s.assigned_ktv_name });
+      const ktvId = getDisplayKtvId(s);
+      const ktvName = getAssignedKtvName(s);
+      if (ktvId && ktvName) {
+        map.set(ktvId, { id: ktvId, name: ktvName });
       }
     });
 
@@ -125,35 +151,31 @@ export function TimelineKtvView({
   // Filter sessions relevant to selected date & search query
   const dateSessions = useMemo(() => {
     return sessions.filter((s) => {
-      // Check if session falls on selected date
-      const matchesDate =
-        s.next_session_date === selectedDateStr ||
-        s.start_date === selectedDateStr ||
-        s.session_logs?.some((l) => l.assigned_date === selectedDateStr);
-
-      if (!matchesDate && selectedDateStr !== todayStr) return false;
+      if (s.assigned_date !== selectedDateStr) return false;
 
       // Filter by KTV
       if (selectedKtvFilter !== 'all') {
-        if (selectedKtvFilter === 'unassigned' && s.assigned_ktv_id) return false;
-        if (selectedKtvFilter !== 'unassigned' && s.assigned_ktv_id !== selectedKtvFilter) return false;
+        const assignedKtvId = getAssignedKtvId(s);
+        const displayKtvId = getDisplayKtvId(s);
+        if (selectedKtvFilter === 'unassigned' && assignedKtvId) return false;
+        if (selectedKtvFilter !== 'unassigned' && displayKtvId !== selectedKtvFilter) return false;
       }
 
       // Filter by Status
       if (selectedStatusFilter !== 'all') {
-        if (selectedStatusFilter === 'completed' && (s.completed_sessions || 0) < (s.total_sessions || 15)) return false;
-        if (selectedStatusFilter === 'unassigned' && s.assigned_ktv_id) return false;
+        if (selectedStatusFilter === 'completed' && s.status !== 'completed') return false;
+        if (selectedStatusFilter === 'unassigned' && getAssignedKtvId(s)) return false;
         if (selectedStatusFilter === 'in_progress' && (s.status === 'completed' || s.status === 'cancelled')) return false;
       }
 
       // Filter by Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const motherName = s.customers?.name_mother?.toLowerCase() || '';
-        const phone = s.customers?.phone?.toLowerCase() || '';
-        const pkgName = (s.package_name || '').toLowerCase();
-        const bookingNum = (s.booking_number || '').toLowerCase();
-        const ktvName = (s.assigned_ktv_name || '').toLowerCase();
+        const motherName = getCustomerName(s).toLowerCase();
+        const phone = getCustomerPhone(s).toLowerCase();
+        const pkgName = getPackageName(s).toLowerCase();
+        const bookingNum = (s.bookings?.booking_number || '').toLowerCase();
+        const ktvName = (getAssignedKtvName(s) || '').toLowerCase();
 
         const match = motherName.includes(q) || phone.includes(q) || pkgName.includes(q) || bookingNum.includes(q) || ktvName.includes(q);
         if (!match) return false;
@@ -161,16 +183,15 @@ export function TimelineKtvView({
 
       return true;
     });
-  }, [sessions, selectedDateStr, todayStr, selectedKtvFilter, selectedStatusFilter, searchQuery]);
+  }, [sessions, selectedDateStr, selectedKtvFilter, selectedStatusFilter, searchQuery]);
 
   // KPI Calculations
   const stats = useMemo(() => {
     const totalToday = dateSessions.length;
-    const uniqueCustomers = new Set(dateSessions.map((s) => s.customers?.id).filter(Boolean)).size;
-    const unassignedCount = dateSessions.filter((s) => !s.assigned_ktv_id).length;
+    const uniqueCustomers = new Set(dateSessions.map((s) => s.bookings?.customers?.id).filter(Boolean)).size;
+    const unassignedCount = dateSessions.filter((s) => !getAssignedKtvId(s)).length;
     const overdueCount = dateSessions.filter((s) => {
-      const isDone = (s.completed_sessions || 0) >= (s.total_sessions || 15);
-      return !isDone && s.status !== 'cancelled' && !!s.next_session_date && s.next_session_date < todayStr;
+      return s.status === 'scheduled' && !!s.assigned_date && s.assigned_date < todayStr;
     }).length;
 
     const availableHoursPerKtv = 8;
@@ -182,13 +203,13 @@ export function TimelineKtvView({
 
   // Group date sessions by KTV (including 'unassigned')
   const sessionsByKtv = useMemo(() => {
-    const grouped = new Map<string, SessionBooking[]>();
+    const grouped = new Map<string, TimelineSession[]>();
     grouped.set('unassigned', []);
 
     activeKtvs.forEach((k) => grouped.set(k.id, []));
 
     dateSessions.forEach((s) => {
-      const key = s.assigned_ktv_id || 'unassigned';
+      const key = getDisplayKtvId(s) || 'unassigned';
       if (!grouped.has(key)) {
         grouped.set(key, []);
       }
@@ -222,7 +243,7 @@ export function TimelineKtvView({
   };
 
   const unassignedList = useMemo(() => {
-    return dateSessions.filter((s) => !s.assigned_ktv_id);
+    return dateSessions.filter((s) => !getAssignedKtvId(s));
   }, [dateSessions]);
 
   return (
@@ -446,22 +467,22 @@ export function TimelineKtvView({
 
             {/* Dynamic Session Cards rendering onto Timeline Board */}
             {dateSessions.map((session, sIdx) => {
-              const ktvId = session.assigned_ktv_id || 'unassigned';
+              const ktvId = getDisplayKtvId(session) || 'unassigned';
               const colIndex = ktvId === 'unassigned' ? 0 : activeKtvs.findIndex((k) => k.id === ktvId) + 1;
               if (colIndex < 0) return null;
 
-              const completedCount = Number(session.completed_sessions) || 0;
-              const totalCount = Number(session.total_sessions) || 15;
-              const isCompleted = completedCount >= totalCount;
+              const completedCount = Number(session.bookings?.completed_sessions) || 0;
+              const totalCount = Number(session.bookings?.total_sessions) || 15;
+              const isCompleted = session.status === 'completed';
 
               // Calculate Y position based on time
-              const preferredTime = session.session_logs?.find((l) => l.status === 'scheduled')?.assigned_time || '09:00';
+              const preferredTime = session.assigned_time || session.bookings?.preferred_time || '09:00';
               const startMinutes = parseTimeMinutes(preferredTime);
               const gridStartMinutes = 8 * 60; // 08:00
               const rowHeight = 52; // height per 30 mins
               const topOffset = Math.max(10, Math.floor(((startMinutes - gridStartMinutes) / 30) * rowHeight));
 
-              const isUnassigned = !session.assigned_ktv_id;
+              const isUnassigned = !getAssignedKtvId(session);
 
               return (
                 <div
@@ -483,12 +504,12 @@ export function TimelineKtvView({
                 >
                   <div className="flex justify-between items-start text-[10px] font-bold opacity-90">
                     <span>{preferredTime}</span>
-                    <span>#{session.booking_number}</span>
+                    <span>#{session.bookings?.booking_number || session.booking_id.slice(0, 8)}</span>
                   </div>
                   <h5 className="font-black text-xs mt-1 truncate">
-                    {session.customers?.name_mother || 'Khách hàng'}
+                    {getCustomerName(session)}
                   </h5>
-                  <p className="text-[10px] font-medium opacity-80 truncate">{session.package_name}</p>
+                  <p className="text-[10px] font-medium opacity-80 truncate">{getPackageName(session)}</p>
                   
                   <div className="flex items-center justify-between mt-2 text-[9px] font-black">
                     <span className={cn(
@@ -527,10 +548,10 @@ export function TimelineKtvView({
                 <div key={item.id} className="p-4 bg-amber-50/60 rounded-2xl border border-amber-200/80 flex items-center justify-between gap-4">
                   <div>
                     <span className="text-xs font-black text-amber-900">
-                      {item.next_session_date ? formatViDate(item.next_session_date) : '---'}
+                      {item.assigned_date ? formatViDate(item.assigned_date) : '---'}
                     </span>
-                    <h4 className="font-black text-sm text-slate-900">{item.customers?.name_mother || 'Khách hàng'}</h4>
-                    <p className="text-xs text-slate-600 font-medium">{item.package_name}</p>
+                    <h4 className="font-black text-sm text-slate-900">{getCustomerName(item)}</h4>
+                    <p className="text-xs text-slate-600 font-medium">{getPackageName(item)}</p>
                   </div>
                   <button 
                     onClick={() => onSelectBooking(item)}

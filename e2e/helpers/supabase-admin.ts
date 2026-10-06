@@ -15,8 +15,10 @@ import { join, resolve } from "node:path";
 
 let _admin: SupabaseClient | null = null;
 let _envLoaded = false;
-let _hqTenantIdPromise: Promise<string> | null = null;
+let _e2eTenantIdPromise: Promise<string> | null = null;
 let _adminUserPromise: Promise<{ id: string; email: string }> | null = null;
+
+type FilterValue = string | number | boolean | null;
 
 function getSupabasePublicKey(): string {
   return process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -90,42 +92,93 @@ export function admin(): SupabaseClient {
   return _admin;
 }
 
-/** Get HQ tenant id (Bella Spa Headquarter) — created by seed or onboarding. */
-export async function getHqTenantId(): Promise<string> {
-  if (_hqTenantIdPromise) return _hqTenantIdPromise;
-
-  _hqTenantIdPromise = (async () => {
-  const { data, error } = await admin()
-    .from("tenants")
-    .select("id")
-    .eq("name", "Bella Spa Headquarter")
-    .single();
-  if (error || !data) {
-    throw new Error(`Không tìm thấy tenant 'Bella Spa Headquarter' — ${error?.message ?? "no row"}`);
-  }
-  return data.id as string;
-  })();
-
-  return _hqTenantIdPromise;
+function getTargetProductKey(): string {
+  return process.env.E2E_TENANT_PRODUCT_KEY?.trim() || process.env.E2E_PRODUCT_KEY?.trim() || "bella_babycare";
 }
 
-/** Get an admin user id for the HQ tenant. */
+function getTargetTenantId(): string {
+  return process.env.E2E_TENANT_ID?.trim() || "";
+}
+
+function getTargetTenantName(): string {
+  return process.env.E2E_TENANT_NAME?.trim() || "";
+}
+
+function getMockAdminEmail(): string {
+  return process.env.E2E_MOCK_ADMIN_EMAIL?.trim() || process.env.E2E_ADMIN_MOCK_EMAIL?.trim() || "";
+}
+
+/** Get E2E tenant id. Defaults to BabyCare for local post-repair browser smoke. */
+export async function getHqTenantId(): Promise<string> {
+  if (_e2eTenantIdPromise) return _e2eTenantIdPromise;
+
+  _e2eTenantIdPromise = (async () => {
+    const explicitTenantId = getTargetTenantId();
+    if (explicitTenantId) return explicitTenantId;
+
+    const targetTenantName = getTargetTenantName();
+    if (targetTenantName) {
+      const { data, error } = await admin()
+        .from("tenants")
+        .select("id")
+        .eq("name", targetTenantName)
+        .limit(2);
+      if (error || !data || data.length !== 1) {
+        throw new Error(
+          `Không xác định được E2E tenant name='${targetTenantName}' — ${error?.message ?? `${data?.length ?? 0} rows`}`,
+        );
+      }
+      return data[0].id as string;
+    }
+
+    const productKey = getTargetProductKey();
+    const { data, error } = await admin()
+      .from("tenants")
+      .select("id")
+      .eq("product_key", productKey)
+      .limit(2);
+    if (error || !data || data.length !== 1) {
+      throw new Error(
+        `Không xác định được E2E tenant product_key='${productKey}' — ${error?.message ?? `${data?.length ?? 0} rows`}. Set E2E_TENANT_ID để chọn rõ tenant.`,
+      );
+    }
+    return data[0].id as string;
+  })();
+
+  return _e2eTenantIdPromise;
+}
+
+/** Get an admin user id for the target E2E tenant. */
 export async function getAnyAdminUser(): Promise<{ id: string; email: string }> {
   if (_adminUserPromise) return _adminUserPromise;
 
   _adminUserPromise = (async () => {
-  const tenantId = await getHqTenantId();
-  const { data, error } = await admin()
-    .from("users")
-    .select("id, email")
-    .eq("tenant_id", tenantId)
-    .eq("role", "admin")
-    .limit(1)
-    .single();
-  if (error || !data) {
-    throw new Error(`Không có user role=admin nào trong tenant HQ — ${error?.message ?? "no row"}`);
-  }
-  return { id: data.id, email: data.email as string };
+    const mockAdminEmail = getMockAdminEmail();
+    if (mockAdminEmail) {
+      const { data, error } = await admin()
+        .from("users")
+        .select("id, email")
+        .eq("email", mockAdminEmail)
+        .limit(1)
+        .single();
+      if (error || !data) {
+        throw new Error(`Không có E2E mock admin email='${mockAdminEmail}' — ${error?.message ?? "no row"}`);
+      }
+      return { id: data.id, email: data.email as string };
+    }
+
+    const tenantId = await getHqTenantId();
+    const { data, error } = await admin()
+      .from("users")
+      .select("id, email")
+      .eq("tenant_id", tenantId)
+      .eq("role", "admin")
+      .limit(1)
+      .single();
+    if (error || !data) {
+      throw new Error(`Không có user role=admin nào trong E2E tenant ${tenantId} — ${error?.message ?? "no row"}`);
+    }
+    return { id: data.id, email: data.email as string };
   })();
 
   return _adminUserPromise;
@@ -185,10 +238,10 @@ export async function deleteTestCustomer(id: string): Promise<void> {
 }
 
 /** Count rows in a table — useful for assertions before/after. */
-export async function countRows(table: string, filter?: Record<string, unknown>): Promise<number> {
+export async function countRows(table: string, filter?: Record<string, FilterValue>): Promise<number> {
   let q = admin().from(table).select("*", { count: "exact", head: true });
   if (filter) {
-    for (const [k, v] of Object.entries(filter)) q = q.eq(k, v as any);
+    for (const [k, v] of Object.entries(filter)) q = q.eq(k, v);
   }
   const { count, error } = await q;
   if (error) throw new Error(`Count failed on ${table}: ${error.message}`);
@@ -198,13 +251,13 @@ export async function countRows(table: string, filter?: Record<string, unknown>)
 /** Wait until a row appears matching the filter, or timeout. */
 export async function waitForRow(
   table: string,
-  filter: Record<string, unknown>,
+  filter: Record<string, FilterValue>,
   timeoutMs = 10_000,
 ): Promise<Record<string, unknown> | null> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     let q = admin().from(table).select("*").limit(1);
-    for (const [k, v] of Object.entries(filter)) q = q.eq(k, v as any);
+    for (const [k, v] of Object.entries(filter)) q = q.eq(k, v);
     const { data } = await q.maybeSingle();
     if (data) return data as Record<string, unknown>;
     await new Promise((r) => setTimeout(r, 500));

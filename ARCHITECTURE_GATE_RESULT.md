@@ -3716,3 +3716,149 @@ No migration. No schema change. No production data mutation.
 - Gate 9 Secret Hygiene: no credential, cookie, or token value logging.
 - Gate 10 CI Governance: targeted auth test, lint, typecheck, architecture, security.
 - Gate 11 Regression: production workflow remains final authority after merge.
+
+---
+
+# Additional Architecture Gate - Legacy BabyCare KTV Branchless Attendance
+
+> **Status:** PASS
+> **Date:** 2026-10-06
+> **Scope:** KTV daily attendance branch resolution for legacy `bella_babycare` tenants only.
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: BabyCare legacy tenant identity is `tenants.product_key = 'bella_babycare'`. The legacy Bella Spa BabyCare runtime is not registered as a Platform branch/chain tenant, so KTV shift attendance must not require `people_directory -> org_relationships -> org_units` branch proof when no branch is selected.
+
+Source of Truth: `docs/governance/BELLA_AI_CODING_CONSTITUTION.md`, `src/platform/registry/product-registry.ts`, `src/services/attendance-actions.ts`, and the user-provided KTV UI error showing branch resolution failure before check-in.
+
+Canonical Contract: Product identity comes from `tenant.product_key -> ProductRegistry`. Branch-aware attendance remains required for branch-platform Beauty products; legacy BabyCare attendance remains tenant-scoped and branchless.
+
+Ownership: Product Registry owns product identity. Attendance actions own KTV check-in/check-out mutation behavior. Platform branch registration owns branch membership and must not be retrofitted onto legacy BabyCare for this fix.
+
+Boundary: no migration, no HQ tenant registration mutation, no Product Registry change, no Healthcare/Education/Logistics kernel change, and no payroll recalculation change.
+
+## 2. Product Manifest
+
+| Product | Product key | Attendance branch requirement |
+|---|---|---|
+| Bella Mommy Baby Care legacy | `bella_babycare` | Branchless tenant-scoped attendance allowed |
+| Bella Beauty Spa v2 / Haircut / Nail | `bella_spa`, `bella_haircut`, `bella_nail` | Platform branch proof required |
+
+## 3. Ownership Map
+
+| Artifact | Owner | Role |
+|---|---|---|
+| `src/services/attendance-actions.ts` | Attendance workflow | KTV daily attendance read/write |
+| `src/services/beauty-branch-context.ts` | Beauty branch context | Branch proof for branch-aware products |
+| `src/__tests__/attendance-actions.test.ts` | Regression test | Proves BabyCare branchless exception and preserves branch-aware guard |
+
+## 4. Contract Dependency Map
+
+```text
+KTV check-in
+  -> current user tenant_id
+  -> tenants.product_key
+  -> bella_babycare legacy branchless exception OR Platform branch resolver
+  -> attendance insert/update
+```
+
+## 5. Change Authority
+
+The user reported KTV check-in failure after HQ tenant registration management changed, and clarified this BabyCare is legacy Bella Spa BabyCare, not registered under Platform. This authorizes only the BabyCare legacy attendance branch-resolution correction.
+
+## 6. UI -> Contract Reconciliation
+
+| UI symptom | Contract | Result |
+|---|---|---|
+| KTV screen shows "Không xác định được chi nhánh chấm công của KTV" | Legacy BabyCare does not have Platform branch registration | `STALE CONSUMER` |
+| KTV "Đầu ca: CHECK-IN" | Tenant-scoped attendance is enough for BabyCare | `MATCH AFTER FIX` |
+
+## 7. Additive Migration Plan
+
+No migration. Existing `attendance.branch_id` remains nullable for legacy rows. No production data mutation.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Healthcare, Logistics, Finance, or Education Kernel files changed.
+- Gate 2 Contract Boundary: product identity read uses `tenants.product_key`, not `enabled_modules`.
+- Gate 3 Tenant Isolation: attendance insert still writes and filters by `tenant_id`.
+- Gate 4 Permission: only authenticated KTV users can check in/out.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: no new event behavior.
+- Gate 7 Audit: audit log remains after attendance persistence.
+- Gate 8 UI Contract: BabyCare KTV check-in no longer depends on Platform branch registration.
+- Gate 9 Secret Hygiene: no credential or environment value touched.
+- Gate 10 Targeted Regression: `attendance-actions.test.ts` covers legacy BabyCare branchless check-in.
+- Gate 11 Type Safety: run targeted Jest and TypeScript/type-focused verification as available.
+
+---
+
+# Additional Architecture Gate - HQ Admin Dashboard Product Shell Denial
+
+> **Status:** PASS
+> **Date:** 2026-10-06
+> **Scope:** Prevent HQ-only admin accounts from entering `/dashboard` product shells.
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: HQ identity is `tenants.product_key = 'bella_hq'`. HQ users are administrative system users for `/hq`, not product users for `/dashboard` vertical runtimes.
+
+Source of Truth: `docs/governance/BELLA_AI_CODING_CONSTITUTION.md`, `src/lib/business-rules/hq-tenant.ts`, `src/services/hq-actions.ts`, `src/app/hq/login/hq-login-client.tsx`, and the reported UI evidence showing `Bella HQ Admin` inside the Beauty/Spa dashboard shell.
+
+Canonical Contract: Product identity comes from `tenant.product_key`. `bella_hq` must route to `/hq` and must not be rendered by dashboard product shell consumers.
+
+Ownership: HQ auth boundary owns HQ authorization. Dashboard layout owns product-shell admission. Product verticals own their own runtime views but do not own HQ identity.
+
+Boundary: no schema change, no data mutation, no Product Registry change, no Healthcare/Education/Logistics kernel change, no HQ feature expansion, and no Beauty UI redesign.
+
+## 2. Product Manifest
+
+No product capability is added. This is a route-boundary correction for the existing HQ administrative tenant.
+
+## 3. Ownership Map
+
+| Artifact | Owner | Role |
+|---|---|---|
+| `src/lib/business-rules/hq-tenant.ts` | HQ business rule | Canonical `bella_hq` predicate |
+| `src/app/dashboard/layout.tsx` | Dashboard product shell | Deny HQ tenant from product shell |
+| `src/__tests__/tenant-isolation-source-guards.test.ts` | Source guard regression | Proves dashboard shell redirects HQ tenant to `/hq` |
+
+## 4. Contract Dependency Map
+
+```text
+DashboardLayout
+  -> getCachedCurrentUser()
+  -> getCachedTenantSettings()
+  -> tenants.product_key
+  -> isHqTenant()
+  -> /hq redirect before product shell authorization
+```
+
+## 5. Change Authority
+
+The user reported that HQ admin is being assigned/rendered as Bella Spa and clarified the account is HQ-only, not a product login. This authorizes dashboard route-boundary correction only.
+
+## 6. UI -> Contract Reconciliation
+
+| UI symptom | Contract | Result |
+|---|---|---|
+| `Bella HQ Admin` appears in `/dashboard` Beauty/Spa shell | `bella_hq` users belong in `/hq` only | `STALE CONSUMER` |
+| Generic `/login` sends successful users to `/dashboard` | Dashboard shell must enforce tenant product boundary | `GUARD REQUIRED` |
+
+## 7. Additive Migration Plan
+
+No migration. No production data mutation.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Healthcare, Logistics, Finance, or Education Kernel files changed.
+- Gate 2 Contract Boundary: use `isHqTenant()` and `tenant.product_key`, not tenant name or enabled modules.
+- Gate 3 Tenant Isolation: dashboard shell no longer renders HQ tenant product UI.
+- Gate 4 Permission: existing `/hq` auth remains enforced by `checkHqAuth()`.
+- Gate 5 Database Migration Safety: no migration.
+- Gate 6 Event-After-Persistence: not applicable.
+- Gate 7 Audit: no mutation, no audit event.
+- Gate 8 UI Contract: HQ users redirect to `/hq` before dashboard shell authorization.
+- Gate 9 Secret Hygiene: no credentials touched.
+- Gate 10 Targeted Regression: static source guard for dashboard HQ redirect.
+- Gate 11 Type Safety: run targeted Jest and type-focused verification as available.

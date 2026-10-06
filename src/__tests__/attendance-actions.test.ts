@@ -134,6 +134,7 @@ describe('attendance read actions fail-fast behavior', () => {
 
   it('propagates today attendance query failures', async () => {
     const scripts: ScriptedResult[] = [
+      { table: 'tenants', op: 'select', data: { product_key: 'bella_spa' } },
       {
         table: 'user_org_unit_access',
         op: 'select',
@@ -591,6 +592,7 @@ describe('attendance branch-aware KTV mutations', () => {
 
   it('resolves the current KTV branch when check-in omits branchId', async () => {
     const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { product_key: 'bella_spa' } },
       {
         table: 'user_org_unit_access',
         op: 'select',
@@ -616,8 +618,30 @@ describe('attendance branch-aware KTV mutations', () => {
       });
   });
 
+  it('allows legacy BabyCare KTV check-in without Platform branch registration', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { product_key: 'bella_babycare' } },
+      { table: 'attendance', op: 'select', data: null },
+      { table: 'attendance', op: 'insert', data: { id: 'att-legacy-1', branch_id: null } },
+    ]);
+
+    const result = await ktvCheckIn();
+
+    expect(result.success).toBe(true);
+    const insertPayload = calls.find(call => call.table === 'attendance' && call.op === 'insert')?.payload;
+    expect(insertPayload).toMatchObject({
+      ktv_id: 'ktv-1',
+      tenant_id: 'tenant-1',
+    });
+    expect(insertPayload).not.toHaveProperty('branch_id');
+    expect(calls.some(call => call.table === 'people_directory')).toBe(false);
+    expect(calls.some(call => call.table === 'org_relationships')).toBe(false);
+    expect(calls.some(call => call.table === 'org_units')).toBe(false);
+  });
+
   it('denies ambiguous KTV branch resolution before check-in write', async () => {
     const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { product_key: 'bella_spa' } },
       {
         table: 'user_org_unit_access',
         op: 'select',

@@ -22,8 +22,10 @@ const BookingModal = nextDynamic(
 
 export const dynamic = 'force-dynamic';
 
+type CustomerDetailTab = 'overview' | 'services' | 'bookings' | 'sessions' | 'payments' | 'profile' | 'activity' | 'notes';
+
 export default function CustomerDetailPage() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'bookings' | 'sessions' | 'payments' | 'profile' | 'activity' | 'notes'>('overview');
+  const [activeTab, setActiveTab] = useState<CustomerDetailTab>('overview');
 
   const {
     activeBooking,
@@ -111,15 +113,19 @@ export default function CustomerDetailPage() {
     );
   }
 
-  const tabs = [
+  const allBookings = customer.allBookings || [];
+  const totalSessions = allBookings.reduce((sum, booking) => sum + (booking.session_logs?.length || 0), 0);
+  const totalPayments = allBookings.reduce((sum, booking) => sum + (booking.revenue?.length || 0), 0);
+  const notesCount = customer.notes?.trim() ? 1 : 0;
+  const tabs: Array<{ id: CustomerDetailTab; label: string }> = [
     { id: 'overview', label: 'Tổng quan' },
-    { id: 'services', label: `Dịch vụ (${customer.allBookings?.length || 0})` },
-    { id: 'bookings', label: 'Lịch hẹn (6)' },
-    { id: 'sessions', label: `Lịch sử chăm sóc (${sortedSessions.length || 3})` },
-    { id: 'payments', label: `Thanh toán (${activeBooking?.revenue?.length || 2})` },
+    { id: 'services', label: `Dịch vụ (${allBookings.length})` },
+    { id: 'bookings', label: `Lịch hẹn (${totalSessions})` },
+    { id: 'sessions', label: `Lịch sử chăm sóc (${sortedSessions.length})` },
+    { id: 'payments', label: `Thanh toán (${totalPayments})` },
     { id: 'profile', label: 'Hồ sơ' },
     { id: 'activity', label: 'Hoạt động' },
-    { id: 'notes', label: 'Ghi chú (4)' },
+    { id: 'notes', label: `Ghi chú (${notesCount})` },
   ];
 
   return (
@@ -189,7 +195,7 @@ export default function CustomerDetailPage() {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id)}
             className={cn(
               "px-4 py-2 rounded-full text-xs font-black whitespace-nowrap transition-all border shrink-0",
               activeTab === tab.id
