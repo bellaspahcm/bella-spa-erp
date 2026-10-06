@@ -7,6 +7,8 @@ const MIGRATION_PATH = /^supabase\/migrations\/(\d{14})_(.+)\.sql$/;
 const FOUNDATION_ORG_PEOPLE_SCHEMA_MIGRATION =
   'supabase/migrations/20260801030000_foundation_org_people_schema.sql';
 const BLUEPRINT_CORE_SCHEMA_MIGRATION = 'supabase/migrations/20260806000000_blueprint_core_schema.sql';
+const EDUCATION_STUDENTS_PLATFORM_SCHEMA_MIGRATION =
+  'supabase/migrations/20260810224418_migrate_students_to_platform_schema.sql';
 const EDUCATION_SCHEMA_MIGRATION = 'supabase/migrations/20260812060000_create_education_schema.sql';
 const EDUCATION_ENROLLMENT_RPC_MIGRATION = 'supabase/migrations/20260813000040_create_enrollment_transaction_rpc.sql';
 const EDUCATION_STUDENT_IDENTITY_CUTOVER_MIGRATION =
@@ -256,6 +258,15 @@ async function canonicalMigrationIsNeeded(client, file) {
       || !(await relationExists(client, 'public', 'edu_enrollments'));
   }
 
+  if (file === EDUCATION_STUDENTS_PLATFORM_SCHEMA_MIGRATION) {
+    return !(await columnExists(client, 'public', 'students', 'student_code'))
+      || !(await columnExists(client, 'public', 'students', 'academic_status'))
+      || !(await columnExists(client, 'public', 'students', 'enrollment_type'))
+      || !(await columnExists(client, 'public', 'students', 'program_id'))
+      || !(await columnExists(client, 'public', 'students', 'enrollment_date'))
+      || !(await columnExists(client, 'public', 'students', 'metadata'));
+  }
+
   if (file === EDUCATION_ENROLLMENT_RPC_MIGRATION) {
     return !(await columnExists(client, 'public', 'edu_courses', 'current_enrollment'))
       || !(await columnExists(client, 'public', 'edu_enrollments', 'request_id'))
@@ -288,6 +299,22 @@ async function ensurePlatformRuleDomainType(client) {
 async function ensureEducationStudentIdentityCreateSideBaseline(client) {
   if (!(await relationExists(client, 'public', 'students'))) {
     return;
+  }
+
+  if (!(await columnExists(client, 'public', 'students', 'student_id'))) {
+    console.log(
+      'Repairing isolated E2E baseline with canonical Education student identifier column '
+      + 'from supabase/migrations/20260810224417_create_students_table.sql: required by current StudentRepository writes.',
+    );
+    await client.query('ALTER TABLE public.students ADD COLUMN student_id UUID DEFAULT gen_random_uuid()');
+  }
+
+  if (!(await indexExists(client, 'public', 'students', 'students_student_id_unique'))) {
+    console.log(
+      'Repairing isolated E2E baseline with canonical unique student_id lookup '
+      + 'from supabase/migrations/20260810224417_create_students_table.sql.',
+    );
+    await client.query('CREATE UNIQUE INDEX students_student_id_unique ON public.students(student_id)');
   }
 
   if (!(await columnExists(client, 'public', 'students', 'party_id'))) {
@@ -330,6 +357,19 @@ async function ensureEducationStudentIdentityCreateSideBaseline(client) {
     );
     await client.query('ALTER TABLE public.students ALTER COLUMN person_id DROP NOT NULL');
   }
+
+  for (const legacyColumn of ['user_id', 'course_id', 'full_name']) {
+    if (
+      await columnExists(client, 'public', 'students', legacyColumn)
+      && await columnIsNotNull(client, 'public', 'students', legacyColumn)
+    ) {
+      console.log(
+        `Repairing isolated E2E baseline by relaxing legacy students.${legacyColumn} NOT NULL: `
+        + 'current canonical StudentRepository writes do not use the student-training legacy columns.',
+      );
+      await client.query(`ALTER TABLE public.students ALTER COLUMN ${legacyColumn} DROP NOT NULL`);
+    }
+  }
 }
 
 async function applyCanonicalBaselineMigration(client, file, reason) {
@@ -363,6 +403,11 @@ async function ensureRequiredE2eBaseline(client, migrations) {
     );
     await applyCanonicalBaselineMigration(
       client,
+      EDUCATION_STUDENTS_PLATFORM_SCHEMA_MIGRATION,
+      'required by current Education StudentRepository create/read shape',
+    );
+    await applyCanonicalBaselineMigration(
+      client,
       EDUCATION_SCHEMA_MIGRATION,
       'required by canonical Education course/enrollment dependencies',
     );
@@ -376,6 +421,11 @@ async function ensureRequiredE2eBaseline(client, migrations) {
   }
 
   if (needsPreschoolAdmissionBaseline(migrations)) {
+    await applyCanonicalBaselineMigration(
+      client,
+      EDUCATION_STUDENTS_PLATFORM_SCHEMA_MIGRATION,
+      'required by Preschool admission student create/read shape',
+    );
     await ensureEducationStudentIdentityCreateSideBaseline(client);
     await applyCanonicalBaselineMigration(
       client,
@@ -399,6 +449,10 @@ async function applyMigration(client, migration) {
   console.log(`Applying E2E migration ${migration.version} (${migration.name}).`);
   await client.query(migration.sql);
   await recordMigration(client, migration);
+}
+
+async function reloadPostgrestSchema(client) {
+  await client.query("NOTIFY pgrst, 'reload schema'");
 }
 
 async function main() {
@@ -438,6 +492,7 @@ async function main() {
     for (const migration of migrations) {
       await applyMigration(client, migration);
     }
+    await reloadPostgrestSchema(client);
   } finally {
     await client.end();
   }
