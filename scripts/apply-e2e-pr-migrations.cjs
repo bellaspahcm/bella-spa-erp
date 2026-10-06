@@ -9,6 +9,10 @@ const FOUNDATION_ORG_PEOPLE_SCHEMA_MIGRATION =
 const BLUEPRINT_CORE_SCHEMA_MIGRATION = 'supabase/migrations/20260806000000_blueprint_core_schema.sql';
 const EDUCATION_SCHEMA_MIGRATION = 'supabase/migrations/20260812060000_create_education_schema.sql';
 const EDUCATION_ENROLLMENT_RPC_MIGRATION = 'supabase/migrations/20260813000040_create_enrollment_transaction_rpc.sql';
+const EDUCATION_STUDENT_IDENTITY_CUTOVER_MIGRATION =
+  'supabase/migrations/20260912000000_r3_education_identity_cutover.sql';
+const EDUCATION_STUDENT_CREATE_SIDE_MIGRATION =
+  'supabase/migrations/20260926002000_r3_student_create_side_nullable_person_id.sql';
 const PRESCHOOL_GUARDIAN_AUTHORIZATION_MIGRATION =
   'supabase/migrations/20260927010000_preschool_guardian_pickup_authorizations.sql';
 const USER_ORG_UNIT_ACCESS_PROJECTION_MIGRATION =
@@ -164,6 +168,51 @@ async function functionExists(client, schemaName, functionName) {
   return result.rowCount > 0;
 }
 
+async function constraintExists(client, schemaName, tableName, constraintName) {
+  const result = await client.query(
+    `
+      SELECT 1
+      FROM information_schema.table_constraints
+      WHERE table_schema = $1
+        AND table_name = $2
+        AND constraint_name = $3
+      LIMIT 1
+    `,
+    [schemaName, tableName, constraintName],
+  );
+  return result.rowCount > 0;
+}
+
+async function indexExists(client, schemaName, tableName, indexName) {
+  const result = await client.query(
+    `
+      SELECT 1
+      FROM pg_indexes
+      WHERE schemaname = $1
+        AND tablename = $2
+        AND indexname = $3
+      LIMIT 1
+    `,
+    [schemaName, tableName, indexName],
+  );
+  return result.rowCount > 0;
+}
+
+async function columnIsNotNull(client, schemaName, tableName, columnName) {
+  const result = await client.query(
+    `
+      SELECT is_nullable
+      FROM information_schema.columns
+      WHERE table_schema = $1
+        AND table_name = $2
+        AND column_name = $3
+      LIMIT 1
+    `,
+    [schemaName, tableName, columnName],
+  );
+  return result.rows[0]?.is_nullable === 'NO';
+}
+
 async function typeExists(client, schemaName, typeName) {
   const result = await client.query(
     `
@@ -236,6 +285,53 @@ async function ensurePlatformRuleDomainType(client) {
   await client.query(PLATFORM_RULE_DOMAIN_TYPE_SQL);
 }
 
+async function ensureEducationStudentIdentityCreateSideBaseline(client) {
+  if (!(await relationExists(client, 'public', 'students'))) {
+    return;
+  }
+
+  if (!(await columnExists(client, 'public', 'students', 'party_id'))) {
+    console.log(
+      'Repairing isolated E2E baseline with canonical Education student identity column '
+      + `from ${EDUCATION_STUDENT_IDENTITY_CUTOVER_MIGRATION}: required by current StudentRepository writes.`,
+    );
+    await client.query('ALTER TABLE public.students ADD COLUMN party_id UUID');
+  }
+
+  if (!(await constraintExists(client, 'public', 'students', 'students_party_id_fkey'))) {
+    console.log(
+      'Repairing isolated E2E baseline with canonical students.party_id FK '
+      + `from ${EDUCATION_STUDENT_IDENTITY_CUTOVER_MIGRATION}: required by Party-backed students.`,
+    );
+    await client.query(`
+      ALTER TABLE public.students
+      ADD CONSTRAINT students_party_id_fkey
+      FOREIGN KEY (party_id)
+      REFERENCES public.party_parties(id)
+      ON DELETE RESTRICT
+    `);
+  }
+
+  if (!(await indexExists(client, 'public', 'students', 'idx_students_party_id'))) {
+    console.log(
+      'Repairing isolated E2E baseline with canonical students.party_id index '
+      + `from ${EDUCATION_STUDENT_IDENTITY_CUTOVER_MIGRATION}.`,
+    );
+    await client.query('CREATE INDEX idx_students_party_id ON public.students(party_id)');
+  }
+
+  if (
+    await columnExists(client, 'public', 'students', 'person_id')
+    && await columnIsNotNull(client, 'public', 'students', 'person_id')
+  ) {
+    console.log(
+      'Repairing isolated E2E baseline with canonical nullable students.person_id '
+      + `from ${EDUCATION_STUDENT_CREATE_SIDE_MIGRATION}: required for Party-backed student creation.`,
+    );
+    await client.query('ALTER TABLE public.students ALTER COLUMN person_id DROP NOT NULL');
+  }
+}
+
 async function applyCanonicalBaselineMigration(client, file, reason) {
   if (!(await canonicalMigrationIsNeeded(client, file))) {
     return;
@@ -276,9 +372,11 @@ async function ensureRequiredE2eBaseline(client, migrations) {
       EDUCATION_ENROLLMENT_RPC_MIGRATION,
       'required by canonical Education enrollment idempotency RPC',
     );
+    await ensureEducationStudentIdentityCreateSideBaseline(client);
   }
 
   if (needsPreschoolAdmissionBaseline(migrations)) {
+    await ensureEducationStudentIdentityCreateSideBaseline(client);
     await applyCanonicalBaselineMigration(
       client,
       PRESCHOOL_GUARDIAN_AUTHORIZATION_MIGRATION,
