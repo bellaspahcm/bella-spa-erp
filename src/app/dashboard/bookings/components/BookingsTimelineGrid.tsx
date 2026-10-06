@@ -16,6 +16,9 @@ export type TimelineSession = {
   booking_id: string;
   assigned_date: string;
   assigned_time?: string | null;
+  completed_date?: string | null;
+  start_time?: string | null;
+  created_at?: string | null;
   notes?: string | null;
   session_number?: number | null;
   status?: string | null;
@@ -33,9 +36,11 @@ export type TimelineSession = {
     completed_sessions?: number | null;
     total_sessions?: number | null;
     assigned_ktv?: {
+      id?: string | null;
       full_name?: string | null;
     } | null;
     customers?: {
+      id?: string | null;
       name_mother?: string | null;
       name_baby?: string | null;
       phone?: string | null;
@@ -46,6 +51,7 @@ export type TimelineSession = {
     discount_percent?: number | string | null;
     status?: string | null;
     preferred_time?: string | null;
+    start_date?: string | null;
     revenue?: {
       amount?: number | string | null;
       status?: string | null;

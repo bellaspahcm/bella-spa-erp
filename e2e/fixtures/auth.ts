@@ -18,7 +18,7 @@ type AdminCredentials = {
 };
 
 type Fixtures = {
-  /** A page that is already authenticated as an admin user (HQ tenant). */
+  /** A page that is already authenticated as an admin user for the target E2E tenant. */
   adminPage: Page;
 };
 
