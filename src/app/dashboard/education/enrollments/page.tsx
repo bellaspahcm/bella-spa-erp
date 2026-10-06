@@ -42,6 +42,7 @@ type StudentItem = {
   age: string;
   gender: string;
   className: string;
+  branchName?: string;
   parentName: string;
   parentPhone: string;
   hasHealthAlert: boolean;
@@ -62,6 +63,12 @@ type ClassroomOption = {
   grade: string;
 };
 
+type BranchOption = {
+  id: string;
+  name: string;
+  code?: string;
+};
+
 type AdmissionFormState = {
   childName: string;
   nickname: string;
@@ -71,6 +78,7 @@ type AdmissionFormState = {
   guardianPhone: string;
   medicalNote: string;
   courseId: string;
+  branchId: string;
 };
 
 type AdmissionResponse = {
@@ -94,6 +102,30 @@ type AdmissionResponse = {
     status: string;
     enrolledAt: string;
   };
+  chain?: {
+    branchId: string;
+    enrollmentId: string;
+    courseId: string;
+  } | null;
+};
+
+type StudentRegistryResponse = {
+  success: boolean;
+  error?: string;
+  students?: Array<{
+    id: string;
+    name: string;
+    nickname: string;
+    dateOfBirth: string;
+    gender: string;
+    className: string;
+    parentName: string;
+    parentPhone: string;
+    hasHealthAlert: boolean;
+    medicalNote: string;
+    status: StudentItem['status'];
+    statusKey: StudentItem['statusKey'];
+  }>;
 };
 
 const DEFAULT_ADMISSION_FORM: AdmissionFormState = {
@@ -105,90 +137,70 @@ const DEFAULT_ADMISSION_FORM: AdmissionFormState = {
   guardianPhone: '',
   medicalNote: '',
   courseId: '',
+  branchId: '',
 };
 
-const STUDENTS_LIST: StudentItem[] = [
-  {
-    id: 'STU-001',
-    name: 'Nguyễn Minh An',
-    nickname: 'Bé Bi',
-    dob: '15/05/2023',
-    age: '3 Tuổi',
-    gender: 'Nam',
-    className: 'Lớp Mầm A1 — Họa Mi',
-    parentName: 'Nguyễn Văn Hùng (Bố)',
-    parentPhone: '0988 123 456',
-    hasHealthAlert: true,
-    medicalNote: 'Dị ứng hạt hải sản. Cần lưu ý bữa ăn trưa.',
-    status: 'Đang Học',
-    statusKey: 'active',
-    theme: {
-      avatarBg: 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300',
-      badgeBg: 'bg-indigo-50 dark:bg-indigo-950/60',
-      badgeText: 'text-indigo-700 dark:text-indigo-300 border-indigo-200/60',
-    },
-  },
-  {
-    id: 'STU-002',
-    name: 'Trần Bảo Ngọc',
-    nickname: 'Bé Bắp',
-    dob: '20/11/2022',
-    age: '4 Tuổi',
-    gender: 'Nữ',
-    className: 'Lớp Chồi B1 — Thỏ Ngọc',
-    parentName: 'Lê Thị Thu Hương (Mẹ)',
-    parentPhone: '0912 345 678',
-    hasHealthAlert: false,
-    medicalNote: 'Sức khỏe bình thường. Đã tiêm đủ 6 mũi vắc-xin.',
-    status: 'Đang Học',
-    statusKey: 'active',
-    theme: {
-      avatarBg: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300',
-      badgeBg: 'bg-emerald-50 dark:bg-emerald-950/60',
-      badgeText: 'text-emerald-700 dark:text-emerald-300 border-emerald-200/60',
-    },
-  },
-  {
-    id: 'STU-003',
-    name: 'Phạm Hoàng Nam',
-    nickname: 'Bé Bin',
-    dob: '10/02/2021',
-    age: '5 Tuổi',
-    gender: 'Nam',
-    className: 'Lớp Lá C1 — Vàng Anh',
-    parentName: 'Phạm Quốc Bảo (Bố)',
-    parentPhone: '0977 888 999',
-    hasHealthAlert: true,
-    medicalNote: 'Đeo kính 1.5 độ. Ưu tiên ngồi hàng ghế đầu.',
-    status: 'Đang Học',
-    statusKey: 'active',
-    theme: {
-      avatarBg: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300',
-      badgeBg: 'bg-amber-50 dark:bg-amber-950/60',
-      badgeText: 'text-amber-700 dark:text-amber-300 border-amber-200/60',
-    },
-  },
-  {
-    id: 'STU-004',
-    name: 'Vũ Khánh Linh',
-    nickname: 'Bé Miu',
-    dob: '05/08/2024',
-    age: '2 Tuổi',
-    gender: 'Nữ',
-    className: 'Lớp Nhà Trẻ N1 — Gấu Misa',
-    parentName: 'Hoàng Anh Tuấn (Bố)',
-    parentPhone: '0903 111 222',
-    hasHealthAlert: true,
-    medicalNote: 'Chưa quen ngủ trưa riêng. Cần dỗ dành ban đầu.',
-    status: 'Chờ Nhập Học',
-    statusKey: 'pending',
-    theme: {
+const STUDENTS_LIST: StudentItem[] = [];
+
+function formatAge(dateOfBirth: string): string {
+  const dob = new Date(dateOfBirth);
+  if (Number.isNaN(dob.getTime())) return 'Chưa rõ tuổi';
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDelta = today.getMonth() - dob.getMonth();
+  if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < dob.getDate())) {
+    age -= 1;
+  }
+  return `${Math.max(age, 0)} Tuổi`;
+}
+
+function formatDate(dateOfBirth: string): string {
+  const dob = new Date(dateOfBirth);
+  if (Number.isNaN(dob.getTime())) return 'Chưa rõ';
+  return dob.toLocaleDateString('vi-VN');
+}
+
+function getStudentTheme(statusKey: StudentItem['statusKey']): StudentItem['theme'] {
+  if (statusKey === 'pending') {
+    return {
       avatarBg: 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300',
       badgeBg: 'bg-rose-50 dark:bg-rose-950/60',
       badgeText: 'text-rose-700 dark:text-rose-300 border-rose-200/60',
-    },
-  },
-];
+    };
+  }
+
+  return {
+    avatarBg: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300',
+    badgeBg: 'bg-emerald-50 dark:bg-emerald-950/60',
+    badgeText: 'text-emerald-700 dark:text-emerald-300 border-emerald-200/60',
+  };
+}
+
+async function fetchStudentRegistry(): Promise<StudentItem[]> {
+  const response = await fetch('/api/education/enrollments', { method: 'GET' });
+  const data = (await response.json()) as StudentRegistryResponse;
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Không tải được danh sách học sinh.');
+  }
+
+  return (data.students || []).map((item) => ({
+    id: item.id,
+    name: item.name,
+    nickname: item.nickname || 'Chưa có',
+    dob: item.dateOfBirth ? formatDate(item.dateOfBirth) : 'Chưa rõ',
+    age: item.dateOfBirth ? formatAge(item.dateOfBirth) : 'Chưa rõ tuổi',
+    gender: item.gender,
+    className: item.className,
+    parentName: item.parentName,
+    parentPhone: item.parentPhone,
+    hasHealthAlert: item.hasHealthAlert,
+    medicalNote: item.medicalNote || 'Chưa ghi nhận lưu ý y tế.',
+    status: item.status,
+    statusKey: item.statusKey,
+    theme: getStudentTheme(item.statusKey),
+  }));
+}
 
 export default function EnrollmentsPage() {
   const [students, setStudents] = useState<StudentItem[]>(STUDENTS_LIST);
@@ -199,10 +211,13 @@ export default function EnrollmentsPage() {
   const [isAdmissionModalOpen, setIsAdmissionModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState(1);
   const [classrooms, setClassrooms] = useState<ClassroomOption[]>([]);
+  const [branches, setBranches] = useState<BranchOption[]>([]);
   const [admissionForm, setAdmissionForm] = useState<AdmissionFormState>(DEFAULT_ADMISSION_FORM);
   const [admissionError, setAdmissionError] = useState('');
   const [admissionSuccess, setAdmissionSuccess] = useState('');
   const [isSubmittingAdmission, setIsSubmittingAdmission] = useState(false);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+  const [studentLoadError, setStudentLoadError] = useState('');
 
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -218,35 +233,77 @@ export default function EnrollmentsPage() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialStudents() {
+      setIsLoadingStudents(true);
+      try {
+        const loadedStudents = await fetchStudentRegistry();
+        if (!cancelled) {
+          setStudents(loadedStudents);
+          setStudentLoadError('');
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setStudentLoadError(error instanceof Error ? error.message : 'Không tải được danh sách học sinh.');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingStudents(false);
+        }
+      }
+    }
+
+    loadInitialStudents();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isAdmissionModalOpen) return;
 
     let cancelled = false;
-    async function loadClassrooms() {
+    async function loadAdmissionOptions() {
       try {
-        const response = await fetch('/api/education/courses');
-        const data = await response.json();
-        if (cancelled || !data?.success) return;
+        const [classroomResponse, branchResponse] = await Promise.all([
+          fetch('/api/education/courses'),
+          fetch('/api/education/branches'),
+        ]);
+        const classroomData = await classroomResponse.json();
+        const branchData = await branchResponse.json();
+        if (cancelled) return;
+        if (!classroomData?.success) return;
 
-        const loadedClassrooms: ClassroomOption[] = (data.classrooms || []).map((item: ClassroomOption) => ({
+        const loadedClassrooms: ClassroomOption[] = (classroomData.classrooms || []).map((item: ClassroomOption) => ({
           id: item.id,
           code: item.code,
           name: item.name,
           grade: item.grade,
         }));
+        const loadedBranches: BranchOption[] = branchData?.success
+          ? (branchData.branches || []).map((item: BranchOption) => ({
+              id: item.id,
+              name: item.name,
+              code: item.code,
+            }))
+          : [];
 
         setClassrooms(loadedClassrooms);
+        setBranches(loadedBranches);
         setAdmissionForm((current) => ({
           ...current,
           courseId: current.courseId || loadedClassrooms[0]?.id || '',
+          branchId: current.branchId || loadedBranches[0]?.id || '',
         }));
       } catch {
         if (!cancelled) {
-          setAdmissionError('Không tải được danh sách lớp. Vui lòng thử lại.');
+          setAdmissionError('Không tải được danh sách lớp hoặc chi nhánh. Vui lòng thử lại.');
         }
       }
     }
 
-    loadClassrooms();
+    loadAdmissionOptions();
     return () => {
       cancelled = true;
     };
@@ -265,6 +322,9 @@ export default function EnrollmentsPage() {
     if (selectedStatusTab === 'healthAlert') return matchesSearch && stu.hasHealthAlert;
     return matchesSearch;
   });
+  const activeStudentCount = students.filter((stu) => stu.statusKey === 'active').length;
+  const pendingStudentCount = students.filter((stu) => stu.statusKey === 'pending').length;
+  const healthAlertCount = students.filter((stu) => stu.hasHealthAlert).length;
 
   function openAdmissionModal() {
     setAdmissionForm(DEFAULT_ADMISSION_FORM);
@@ -279,24 +339,16 @@ export default function EnrollmentsPage() {
     setAdmissionError('');
   }
 
-  function formatAge(dateOfBirth: string): string {
-    const dob = new Date(dateOfBirth);
-    if (Number.isNaN(dob.getTime())) return 'Chưa rõ tuổi';
-    const today = new Date();
-    let age = today.getFullYear() - dob.getFullYear();
-    const monthDelta = today.getMonth() - dob.getMonth();
-    if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < dob.getDate())) {
-      age -= 1;
-    }
-    return `${Math.max(age, 0)} Tuổi`;
-  }
-
   async function submitAdmission() {
     setAdmissionError('');
     setAdmissionSuccess('');
 
     if (!admissionForm.childName.trim() || !admissionForm.dateOfBirth || !admissionForm.guardianName.trim() || !admissionForm.guardianPhone.trim() || !admissionForm.courseId) {
       setAdmissionError('Vui lòng nhập đủ thông tin bắt buộc và chọn lớp.');
+      return;
+    }
+    if (branches.length > 0 && !admissionForm.branchId) {
+      setAdmissionError('Vui lòng chọn cơ sở/chi nhánh nhập học.');
       return;
     }
 
@@ -313,30 +365,10 @@ export default function EnrollmentsPage() {
         throw new Error(data.error || 'Đăng ký nhập học chưa hoàn tất.');
       }
 
-      const selectedClass = classrooms.find((item) => item.id === data.enrollment?.courseId);
-      const createdStudent: StudentItem = {
-        id: data.student.studentCode,
-        name: data.student.childName,
-        nickname: data.student.nickname || 'Chưa có',
-        dob: new Date(data.student.dateOfBirth).toLocaleDateString('vi-VN'),
-        age: formatAge(data.student.dateOfBirth),
-        gender: data.student.gender === 'female' ? 'Nữ' : data.student.gender === 'male' ? 'Nam' : 'Khác',
-        className: selectedClass ? `${selectedClass.name} — ${selectedClass.grade}` : data.enrollment.courseTitle,
-        parentName: data.student.guardianName,
-        parentPhone: data.student.guardianPhone,
-        hasHealthAlert: Boolean(data.student.medicalNote),
-        medicalNote: data.student.medicalNote || 'Chưa ghi nhận lưu ý y tế.',
-        status: data.enrollment.status === 'active' ? 'Đang Học' : 'Chờ Nhập Học',
-        statusKey: data.enrollment.status === 'active' ? 'active' : 'pending',
-        theme: {
-          avatarBg: 'bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300',
-          badgeBg: 'bg-sky-50 dark:bg-sky-950/60',
-          badgeText: 'text-sky-700 dark:text-sky-300 border-sky-200/60',
-        },
-      };
-
-      setStudents((current) => [createdStudent, ...current]);
-      setAdmissionSuccess(`Đã tạo học sinh ${data.student.studentCode} và enrollment ${data.enrollment.id}.`);
+      const refreshedStudents = await fetchStudentRegistry();
+      setStudents(refreshedStudents);
+      setStudentLoadError('');
+      setAdmissionSuccess(`Đã tạo học sinh ${data.student.studentCode}, enrollment ${data.enrollment.id}${data.chain ? ' và chain assignment đã đọc lại.' : ''}`);
       setIsAdmissionModalOpen(false);
     } catch (error) {
       setAdmissionError(error instanceof Error ? error.message : 'Đăng ký nhập học thất bại.');
@@ -431,7 +463,7 @@ export default function EnrollmentsPage() {
                   : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
               }`}
             >
-              Đang học (263)
+              Đang học ({activeStudentCount})
             </button>
             <button 
               onClick={() => setSelectedStatusTab('pending')}
@@ -441,7 +473,7 @@ export default function EnrollmentsPage() {
                   : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
               }`}
             >
-              Chờ nhập học (5)
+              Chờ nhập học ({pendingStudentCount})
             </button>
             <button 
               onClick={() => setSelectedStatusTab('healthAlert')}
@@ -451,13 +483,32 @@ export default function EnrollmentsPage() {
                   : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100'
               }`}
             >
-              ⚠️ Lưu ý y tế (12)
+              ⚠️ Lưu ý y tế ({healthAlertCount})
             </button>
           </div>
         </div>
       </div>
 
+      {studentLoadError && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+          {studentLoadError}
+        </div>
+      )}
+
+      {isLoadingStudents && (
+        <div className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-6 text-xs font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Đang tải danh sách học sinh...</span>
+        </div>
+      )}
+
       {/* ── 2 Column Grid for Student Cards ── */}
+      {!isLoadingStudents && filteredStudents.length === 0 && (
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          Chưa có học sinh phù hợp với bộ lọc hiện tại.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" ref={menuRef}>
         {filteredStudents.map((stu) => {
           const isMenuOpen = activeMenuId === stu.id;
@@ -548,6 +599,12 @@ export default function EnrollmentsPage() {
                   <span className="text-gray-400 font-medium">Lớp học hiện tại:</span>
                   <span className="font-bold text-gray-900 dark:text-white">{stu.className}</span>
                 </div>
+                {stu.branchName && (
+                  <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                    <span className="text-gray-400 font-medium">Cơ sở/chi nhánh:</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">{stu.branchName}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
                   <span className="text-gray-400 font-medium">Phụ huynh:</span>
                   <span className="font-semibold text-gray-800 dark:text-gray-200">{stu.parentName}</span>
@@ -742,6 +799,28 @@ export default function EnrollmentsPage() {
                       classrooms.map((classroom) => (
                         <option key={classroom.id} value={classroom.id}>
                           {classroom.name} • {classroom.grade}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                    Cơ sở / chi nhánh nhập học {branches.length > 0 ? '*' : ''}
+                  </label>
+                  <select
+                    value={admissionForm.branchId}
+                    onChange={(event) => updateAdmissionForm('branchId', event.target.value)}
+                    disabled={branches.length === 0}
+                    className="w-full p-3 text-xs rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
+                  >
+                    {branches.length === 0 ? (
+                      <option value="">Chưa có chi nhánh active để chọn</option>
+                    ) : (
+                      branches.map((branch) => (
+                        <option key={branch.id} value={branch.id}>
+                          {branch.name}{branch.code ? ` • ${branch.code}` : ''}
                         </option>
                       ))
                     )}

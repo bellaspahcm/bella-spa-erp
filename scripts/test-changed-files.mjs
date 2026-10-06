@@ -10,6 +10,7 @@ const DIRECT_TEST_EXCLUDED_PATTERNS = [
   /^src\/app\/api\/english-center\/__tests__\/post-rc-real-db-validation\.test\.ts$/,
   /^src\/__tests__\/haircut-f3-debt-real-db-diagnostic\.test\.ts$/,
   /^src\/products\/beauty-spa-v2\/__tests__\/beauty-spa-v2-real-db\.test\.ts$/,
+  /^src\/products\/bella-education\/__tests__\/preschool-chain-real-db\.test\.ts$/,
 ];
 const EXCLUDED_PATTERNS = [
   /^scripts\//,

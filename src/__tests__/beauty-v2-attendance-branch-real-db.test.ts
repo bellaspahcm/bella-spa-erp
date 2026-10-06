@@ -6,6 +6,7 @@ import { getSupabaseAdminKey, getSupabaseAdminUrl, requireSupabaseAdminEnv } fro
 import { ktvCheckIn, ktvCheckOut } from '@/services/attendance-actions';
 import type { Database } from '@/types/database.types';
 import { runRealDbSql } from './utils/real-db-sql';
+import { createUserOrgUnitAccessRuntimeClient } from './utils/user-org-unit-access-runtime-client';
 
 jest.mock('server-only', () => ({}), { virtual: true });
 jest.mock('next/cache', () => ({
@@ -25,6 +26,7 @@ type CurrentUserStub = {
 };
 
 let supabase: SupabaseClient<Database>;
+let adminSupabase: SupabaseClient<Database>;
 let mockCurrentUser: CurrentUserStub | null = null;
 
 jest.mock('@/services/user-actions', () => ({
@@ -120,7 +122,7 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
     );
 
     if (ktvUserId) {
-      const { error } = await supabase.auth.admin.deleteUser(ktvUserId);
+      const { error } = await adminSupabase.auth.admin.deleteUser(ktvUserId);
       if (error && !error.message.toLowerCase().includes('user not found')) {
         throw new Error(`auth user cleanup failed: ${error.message}`);
       }
@@ -129,9 +131,10 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
-    supabase = createSupabaseClient<Database>(url, adminKey, {
+    adminSupabase = createSupabaseClient<Database>(url, adminKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    supabase = adminSupabase;
 
     const authUser = await supabase.auth.admin.createUser({
       email,
@@ -142,6 +145,7 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
       throw new Error(`auth user fixture failed: ${authUser.error?.message ?? 'missing auth user'}`);
     }
     ktvUserId = authUser.data.user.id;
+    supabase = createUserOrgUnitAccessRuntimeClient(adminSupabase, { tenantId, userId: ktvUserId });
 
     await cleanupStep('tenant insert', supabase.from('tenants').insert([
       {
@@ -249,7 +253,7 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
     const checkInResult = await ktvCheckIn(branchAId);
     expect(checkInResult.success).toBe(true);
 
-    const attendanceA = await supabase
+    const attendanceA = await adminSupabase
       .from('attendance')
       .select('id, ktv_id, tenant_id, branch_id, date, status, checkout_time')
       .eq('tenant_id', tenantId)
@@ -278,7 +282,7 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
       error: 'Không có quyền chấm công tại chi nhánh này',
     });
 
-    const deniedRows = await supabase
+    const deniedRows = await adminSupabase
       .from('attendance')
       .select('id')
       .or(`branch_id.eq.${branchBId},branch_id.eq.${otherBranchId}`);
@@ -288,7 +292,7 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
     const checkOutResult = await ktvCheckOut(branchAId);
     expect(checkOutResult.success).toBe(true);
 
-    const checkedOut = await supabase
+    const checkedOut = await adminSupabase
       .from('attendance')
       .select('tenant_id, branch_id, checkout_time')
       .eq('tenant_id', tenantId)

@@ -119,7 +119,7 @@ export class PaymentReconciliationService {
       throw new Error(`PAYMENT_NOT_FOUND_ERROR: Payment ${paymentId} not found.`);
     }
 
-    if (payment.studentId !== invoice.studentId) {
+    if (payment.studentPartyId !== invoice.studentPartyId) {
       throw new Error(`PAYMENT_INVOICE_STUDENT_MISMATCH_ERROR: Payment student does not match invoice student.`);
     }
 

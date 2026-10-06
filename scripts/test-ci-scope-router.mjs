@@ -150,7 +150,7 @@ const cases = [
   },
   {
     name: 'RUN real database E2E when real-db test file changes',
-    files: ['src/products/beauty-spa-v2/__tests__/beauty-spa-v2-real-db.test.ts'],
+    files: ['src/products/bella-education/__tests__/preschool-chain-real-db.test.ts'],
     expect(result) {
       assert.equal(result.scope_status, 'ALLOW');
       assert.equal(result.needs_tests, true);

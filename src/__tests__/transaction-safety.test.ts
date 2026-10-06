@@ -134,6 +134,7 @@ class MockQueryBuilder {
             ktv_commission: 150000,
             assigned_ktv_id: 'ktv-1',
             tenant_id: 'tenant-a',
+            branch_id: 'branch-a',
             customer_id: 'cust-123',
             full_price: 5000000,
             package_id: 'pkg-1',
@@ -270,7 +271,9 @@ class MockQueryBuilder {
   }
 
   then(onfulfilled: (value: MockChainResult) => unknown) {
-    const data = this.table === 'org_relationships'
+    const data = this.table === 'user_org_unit_access'
+      ? [{ access_source: 'belongs_to', org_unit_id: 'branch-a', root_org_unit_id: 'branch-a', user_id: 'ktv-1' }]
+      : this.table === 'org_relationships'
       ? [{ rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }]
       : this.table === 'org_units'
         ? [{ id: 'branch-a', parent_id: null, unit_type: 'branch' }]

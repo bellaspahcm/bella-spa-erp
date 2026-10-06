@@ -304,6 +304,8 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
     const adminB = await insertUser(tenantB, 'admin', 'admin-b');
     const ktvB = await insertUser(tenantB, 'ktv', 'ktv-b');
     const packageId = await insertPackage(tenantA);
+    const tenantABranchId = branchByTenant.get(tenantA);
+    expect(tenantABranchId).toBeTruthy();
 
     await setCurrentUser(adminA);
 
@@ -330,6 +332,7 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
       ktv_commission: 30_000,
       discount_percent: 0,
       preferred_time: '10:00',
+      metadata: { branch_id: tenantABranchId },
     });
 
     expect(bookingResult.error).toBeFalsy();
@@ -337,8 +340,6 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
 
     const bookingId = String(bookingResult.data!.id);
     created.bookings.push(bookingId);
-    const tenantABranchId = branchByTenant.get(tenantA);
-    expect(tenantABranchId).toBeTruthy();
     const today = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Asia/Ho_Chi_Minh',
       year: 'numeric',
@@ -386,6 +387,8 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
     expect(existingSessions).toHaveLength(2);
 
     const sessionId = existingSessions![0].id;
+
+    await setCurrentUser(ktvA);
 
     const checkInResult = await updateSessionLog(sessionId, {
       status: 'in_progress',

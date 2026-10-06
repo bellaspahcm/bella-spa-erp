@@ -144,6 +144,7 @@ class MockQueryBuilder {
           assigned_ktv_id: 'ktv-1',
           package_id: 'pkg-1',
           status: 'booked',
+          branch_id: 'branch-a',
           total_sessions: 15,
           completed_sessions: 0
         },
@@ -213,6 +214,8 @@ class MockQueryBuilder {
   then(onfulfilled: MockThenCallback) {
     const data = this.table === 'attendance'
       ? [{ id: 'attendance-1', status: 'present', date: '2026-06-03', branch_id: 'branch-a' }]
+      : this.table === 'user_org_unit_access'
+        ? [{ access_source: 'belongs_to', org_unit_id: 'branch-a', root_org_unit_id: 'branch-a', user_id: 'ktv-1' }]
       : this.table === 'org_relationships'
         ? [{ rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }]
         : this.table === 'org_units'
