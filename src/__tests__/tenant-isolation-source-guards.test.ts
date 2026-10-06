@@ -121,6 +121,20 @@ describe('dashboard tenant isolation source guards', () => {
     );
   });
 
+  it('redirects HQ tenant accounts away from dashboard product shell', () => {
+    const dashboardLayoutSource = readSource('src/app/dashboard/layout.tsx');
+
+    expect(dashboardLayoutSource).toContain("from '@/lib/business-rules/hq-tenant'");
+    expect(dashboardLayoutSource).toContain('if (isHqTenant(tenant))');
+    expect(dashboardLayoutSource).toContain("router.replace('/hq')");
+    expect(dashboardLayoutSource.indexOf('if (isHqTenant(tenant))')).toBeLessThan(
+      dashboardLayoutSource.indexOf('await applyDashboardTenantBrandRuntime(tenant'),
+    );
+    expect(dashboardLayoutSource.indexOf("router.replace('/hq')")).toBeLessThan(
+      dashboardLayoutSource.indexOf('setIsAuthorized(true)'),
+    );
+  });
+
   it('shares dashboard bootstrap reads through the client context cache', () => {
     const contextSource = readSource('src/lib/dashboard-client-context.ts');
     const dashboardLayoutSource = readSource('src/app/dashboard/layout.tsx');
