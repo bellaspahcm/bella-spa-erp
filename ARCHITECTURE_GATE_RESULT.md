@@ -4,6 +4,63 @@
 > **Date:** 2026-10-04
 > **Scope:** Reduce pre-existing repo-wide `npm run lint` errors without touching Bella English business logic, product contracts, database schema, or frozen kernels.
 
+## Additional Architecture Gate - Beauty V2 Runtime Branch Context
+
+> **Status:** PASS - minimal runtime branch context integration authorized
+> **Date:** 2026-10-06
+> **Scope:** Connect the completed Beauty V2 Tenant Chain MVP to runtime branch selection and server-side branch authorization. Do not expand Chain UI, do not add Region, do not modify HQ Tenant Provisioning, do not modify `registerNewTenant()`, do not create Beauty-specific chain tables, and do not redesign Platform kernel.
+
+- Bella OS/Product Development Process Gate: PASS. This change consumes existing Platform org/people/access primitives and existing branch-aware Beauty consumers; it does not alter frozen Healthcare/Education/Logistics kernels or Platform ownership boundaries.
+- Product Manifest: runtime scope includes accessible branch read, active branch selection, branch selector UI in the Beauty shell, and canonical branch context resolution through `user_org_unit_access`. Out of scope: Region, new chain tables, broad module refactors, HQ tenant provisioning, accounting consolidation, franchise/inter-company, and claiming full Real DB E2E proof unless a real database proof is actually run.
+- Ownership Map: Platform owns `org_units`, `org_relationships`, `people_directory`, and `user_org_unit_access`. Beauty V2 owns runtime selection UX and passes selected `branchId` into branch-aware flows. Existing business writers remain responsible for server-side deny-before-write checks.
+- Contract Dependency Map: Chain Management writes Platform contract -> `user_org_unit_access` projects allowed branches -> Beauty runtime selector exposes active branch -> branch-aware consumers call `resolveSingleStaffBranchContext` -> writes persist canonical `branch_id`.
+- Change Authority: authorized layers are Beauty runtime branch context service/action, a small shell selector component, focused tests, and minimal resolver hardening to prefer `user_org_unit_access`. Not authorized: HQ, Product Registry identity, migrations, generated type edits, Platform kernel redesign, or broad UI redesign.
+- UI -> Contract Reconciliation:
+  - Active branch selector: MATCH, reads accessible branch options from `user_org_unit_access` and `org_units`.
+  - Selected branch: MATCH, persisted as runtime UI context and revalidated server-side before writes.
+  - Attendance/booking/product sale/payroll consumers: PARTIAL/MATCH, existing consumers already accept or derive branch context; this PR standardizes the context source but does not refactor every product module.
+- Additive Migration Plan: none. Existing Platform schema and view are reused.
+- 11 Automated Verification Gates Plan: focused unit tests for branch option read, single-branch auto-selection, selected branch authorization, cross-tenant/unauthorized denial, runtime resolver using `user_org_unit_access`, plus targeted TypeScript/lint/diff checks. Real DB E2E remains a separate proof unless explicitly run against real Supabase.
+- Explicit decision: `Runtime Branch Context` is `PROVEN_BY_REAL_DB_E2E`. `BEAUTY_V2_TENANT_CHAIN = PROVEN` for the MVP scope after the real Supabase E2E flow passed on 2026-10-06: create Company -> create Branch A/B -> create Staff user -> assign Staff to Branch A -> read `user_org_unit_access` -> runtime Branch A allowed -> runtime Branch B denied -> attendance write at Branch A -> database read-back.
+
+## Additional Architecture Gate - Beauty V2 Branch Runtime Operational Verification
+
+> **Status:** PASS - Booking, Inventory, Payroll, and Commission runtime branch verification sealed
+> **Date:** 2026-10-06
+> **Scope:** Verify branch-aware runtime correctness for Beauty V2 Booking, Inventory/Product Sales, Payroll, and Commission using the already sealed Tenant Chain MVP and canonical branch context. Do not reopen Chain MVP, do not modify HQ, do not modify `registerNewTenant()`, do not create Beauty-specific chain tables, and do not expand Region or Platform kernel scope.
+
+- Bella OS/Product Development Process Gate: PASS. This change consumes existing Platform org access (`user_org_unit_access`) and existing Beauty operational writers. It does not alter frozen Healthcare/Education/Logistics kernels, Product Registry identity, HQ provisioning, or database schema.
+- Product Manifest: operational verification scope includes Booking service-item commission writes, Product Sales inventory/commission writes, Attendance -> Payroll branch propagation, and Commission source branch matching. Out of scope: general stock movement redesign, every Booking mutation, Region, Payroll/Finance expansion, HQ, and cross-tenant chain modeling.
+- Ownership Map: Platform owns org access projection and org units. Beauty V2 owns runtime branch selection and operational writer validation. Payroll owns salary branch derivation from attendance and commission source matching.
+- Contract Dependency Map: Chain Management -> `org_units` / `org_relationships` / `people_directory` -> `user_org_unit_access` -> active branch context -> Booking/Product Sales/Attendance writers -> Payroll/Commission read-back.
+- Change Authority: authorized code change is limited to replacing the remaining explicit KTV attendance branch authorization path with the existing canonical `resolveSingleStaffBranchContext`. Authorized tests include focused unit coverage and a Real DB operational proof. Not authorized: Platform kernel redesign, migrations, HQ provisioning, new Beauty chain tables, or broad product refactors.
+- UI -> Contract Reconciliation: no UI redesign. Runtime selector remains the branch context entrypoint; server-side writers still enforce branch access before mutation.
+- Additive Migration Plan: none.
+- Verification Gates Plan: focused unit tests for attendance, booking service item writer, product sales writer, session completion, salary recalculation, and runtime branch actions; Real DB E2E through `.env.e2e`; changed-file typecheck; targeted lint; `git diff --check`.
+- Explicit decision: `BEAUTY_V2_BRANCH_RUNTIME = PROVEN_FOR_BOOKING_INVENTORY_PAYROLL_COMMISSION` after Real DB E2E passed on 2026-10-06: Branch A allowed, Branch B denied before write, Booking service item and Product Sales persisted `branch_id = Branch A`, Payroll wrote `salary_records.branch_id = Branch A`, Commission source mismatch for Branch B was denied, and DB read-back confirmed no Branch B mutation.
+
+## Additional Architecture Gate - Beauty V2 Tenant Chain Management MVP
+
+> **Status:** PASS - minimal tenant-side Chain Management MVP authorized
+> **Date:** 2026-10-06
+> **Scope:** Implement Beauty V2 tenant-side Company, Branch, Staff, and Staff -> Branch assignment using existing Platform org/people primitives. Do not modify HQ Tenant Provisioning, do not modify `registerNewTenant()`, do not create Beauty-specific chain tables, and do not claim runtime branch enforcement in this PR.
+
+- Bella OS/Product Development Process Gate: PASS. The audit in `investigations/beauty-v2-tenant-chain-platform-contract-investigation.md` proves the data model foundation exists in Platform (`org_units`, `people_directory`, `org_relationships`, `user_org_unit_access`) and this scope is a Product tenant-side capability consuming that contract.
+- Product Manifest: Beauty V2 Chain Management MVP includes Company, Branch list/create/detail, existing Staff linking, Staff -> Branch assignment, and access read-back. Region, runtime branch selector, booking/customer/inventory/payroll enforcement, franchise/inter-company, analytics, and Real DB end-to-end proof are out of scope.
+- Ownership Map: `org_units`, `people_directory`, `org_relationships`, and `user_org_unit_access` are Platform/Foundation-owned. Beauty V2 owns tenant-side UX/API and Beauty-specific branch configuration/labels. Auth users and tenant roles remain owned by existing `users` management.
+- Contract Dependency Map: Beauty V2 UI -> Beauty chain server actions/service -> Platform org/people tables under tenant-scoped RLS/admin authorization -> `user_org_unit_access` projection. Product code may consume Platform primitives; it must not create a parallel chain schema.
+- Change Authority: authorized layers are a small Beauty chain service/action boundary, Beauty tenant dashboard UI/navigation, focused tests, and a minimal hardening of the staff assignment boundary needed to prevent missing tenant identity or cross-tenant relationships. Not authorized: HQ provisioning, Product Registry identity, Platform kernel redesign, generated type edits, schema migrations, Healthcare/Education/Logistics frozen kernels.
+- UI -> Contract Reconciliation:
+  - Chain Management entry: MATCH, maps to Beauty tenant-side product UI over Platform org/people contract.
+  - Company display/create: MATCH, maps to `org_units.unit_type = 'company'`.
+  - Branch list/create/detail: MATCH, maps to `org_units.unit_type = 'branch'` with `parent_id` company.
+  - Staff list/link: MATCH, maps existing `users` to `people_directory.user_id`.
+  - Staff assignment: MATCH with boundary hardening, maps Person -> Branch through `org_relationships`.
+  - Branch access read-back: MATCH, maps to `user_org_unit_access`.
+- Additive Migration Plan: none. No DDL is required for this MVP; existing Platform schema is reused.
+- 11 Automated Verification Gates Plan: targeted unit tests for company creation, branch creation, staff person registration/link, Staff -> Branch assignment, same-tenant access read-back, cross-tenant assignment denial; targeted TypeScript/test command; `git diff --check`. Runtime branch enforcement and Real DB E2E are deferred to follow-up PRs.
+- Explicit decision: `BEAUTY_V2_TENANT_CHAIN` remains `NOT_PROVEN` after this PR until runtime integration and Real DB E2E are implemented. This PR can only close as `READY_FOR_RUNTIME_INTEGRATION` if targeted tests pass.
+
 ## Additional Architecture Gate - Real Estate Unit Test Coverage Upload Stability
 
 > **Status:** PASS - CI plumbing fix authorized
