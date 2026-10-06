@@ -23,14 +23,6 @@ type AttendanceRow = Database['public']['Tables']['attendance']['Row'];
 type AttendanceUpdate = Database['public']['Tables']['attendance']['Update'];
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
-type OrgRelationshipRow = Pick<
-  Database['public']['Tables']['org_relationships']['Row'],
-  'id' | 'rel_type' | 'since' | 'to_id' | 'until'
->;
-type OrgUnitRow = Pick<
-  Database['public']['Tables']['org_units']['Row'],
-  'id' | 'parent_id'
->;
 type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type StaffLeaveUpdate = Database['public']['Tables']['staff_leaves']['Update'];
@@ -72,7 +64,6 @@ type BranchAccessResult =
   | { success: true; context: BranchAccessContext | null }
   | { success: false; error: string };
 
-const ATTENDANCE_BRANCH_REL_TYPES = ['belongs_to', 'manages', 'participates_in'];
 const TENANT_WIDE_BRANCH_ROLES = new Set(['admin', 'super_admin']);
 const LEGACY_BRANCHLESS_ATTENDANCE_PRODUCT_KEYS = new Set(['bella_babycare']);
 
@@ -83,31 +74,6 @@ function getErrorMessage(error: unknown, fallback = 'Lá»—i há»‡ thá»�
     if (typeof message === 'string') return message;
   }
   return fallback;
-}
-
-function isEffectiveOrgRelationship(relationship: OrgRelationshipRow, todayStr: string) {
-  const startsBeforeToday = !relationship.since || relationship.since <= todayStr;
-  const endsAfterToday = !relationship.until || relationship.until >= todayStr;
-  return startsBeforeToday && endsAfterToday;
-}
-
-function findAccessibleRootForBranch(
-  branchId: string,
-  relationships: OrgRelationshipRow[],
-  orgUnits: OrgUnitRow[],
-) {
-  const parentByUnit = new Map(orgUnits.map(unit => [unit.id, unit.parent_id]));
-  const accessibleUnits = new Set(relationships.map(relationship => relationship.to_id));
-
-  let currentUnitId: string | null = branchId;
-  while (currentUnitId) {
-    if (accessibleUnits.has(currentUnitId)) {
-      return currentUnitId;
-    }
-    currentUnitId = parentByUnit.get(currentUnitId) ?? null;
-  }
-
-  return null;
 }
 
 async function resolveAttendanceBranchAccess(
@@ -163,55 +129,16 @@ async function resolveAttendanceBranchAccess(
     return { success: true, context: { branchId, rootOrgUnitId: branch.id } };
   }
 
-  const { data: person, error: personError } = await supabase
-    .from('people_directory')
-    .select('id')
-    .eq('tenant_id', tenantId)
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-    .maybeSingle();
-
-  if (personError) {
-    return { success: false, error: personError.message };
-  }
-  if (!person) {
-    return { success: false, error: 'Không có quyền chấm công tại chi nhánh này' };
-  }
-
-  const { data: relationships, error: relationshipError } = await supabase
-    .from('org_relationships')
-    .select('id, rel_type, since, to_id, until')
-    .eq('tenant_id', tenantId)
-    .eq('from_id', person.id)
-    .eq('from_type', 'person')
-    .eq('to_type', 'unit')
-    .in('rel_type', ATTENDANCE_BRANCH_REL_TYPES);
-
-  if (relationshipError) {
-    return { success: false, error: relationshipError.message };
-  }
-
-  const { data: orgUnits, error: orgUnitsError } = await supabase
-    .from('org_units')
-    .select('id, parent_id')
-    .eq('tenant_id', tenantId)
-    .eq('is_active', true);
-
-  if (orgUnitsError) {
-    return { success: false, error: orgUnitsError.message };
-  }
-
-  const todayStr = await getVNTodayString();
-  const activeRelationships = (relationships ?? []).filter(relationship =>
-    isEffectiveOrgRelationship(relationship, todayStr),
-  );
-  const rootOrgUnitId = findAccessibleRootForBranch(branch.id, activeRelationships, orgUnits ?? []);
-
-  if (!rootOrgUnitId) {
-    return { success: false, error: 'Không có quyền chấm công tại chi nhánh này' };
-  }
-
-  return { success: true, context: { branchId, rootOrgUnitId } };
+  return resolveSingleStaffBranchContext({
+    supabase,
+    tenantId,
+    userId: user.id,
+    asOfDate: await getVNTodayString(),
+    branchId,
+    missingMessage: 'Không xác định được chi nhánh chấm công của KTV',
+    ambiguousMessage: 'KTV có nhiều chi nhánh khả dụng; vui lòng chọn chi nhánh trước khi chấm công',
+    unauthorizedMessage: 'Không có quyền chấm công tại chi nhánh này',
+  });
 }
 
 function attendanceBranchPayload(branchAccess: BranchAccessContext | null) {

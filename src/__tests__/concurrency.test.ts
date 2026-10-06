@@ -152,7 +152,8 @@ class MockQueryBuilder {
           package_name: 'Gói VIP',
           ktv_commission: 150000,
           assigned_ktv_id: 'ktv-1',
-          tenant_id: 'tenant-a'
+          tenant_id: 'tenant-a',
+          branch_id: 'branch-a'
         },
         error: null
       });
@@ -224,7 +225,9 @@ class MockQueryBuilder {
   }
 
   then(onfulfilled: MockThenCallback) {
-    const data = this.table === 'org_relationships'
+    const data = this.table === 'user_org_unit_access'
+      ? [{ access_source: 'belongs_to', org_unit_id: 'branch-a', root_org_unit_id: 'branch-a', user_id: 'ktv-1' }]
+      : this.table === 'org_relationships'
       ? [{ rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }]
       : this.table === 'org_units'
         ? [{ id: 'branch-a', parent_id: null, unit_type: 'branch' }]

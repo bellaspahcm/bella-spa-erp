@@ -6,6 +6,7 @@ import { completeSession } from '@/core/services/order';
 import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import type { Database } from '@/types/database.types';
 import { createAuthenticatedClient } from '../../tests/utils/test-jwt-helper';
+import { createUserOrgUnitAccessRuntimeClient } from './utils/user-org-unit-access-runtime-client';
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
@@ -19,9 +20,13 @@ type CurrentUserStub = {
 };
 
 let mockCurrentUser: CurrentUserStub | null = null;
+let supabaseForRuntime: SupabaseClient<Database>;
 
 jest.mock('@/services/user-actions', () => ({
   getCurrentUser: jest.fn(async () => mockCurrentUser),
+}));
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: jest.fn(async () => supabaseForRuntime),
 }));
 
 jest.setTimeout(90_000);
@@ -157,6 +162,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
     supabase = createSupabaseClient<Database>(url, adminKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    supabaseForRuntime = supabase;
     tenantId = await ensureTenant('Inventory Real DB Proof Tenant');
     otherTenantId = await ensureTenant('Inventory Real DB Proof Other Tenant');
     await cleanup();
@@ -173,6 +179,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
   it('proves complete session auto-consumes package materials and RLS isolates inventory rows', async () => {
     adminUserId = await createAuthUser(adminEmail);
     otherUserId = await createAuthUser(otherEmail);
+    supabaseForRuntime = createUserOrgUnitAccessRuntimeClient(supabase, { tenantId, userId: adminUserId });
 
     const tenantInsert = await supabase
       .from('tenants')
@@ -289,6 +296,7 @@ describeWithRealSupabase('Inventory session consumption Real DB proof', () => {
       status: 'booked',
       total_sessions: 2,
       completed_sessions: 0,
+      branch_id: branchId,
     });
     expect(bookingInsert.error).toBeNull();
 

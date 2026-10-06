@@ -138,7 +138,9 @@ function createKtvBranchAwareQuery(table: string) {
     }),
     update: jest.fn(() => query),
     then: jest.fn((onfulfilled?: ((value: BranchAwareQueryResult) => unknown) | null) => {
-      const data = table === 'org_relationships'
+      const data = table === 'user_org_unit_access'
+        ? [{ access_source: 'belongs_to', org_unit_id: 'branch-a', root_org_unit_id: 'branch-a', user_id: 'ktv-123' }]
+        : table === 'org_relationships'
         ? [{ rel_type: 'belongs_to', since: null, to_id: 'branch-a', until: null }]
         : table === 'org_units'
           ? [{ id: 'branch-a', parent_id: null, unit_type: 'branch' }]
