@@ -44,6 +44,9 @@ async function resolveParentContext(client: EducationParentDailyClient): Promise
   if (!currentUser?.id || !currentUser.tenant_id) {
     return null;
   }
+  if (currentUser.role?.toLowerCase() !== 'parent') {
+    throw new Error('PARENT_ROLE_REQUIRED');
+  }
 
   const { data, error } = await client
     .from('users')
@@ -97,7 +100,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, dailyExperience });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    const status = message === 'PARENT_DAILY_STUDENT_ACCESS_DENIED' ? 403 : 500;
+    const status = message === 'PARENT_DAILY_STUDENT_ACCESS_DENIED' || message === 'PARENT_ROLE_REQUIRED' ? 403 : 500;
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }

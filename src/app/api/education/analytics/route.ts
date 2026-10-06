@@ -1,7 +1,25 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase-server';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
+import { getCurrentUser } from '@/services/user-actions';
+import type { Database } from '@/types/database.types';
 import { PreschoolAnalyticsRepository } from '@/products/bella-education/analytics/repositories/preschool-analytics.repository';
 import { PreschoolAnalyticsService } from '@/products/bella-education/analytics/services/preschool-analytics.service';
+
+type AnalyticsClient = SupabaseClient<Database>;
+
+function createAdminOperationClient(): AnalyticsClient | null {
+  if (process.env.NODE_ENV === 'test') return null;
+
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+  if (!adminUrl || !adminKey) return null;
+
+  return createSupabaseClient<Database>(adminUrl, adminKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 function getErrorMessage(error: unknown): string | undefined {
   if (typeof error === 'object' && error !== null && 'message' in error) {
@@ -15,21 +33,22 @@ function getErrorMessage(error: unknown): string | undefined {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId') || '00000000-0000-0000-0000-000000000001';
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
+    const currentUser = await getCurrentUser();
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-    if (!supabaseKey) {
-      return NextResponse.json({ error: 'Supabase key not configured' }, { status: 500 });
+    if (!currentUser?.id || !currentUser.tenant_id) {
+      return NextResponse.json({ success: false, error: 'Authenticated tenant is required' }, { status: 401 });
+    }
+    const role = currentUser.role?.toLowerCase() ?? '';
+    if (role === 'parent' || role === 'student') {
+      return NextResponse.json({ success: false, error: 'ANALYTICS_ROLE_FORBIDDEN' }, { status: 403 });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createAdminOperationClient() ?? await createClient();
     const repo = new PreschoolAnalyticsRepository(supabase);
     const service = new PreschoolAnalyticsService(repo);
 
-    const dashboard = await service.getExecutiveDashboard(tenantId, date);
+    const dashboard = await service.getExecutiveDashboard(currentUser.tenant_id, date);
 
     return NextResponse.json({ success: true, dashboard });
   } catch (error) {

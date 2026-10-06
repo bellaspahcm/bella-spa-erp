@@ -8,6 +8,14 @@ import { getCurrentUser } from '@/services/user-actions';
 import type { Database } from '@/types/database.types';
 
 type EducationCoursesClient = SupabaseClient<Database>;
+type EduCourseRow = Pick<
+  Database['public']['Tables']['edu_courses']['Row'],
+  'id' | 'course_code' | 'title' | 'status' | 'max_students' | 'current_enrollment' | 'created_at'
+>;
+type CourseProjectionRow = Pick<
+  Database['public']['Tables']['courses']['Row'],
+  'course_id' | 'course_code' | 'course_name' | 'description' | 'duration_weeks' | 'metadata' | 'status'
+>;
 const ROSTER_ENROLLMENT_STATUSES = ['active', 'pending'] as const;
 
 export interface ClassroomOverviewItem {
@@ -48,6 +56,16 @@ function createDevMockClient(mockEmail: string): EducationCoursesClient | null {
   });
 }
 
+function readMetadataString(metadata: CourseProjectionRow['metadata'], key: string): string {
+  if (!metadata || Array.isArray(metadata) || typeof metadata !== 'object') {
+    return '';
+  }
+
+  const record = metadata as Record<string, unknown>;
+  const value = record[key];
+  return typeof value === 'string' ? value : '';
+}
+
 async function getTenantIdForCourses(
   supabase: EducationCoursesClient,
   request: Request,
@@ -75,10 +93,10 @@ export async function GET(request: Request) {
     const supabase = createDevMockClient(getDevMockEmail(request)) ?? await createClient();
     const tenantId = await getTenantIdForCourses(supabase, request);
 
-    // 1. Fetch courses from DB
+    // 1. Fetch canonical Education courses used by enrollment runtime.
     const { data: dbCourses, error: courseErr } = await supabase
-      .from('courses')
-      .select('*')
+      .from('edu_courses')
+      .select('id, course_code, title, status, max_students, current_enrollment, created_at')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false });
 
@@ -87,13 +105,31 @@ export async function GET(request: Request) {
     }
 
     const teacherContract = new TeacherAssignmentContractImpl(supabase);
+    const canonicalCourses = (dbCourses || []) as EduCourseRow[];
+    const courseIds = canonicalCourses.map((course) => course.id);
+    const { data: courseProjections, error: projectionErr } = courseIds.length > 0
+      ? await supabase
+        .from('courses')
+        .select('course_id, course_code, course_name, description, duration_weeks, metadata, status')
+        .eq('tenant_id', tenantId)
+        .in('course_id', courseIds)
+      : { data: [] as CourseProjectionRow[], error: null };
+
+    if (projectionErr) {
+      return NextResponse.json({ success: false, error: projectionErr.message }, { status: 500 });
+    }
+
+    const projectionByCourseId = new Map(
+      ((courseProjections || []) as CourseProjectionRow[]).map((projection) => [projection.course_id, projection]),
+    );
 
     // 2. Map courses to ClassroomOverviewItem
     const classrooms: ClassroomOverviewItem[] = [];
 
-    for (const course of dbCourses || []) {
+    for (const course of canonicalCourses) {
+      const projection = projectionByCourseId.get(course.id);
       // Fetch active teacher assignments for course
-      const teacherAssignments = await teacherContract.getCourseTeachers(tenantId, course.course_id);
+      const teacherAssignments = await teacherContract.getCourseTeachers(tenantId, course.id);
       
       let teacherNames = 'Chưa phân công GVN';
       let leadTeacherPartyId: string | undefined = undefined;
@@ -122,24 +158,25 @@ export async function GET(request: Request) {
       const { count: studentCount } = await supabase
         .from('edu_enrollments')
         .select('*', { count: 'exact', head: true })
-        .eq('course_id', course.course_id)
+        .eq('course_id', course.id)
         .eq('tenant_id', tenantId)
         .in('status', [...ROSTER_ENROLLMENT_STATUSES]);
 
       // Grade key mapping from course_code or course_name
       let gradeKey: 'mam' | 'choi' | 'la' | 'nursery' = 'mam';
       const codeUpper = (course.course_code || '').toUpperCase();
-      if (codeUpper.includes('CHOI') || course.course_name.includes('Chồi')) gradeKey = 'choi';
-      else if (codeUpper.includes('LA') || course.course_name.includes('Lá')) gradeKey = 'la';
-      else if (codeUpper.includes('NURSERY') || course.course_name.includes('Nhi')) gradeKey = 'nursery';
+      const title = projection?.course_name || course.title;
+      if (codeUpper.includes('CHOI') || title.includes('Chồi')) gradeKey = 'choi';
+      else if (codeUpper.includes('LA') || title.includes('Lá')) gradeKey = 'la';
+      else if (codeUpper.includes('NURSERY') || title.includes('Nhi')) gradeKey = 'nursery';
 
-      const currentStudents = studentCount || 0;
-      const maxCap = course.duration_weeks || 25; // using duration_weeks or fallback 25 for max capacity
+      const currentStudents = studentCount || course.current_enrollment || 0;
+      const maxCap = course.max_students || projection?.duration_weeks || 25;
       const today = getLocalDateString(new Date());
       const { data: enrollmentRows } = await supabase
         .from('edu_enrollments')
         .select('id')
-        .eq('course_id', course.course_id)
+        .eq('course_id', course.id)
         .eq('tenant_id', tenantId)
         .in('status', [...ROSTER_ENROLLMENT_STATUSES]);
 
@@ -158,19 +195,19 @@ export async function GET(request: Request) {
       const markedCount = todayStates?.length || 0;
 
       classrooms.push({
-        id: course.course_id,
+        id: course.id,
         code: course.course_code,
-        name: course.course_name,
-        grade: course.description || 'Khối Mầm (3 tuổi)',
+        name: title,
+        grade: projection?.description || 'Khối Mầm (3 tuổi)',
         gradeKey,
-        room: (course.metadata as Record<string, string> | null)?.room || 'Phòng 101 • Tầng 1',
+        room: readMetadataString(projection?.metadata ?? null, 'room') || 'Phòng 101 • Tầng 1',
         teacher: teacherNames,
         teacherPartyId: leadTeacherPartyId,
         students: currentStudents,
         maxStudents: maxCap,
         academicYear: '2025-2026',
         focus: 'Phát triển Kỹ năng & Vận động',
-        status: course.status === 'active' ? 'active' : 'inactive',
+        status: course.status === 'active' ? 'active' : course.status === 'archived' ? 'archived' : 'inactive',
         todayStatus: {
           present: presentCount,
           excused: excusedCount,
@@ -240,8 +277,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: createErr?.message || 'Failed to create course' }, { status: 500 });
     }
 
-    // 3. Insert into edu_courses kernel table for capacity RPC
-    await supabase.from('edu_courses').insert({
+    // 3. Persist the canonical edu_courses row used by enrollment runtime.
+    const { error: eduCourseErr } = await supabase.from('edu_courses').insert({
       id: newCourse.course_id,
       tenant_id: tenantId,
       course_code: newCourse.course_code,
@@ -250,6 +287,20 @@ export async function POST(request: Request) {
       max_students: maxStudents,
       current_enrollment: 0,
     });
+    if (eduCourseErr) {
+      await supabase
+        .from('courses')
+        .delete()
+        .eq('tenant_id', tenantId)
+        .eq('course_id', newCourse.course_id);
+
+      return NextResponse.json({
+        success: false,
+        error: eduCourseErr.code === '23505'
+          ? `Mã lớp '${courseCode}' đã tồn tại trong canonical Education courses`
+          : `Failed to create canonical education course: ${eduCourseErr.message}`,
+      }, { status: eduCourseErr.code === '23505' ? 409 : 500 });
+    }
 
     // 4. Assign Lead Teacher if provided
     let assignedTeacherMessage = '';

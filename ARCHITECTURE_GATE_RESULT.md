@@ -1,3 +1,134 @@
+# ARCHITECTURE GATE RESULT - PRESCHOOL CHAIN AUDIT & COMPLETION
+
+> **Status:** PASS - product-layer Preschool Chain completion authorized
+> **Date:** 2026-10-06
+> **Scope:** Audit and complete Preschool Chain evidence from API trigger to product-owned branch/chain persistence and read-back, without modifying frozen Education Kernel code or Platform org-unit engine.
+
+## Bella OS/Product Development Process Gate
+
+- Truth: Preschool runtime enrollment uses canonical `edu_courses`, `edu_enrollments`, `students`, `party_parties`, `edu_attendance`, and `edu_attendance_daily_state`.
+- Source of Truth: Education Constitution, product manifest, canonical Education public contracts, Supabase migrations/types, and existing Preschool operational tests.
+- Canonical Contract: Product → Education public contracts for student/enrollment/attendance; Product → Platform org hierarchy data (`org_units`, `org_relationships`, `people_directory`, `user_org_unit_access`) for chain/branch scope.
+- Gate result: `PASS` for product-layer additive completion only. No `src/platform/education/` changes are authorized.
+
+## Product Manifest
+
+- Product: Bella Education / Preschool implementation (`bella_education`).
+- Existing capabilities: course catalog query, student enrollment command, attendance checkpoint command, grade reporting command.
+- Gap found during audit: no explicit Preschool product capability records customer-chain/branch assignment through the canonical `edu_*` runtime path.
+- Additive capability: Preschool branch/chain assignment and verification for enrollment flows.
+
+## Ownership Map
+
+| Data / Behavior | Owner | Decision |
+|---|---|---|
+| `org_units`, `org_relationships`, `people_directory` | Platform Org Unit / Authorization | consume only; do not modify engine |
+| `edu_courses`, `edu_enrollments`, Education public contracts | Education Kernel | consume only; do not modify frozen code |
+| Preschool course/enrollment branch assignment | Bella Education product layer | add product-owned tables/service |
+| Enrollment API orchestration | Bella Education product/API layer | wire branch assignment after canonical enrollment |
+| Real DB proof | Product verification | prove only when credentials/environment are available |
+
+## Contract Dependency Map
+
+```text
+API Trigger
+  -> Bella Education enrollment route
+  -> StudentContract / EnrollmentContract
+  -> Education Kernel persistence in canonical edu_* tables
+  -> Preschool product chain assignment
+  -> Platform org-unit membership/branch validation
+  -> product read-back verification
+```
+
+## Change Authority
+
+Authorized:
+- Additive product-owned migration for Preschool chain assignment tables/indexes/RLS.
+- Product service and route wiring under `src/products/bella-education` / `src/app/api/education`.
+- Focused unit/integration tests for chain validation and route behavior.
+- Minimal Preschool enrollment UI wiring for runtime branch selection/read-back when branch scope is available.
+
+Not authorized:
+- Modifying `src/platform/education/`.
+- Modifying Platform org-unit engine.
+- Altering frozen Healthcare/Logistics artifacts.
+- Creating a Preschool-specific branch registration architecture.
+- Broad UI redesign, unrelated Preschool features, or core abstractions.
+
+## UI -> Contract Reconciliation
+
+Authority boundary:
+- Chain/branch lifecycle registration authority remains Platform Org Unit / tenant organization management. Preschool must not create a separate branch registry.
+- HQ subscription/franchise setup is tenant/customer commercial authority and is not the Preschool runtime chain assignment authority.
+- Preschool runtime authority is limited to assigning an enrollment/course to an existing active branch the current tenant/user can access.
+
+UI reconciliation:
+- Existing Preschool enrollment UI has classroom selection but no branch selection, so canonical runtime assignment is not proven from product UI.
+- Minimal authorized UI fix is to fetch accessible tenant branches, require a branch only when branches are available, submit `branchId` with admission, and render backend read-back.
+- Branch registration/management UI remains the existing organization/branch management surface; no new Preschool management surface is authorized unless a separate business contract requires it.
+
+## Additive Migration Plan
+
+- `CREATE TABLE public.preschool_chain_course_branch_assignments`.
+- `CREATE TABLE public.preschool_chain_enrollment_branch_assignments`.
+- Add indexes, unique constraints, FK constraints to canonical `edu_courses`, `edu_enrollments`, `org_units`, and `tenants`.
+- Enable tenant RLS and grant standard authenticated/service-role access.
+- No alteration of `edu_courses`, `edu_enrollments`, Platform tables, or frozen kernel code.
+
+## 11 Automated Verification Gates Plan
+
+1. Architecture Compliance: no Platform/Education Kernel source modification.
+2. Contract Boundary: product consumes Education public contracts.
+3. Tenant Isolation: product chain service rejects cross-tenant branch/course/enrollment.
+4. RLS & Authorization: migration enables tenant RLS; service checks user branch access.
+5. Database Migration Safety: additive `CREATE TABLE`/indexes only.
+6. Event-After-Persistence: no new async event; assignment follows successful enrollment persistence.
+7. Academic Safety Routing: unchanged; enrollment remains in Education contract.
+8. Temporal Provenance: additive timestamps/actor/request identifiers on chain rows.
+9. Rule Governance: unchanged; no grading/prerequisite rule changes.
+10. Audit Evidence Integrity: focused chain tests and read-back evidence.
+11. Platform Regression: run targeted product tests, education architecture/conformance where feasible, typecheck/diff checks.
+
+---
+
+## Additional Architecture Gate - Preschool Student Admission Read-Back
+
+> **Status:** PASS - app read-model/UI registry fix authorized
+> **Date:** 2026-10-06
+> **Scope:** Prove Preschool Student/Admission read-back after canonical enrollment persistence without reopening Preschool Chain, modifying frozen Education Kernel code, or creating a new student architecture.
+
+- Bella OS/Product Development Process Gate: PASS. This is a minimal Education app/API read-model and UI registry reconciliation, not a Kernel contract change, schema change, product redesign, or Chain continuation.
+- Truth / Source of Truth: Admission mutation already persists canonical Party-backed Student and `edu_enrollments`; the registry page initializes from static demo data and has no `GET /api/education/enrollments` read-back path after reload.
+- Product Manifest: no new product capability. Existing Student Registry / Admission surface should display canonical persisted admissions for the current tenant.
+- Ownership Map: `edu_enrollments`, `students`, and Education public contracts remain Education-owned. The app route owns a tenant-scoped read model, matching existing classroom roster/finance read-model patterns. Guardian display uses existing Preschool guardian authorization service.
+- Contract Dependency Map: Preschool registry UI -> `GET /api/education/enrollments` -> tenant/auth context -> canonical `edu_enrollments` + `students` + `party_parties` + `edu_courses` -> guardian authorization read service -> UI read-back.
+- Change Authority: limited to `src/app/api/education/enrollments/route.ts`, `src/app/api/education/enrollments/__tests__/route.test.ts`, `src/app/dashboard/education/enrollments/page.tsx`, and this gate note.
+- UI -> Contract Reconciliation: replace static-only student list with tenant-scoped API read-back; after admission submit, refresh from canonical read model. Demo rows may remain only as an empty/error fallback.
+- Additive Migration Plan: none.
+- Verification Gates Plan: targeted enrollment route tests, route/UI typecheck, targeted lint, `git diff --check`, education architecture/no-new-debt gates where relevant.
+- Explicit non-goals: no `src/platform/education/` modification, no new list contract, no migration, no Chain changes, no persistence redesign for optional nickname/medical-note metadata.
+
+---
+
+## Additional Architecture Gate - Preschool Class Canonical Course Read-Back
+
+> **Status:** PASS - app route canonical course reconciliation authorized
+> **Date:** 2026-10-06
+> **Scope:** Reconcile Preschool Class UI/API options with canonical `edu_courses` used by admission/enrollment runtime, without modifying frozen Education Kernel contracts or creating a new class architecture.
+
+- Bella OS/Product Development Process Gate: PASS. This is a route-level read-model and dual-write success validation fix for existing Class UI, not a Kernel schema/contract change.
+- Truth / Source of Truth: `POST /api/education/courses` writes a legacy `courses` projection and an `edu_courses` row; `POST /api/education/enrollments` verifies active courses only in `edu_courses`. Before this fix, `GET /api/education/courses` listed `courses` projection rows, so UI/admission could select a class not proven enrollment-compatible.
+- Product Manifest: no new product capability. Existing Class management must expose classes that can be used by canonical enrollment.
+- Ownership Map: `edu_courses` remains Education runtime enrollment source; `courses` remains projection/detail surface for room/grade metadata and legacy classroom UI. Teacher assignment contract remains the teacher assignment authority.
+- Contract Dependency Map: Class UI -> `GET /api/education/courses` -> tenant/auth context -> canonical `edu_courses` -> optional `courses` projection metadata -> teacher assignment contract -> enrollment/attendance counts.
+- Change Authority: limited to `src/app/api/education/courses/route.ts`, focused tests, and this gate note.
+- UI -> Contract Reconciliation: list class/admission options from canonical `edu_courses`; merge legacy projection only for display fields. Class creation must fail if canonical `edu_courses` persistence fails.
+- Additive Migration Plan: none.
+- Verification Gates Plan: targeted courses/enrollment route tests, changed-file typecheck, targeted lint, `git diff --check`, education no-new-debt and architecture baseline checks.
+- Explicit non-goals: no Platform/Education Kernel modification, no migration, no table removal, no broad classroom redesign, no Chain reopen.
+
+---
+
 # ARCHITECTURE GATE RESULT - GLOBAL LINT BASELINE REMEDIATION
 
 > **Status:** PASS - Platform/CI lint error baseline remediated
@@ -3511,6 +3642,79 @@ No migration. No schema change. No production data mutation.
 
 ---
 
+# Additional Architecture Gate - Preschool Critical Flow Audit
+
+> **Status:** PASS for authorized product/API/service fixes; Real DB and browser E2E remain NOT_PROVEN
+> **Date:** 2026-10-06
+> **Scope:** Preschool critical user journey audit after Chain implementation seal
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: Preschool Chain implementation is complete but Go-Live proof is not complete without Real DB/UI E2E. The follow-up scope is the non-Chain Preschool critical flow audit: Student/Admission, Branch/Chain assignment, Class, Enrollment, Attendance, Tuition/Payment, Parent/Guardian, and Reporting.
+
+Source of Truth: existing Education product routes, product services, public Education contracts, canonical `edu_*`, `party_*`, `org_units`, `user_org_unit_access`, and `edu_fin_*` tables.
+
+Canonical Contract: Product UI/API must route through Bella Education product services or existing public contracts, preserve tenant isolation, derive tenant/user authority server-side, and read back from canonical persistence. Mock/static UI data cannot prove runtime product readiness.
+
+Ownership: Preschool product/API layers own UI orchestration and route authorization. Education contracts/kernel own canonical student/enrollment/course/attendance persistence and remain frozen. Platform Org Unit remains the Branch/Chain registration authority.
+
+Boundary: authorized product/API/service fixes only. No Education Kernel modification, no Platform authority change, no frozen Healthcare/Logistics artifacts, no non-additive schema mutation, and no new architecture/framework.
+
+## 2. Product Manifest
+
+No new product capability is introduced. Fixes wire existing Preschool capabilities and screens to already-present product/service/contract paths.
+
+## 3. Ownership Map
+
+| Flow | Owner | Canonical Data |
+|---|---|---|
+| Student/Admission | Preschool UI/API + Education Student/Enrollment contracts | `party_parties`, `students`, `edu_enrollments` |
+| Branch/Chain | Platform Org Unit + Preschool runtime assignment | `org_units`, `user_org_unit_access`, `preschool_chain_*` |
+| Class | Preschool API + Education course/teacher contracts | `edu_courses`, projection `courses`, `teacher_assignments` |
+| Attendance/Handover | Preschool API + Attendance contract + handover service | `edu_attendance_daily_state`, `edu_preschool_pickup_handover_events` |
+| Tuition/Payment | Preschool Finance services/repository | `edu_fin_*` |
+| Parent/Guardian | Preschool guardian/parent services | `party_relationships`, `party_identifiers`, `edu_preschool_pickup_authorizations` |
+| Reporting | Preschool Analytics service/repository | canonical current snapshot reads across `edu_*`, `edu_fin_*`, `edu_comm_*` |
+
+## 4. Contract Dependency Map
+
+```text
+Preschool UI
+  -> Product API route
+  -> Existing Product service / Education public contract
+  -> Canonical DB tables
+  -> Product read-back API
+  -> UI read-back
+```
+
+## 5. Change Authority
+
+Authorized changes are limited to product UI/API/services and tests needed to close true gaps found during the audit. Education kernel and Platform authority boundaries are not modified.
+
+## 6. UI -> Contract Reconciliation
+
+Static/demo Preschool UI surfaces were reconciled to canonical APIs where they affected critical read-back: enrollment registry, class list, attendance/handover authorization, parent daily access, and reporting current KPIs.
+
+## 7. Additive Migration Plan
+
+No new migration in this continuation. Existing Preschool Chain migration remains part of the prior Chain implementation.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Education Kernel, Healthcare Kernel, or Logistics sealed files modified.
+- Gate 2 Contract Boundary: product routes call existing product services/contracts.
+- Gate 3 Tenant Isolation: API routes derive tenant from authenticated user or existing context.
+- Gate 4 Authorization: attendance/handover, finance, parent, and analytics role boundaries are covered.
+- Gate 5 Database Migration Safety: no continuation migration.
+- Gate 6 Event-After-Persistence: enrollment evidence remains contract/engine-owned.
+- Gate 7 Business Flow: focused tests cover route/service GAPs.
+- Gate 8 Real DB Evidence: BLOCKED/NOT_PROVEN without environment.
+- Gate 9 Secret Hygiene: no credential or secret output.
+- Gate 10 CI Governance: focused tests, typecheck, lint, education gates, diff check.
+- Gate 11 Regression: browser UI E2E remains NOT_PROVEN until environment is available.
+
+---
+
 # Additional Architecture Gate - Tenant Context Raw Cookie Header Fallback
 
 > **Status:** PASS - route-only follow-up authorized
@@ -3659,3 +3863,89 @@ No migration. No schema change. No production data mutation.
 - Gate 9 Secret Hygiene: no credential, cookie, or token value logging.
 - Gate 10 CI Governance: targeted auth test, lint, typecheck, architecture, security.
 - Gate 11 Regression: production workflow remains final authority after merge.
+
+---
+
+# Additional Architecture Gate - Preschool Chain Real DB Evidence Harness
+
+> **Status:** PASS for harness integration; BLOCKED for real DB execution evidence
+> **Date:** 2026-10-06
+> **Scope:** Bella Preschool Chain proof wiring only
+
+## 1. Bella OS/Product Development Process Gate
+
+Truth: Preschool Chain runtime implementation is locally proven, but Go-Live proof still requires a real database run. The canonical real DB evidence path in this repository is `jest.real-db.config.ts` plus `jest.real-db.setup.ts`, which fails on missing or mock Supabase credentials.
+
+Source of Truth: existing real DB Jest config/setup, existing Haircut/Nail and Beauty real DB tests, Preschool enrollment route, Education contracts, Platform Org Unit, and the additive Preschool Chain migration.
+
+Canonical Contract: Preschool uses Platform `org_units` branches as the registration/management authority and product-owned `preschool_chain_*` assignment tables for runtime course/enrollment branch assignment. The proof must run through the existing real DB Jest lane; no new DB E2E framework is introduced.
+
+Ownership: Platform owns `org_units` and `org_relationships`; Education Kernel owns `edu_courses` and `edu_enrollments`; Bella Education product owns Preschool Chain assignment persistence and admission UI/API consumption.
+
+Boundary: test harness and evidence integration only. No runtime Chain logic, Education Kernel, Platform Org Unit, Healthcare, Logistics, Finance, or shared Core code changed.
+
+## 2. Product Manifest
+
+No new product capability is added. This work adds real DB proof coverage for the existing Preschool admission/enrollment/branch assignment capability.
+
+## 3. Ownership Map
+
+| Artifact | Owner Context | Data Definition |
+|---|---|---|
+| `jest.real-db.config.ts` | CI evidence lane | Canonical allowlist for real DB E2E suites |
+| `src/products/bella-education/__tests__/preschool-chain-real-db.test.ts` | Bella Education product test | Real DB proof of Preschool branch assignment chain |
+| `supabase/migrations/20261006010000_preschool_chain_assignments.sql` | Bella Education product schema | Product-owned additive Preschool Chain tables |
+
+## 4. Contract Dependency Map
+
+```text
+Preschool admission route
+        ↓
+Student / Enrollment public contracts
+        ↓
+edu_enrollments
+        ↓
+PreschoolChainService
+        ↓
+Platform org_units / org_relationships
+        ↓
+preschool_chain_course_branch_assignments
+        ↓
+preschool_chain_enrollment_branch_assignments
+        ↓
+service read-back / tenant isolation / branch authorization / idempotent retry
+```
+
+## 5. Change Authority
+
+Authorized by the request to complete Preschool Chain evidence execution, specifically by reusing the existing canonical real DB workflow and not continuing runtime Chain feature work.
+
+## 6. UI -> Contract Reconciliation
+
+No UI changes. Existing local route/UI tests cover branch selection and admission response. Real DB proof is added at API/service/database boundary because current local environment does not provide browser-authenticated real DB credentials.
+
+## 7. Additive Migration Plan
+
+No new migration in this step. The real DB test verifies the existing additive Preschool Chain migration tables, RLS enablement, and tenant-isolation policies are present in the target database.
+
+## 8. 11 Automated Verification Gates Plan
+
+- Gate 1 Architecture Compliance: no Education Kernel or Platform runtime change.
+- Gate 2 Contract Boundary: route still uses Student/Enrollment contracts and Platform Org Unit contract.
+- Gate 3 Tenant Isolation: test verifies tenant-scoped read-back and cross-tenant null read.
+- Gate 4 Authorization: test verifies only assigned branch is accessible and another branch is denied.
+- Gate 5 Database Migration Safety: test checks real DB tables/RLS/policies from the additive migration.
+- Gate 6 Event-After-Persistence: not changed in this evidence step.
+- Gate 7 Academic Safety Routing: not applicable to branch assignment.
+- Gate 8 Runtime Evidence: `npx jest --config jest.real-db.config.ts src/products/bella-education/__tests__/preschool-chain-real-db.test.ts --runInBand`.
+- Gate 9 Secret Hygiene: test reads env only through existing Supabase env helpers; no secrets logged.
+- Gate 10 CI Governance: targeted lint, typecheck, no-new-debt, architecture baseline.
+- Gate 11 Regression: existing Preschool Chain local route/service tests remain passing.
+
+## 9. Current Evidence
+
+```ini
+REAL_DB_E2E = BLOCKED
+Reason = jest.real-db.setup.ts detected mock Supabase credentials
+Observed = NEXT_PUBLIC_SUPABASE_URL=mock.supabase.co, SUPABASE_SERVICE_ROLE_KEY=mock-service-role-key
+```

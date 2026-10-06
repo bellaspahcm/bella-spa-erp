@@ -32,6 +32,9 @@ async function resolveParentContext(client: EducationDigestClient): Promise<Pare
   if (!currentUser?.id || !currentUser.tenant_id) {
     return null;
   }
+  if (currentUser.role?.toLowerCase() !== 'parent') {
+    throw new Error('PARENT_ROLE_REQUIRED');
+  }
 
   const { data, error } = await client
     .from('users')
@@ -100,7 +103,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal Server Error';
-    const status = message === 'PARENT_DAILY_STUDENT_ACCESS_DENIED' ? 403 : 500;
+    const status = message === 'PARENT_DAILY_STUDENT_ACCESS_DENIED' || message === 'PARENT_ROLE_REQUIRED' ? 403 : 500;
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }
@@ -166,7 +169,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Parent Digest API Error:', error);
     const message = error instanceof Error ? error.message : 'Internal Server Error';
-    const status = message === 'PARENT_DAILY_STUDENT_ACCESS_DENIED' ? 403 : 500;
+    const status = message === 'PARENT_DAILY_STUDENT_ACCESS_DENIED' || message === 'PARENT_ROLE_REQUIRED' ? 403 : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }

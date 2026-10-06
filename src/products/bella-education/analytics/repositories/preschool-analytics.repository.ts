@@ -10,7 +10,9 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 export interface EnrollmentStudentRaw {
   id?: string;
+  course_id?: string;
   student_id?: string;
+  student_party_id?: string;
   academic_status?: string;
   status?: string;
   metadata?: Record<string, unknown> | null;
@@ -24,7 +26,8 @@ export interface ClassroomRaw {
 
 export interface AttendanceRaw {
   id: string;
-  student_id: string;
+  student_id?: string;
+  enrollment_id?: string;
   attendance_status: string;
   record_date: string;
 }
@@ -53,35 +56,38 @@ export class PreschoolAnalyticsRepository {
     enrolledStudents: EnrollmentStudentRaw[];
     classrooms: ClassroomRaw[];
   }> {
-    // Primary student table in Education Platform is `students`
-    const { data: primaryStudents } = await this.supabase
-      .from('students')
-      .select('student_id, academic_status, metadata')
+    const { data: canonicalEnrollments } = await this.supabase
+      .from('edu_enrollments')
+      .select('id, course_id, student_party_id, status')
       .eq('tenant_id', tenantId)
-      .in('academic_status', ['enrolled', 'ENROLLED']);
+      .in('status', ['active', 'pending']);
 
-    let students: EnrollmentStudentRaw[] = primaryStudents || [];
+    let students: EnrollmentStudentRaw[] = canonicalEnrollments || [];
 
     if (students.length === 0) {
       const { data: fallbackStudents } = await this.supabase
-        .from('edu_students')
-        .select('id, status')
+        .from('students')
+        .select('student_id, academic_status, metadata')
         .eq('tenant_id', tenantId)
-        .in('status', ['ENROLLED', 'enrolled']);
+        .in('academic_status', ['enrolled', 'ENROLLED']);
       if (fallbackStudents) students = fallbackStudents;
     }
 
-    // Try preschool_classrooms first, fallback to edu_classrooms / courses
-    const { data: primaryClassrooms } = await this.supabase
-      .from('preschool_classrooms')
-      .select('id, name, max_capacity')
-      .eq('tenant_id', tenantId);
+    const { data: canonicalCourses } = await this.supabase
+      .from('edu_courses')
+      .select('id, title, max_students, status')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'active');
 
-    let classrooms: ClassroomRaw[] = primaryClassrooms || [];
+    let classrooms: ClassroomRaw[] = (canonicalCourses || []).map((course) => ({
+      id: course.id,
+      name: course.title ?? course.id,
+      max_capacity: course.max_students ?? null,
+    }));
 
     if (classrooms.length === 0) {
       const { data: fallbackRooms } = await this.supabase
-        .from('edu_classrooms')
+        .from('preschool_classrooms')
         .select('id, name, max_capacity')
         .eq('tenant_id', tenantId);
       if (fallbackRooms) classrooms = fallbackRooms;
@@ -95,18 +101,22 @@ export class PreschoolAnalyticsRepository {
 
   // 2. Attendance Metrics (P3)
   async getAttendanceRawData(tenantId: string, dateStr: string): Promise<AttendanceRaw[]> {
-    // Try edu_daily_care_records first
-    const { data: primaryAttendance } = await this.supabase
-      .from('edu_daily_care_records')
-      .select('id, student_id, attendance_status, record_date')
+    const { data: canonicalAttendance } = await this.supabase
+      .from('edu_attendance_daily_state')
+      .select('id, enrollment_id, status, school_day')
       .eq('tenant_id', tenantId)
-      .eq('record_date', dateStr);
+      .eq('school_day', dateStr);
 
-    let attendance: AttendanceRaw[] = primaryAttendance || [];
+    let attendance: AttendanceRaw[] = (canonicalAttendance || []).map((row) => ({
+      id: row.id,
+      enrollment_id: row.enrollment_id,
+      attendance_status: row.status,
+      record_date: row.school_day,
+    }));
 
     if (attendance.length === 0) {
       const { data: fallbackAtt } = await this.supabase
-        .from('edu_care_daily_records')
+        .from('edu_daily_care_records')
         .select('id, student_id, attendance_status, record_date')
         .eq('tenant_id', tenantId)
         .eq('record_date', dateStr);

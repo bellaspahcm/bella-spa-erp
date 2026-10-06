@@ -7,6 +7,9 @@ const mockGetStudent = jest.fn();
 const mockEnrollStudent = jest.fn();
 const mockGetEnrollment = jest.fn();
 const mockEstablishGuardianAuthorization = jest.fn();
+const mockGetAuthorizedGuardians = jest.fn();
+const mockAssignEnrollmentToBranch = jest.fn();
+const mockGetEnrollmentChain = jest.fn();
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: () => ({
@@ -44,18 +47,28 @@ jest.mock('@/products/bella-education/services/preschool-guardian-authorization.
   },
   PreschoolGuardianAuthorizationService: jest.fn().mockImplementation(() => ({
     establishForEnrollment: mockEstablishGuardianAuthorization,
+    getAuthorizedGuardians: mockGetAuthorizedGuardians,
   })),
 }));
 
-const { POST } = require('../route') as typeof import('../route');
+jest.mock('@/products/bella-education/services/preschool-chain.service', () => ({
+  PreschoolChainService: jest.fn().mockImplementation(() => ({
+    assignEnrollmentToBranch: mockAssignEnrollmentToBranch,
+    getEnrollmentChain: mockGetEnrollmentChain,
+  })),
+}));
+
+const { GET, POST } = require('../route') as typeof import('../route');
 
 const tenantId = '00000000-0000-0000-0000-0000000000aa';
 const userId = '00000000-0000-0000-0000-000000000001';
 const partyId = '00000000-0000-0000-0000-0000000000bb';
 const guardianPartyId = '00000000-0000-0000-0000-0000000000dd';
 const courseId = '00000000-0000-0000-0000-0000000000cc';
+const branchId = '00000000-0000-0000-0000-0000000000ee';
 
 const insertedRows: unknown[] = [];
+const queryFilters: Array<{ readonly table: string; readonly column: string; readonly value: unknown }> = [];
 
 function buildRequest(body: object): Request {
   return new Request('http://localhost/api/education/enrollments', {
@@ -80,13 +93,35 @@ function setupSupabaseMocks() {
     if (table === 'edu_courses') {
       const chain = {
         select: () => chain,
-        eq: () => chain,
+        eq: (column: string, value: unknown) => {
+          queryFilters.push({ table, column, value });
+          return chain;
+        },
+        in: async () => ({
+          data: [{ id: courseId, title: 'Lớp Mầm A1' }],
+          error: null,
+        }),
         maybeSingle: async () => ({ data: { id: courseId, title: 'Lớp Mầm A1' }, error: null }),
       };
       return chain;
     }
 
     if (table === 'party_parties') {
+      const selectChain = {
+        eq: (column: string, value: unknown) => {
+          queryFilters.push({ table, column, value });
+          return selectChain;
+        },
+        in: async () => ({
+          data: [{
+            id: partyId,
+            display_name: 'Lê Hoàng Nam',
+            dob: '2023-06-15',
+            gender: 'male',
+          }],
+          error: null,
+        }),
+      };
       return {
         insert: (row: unknown) => {
           insertedRows.push(row);
@@ -96,17 +131,124 @@ function setupSupabaseMocks() {
             }),
           };
         },
+        select: () => selectChain,
       };
+    }
+
+    if (table === 'edu_enrollments') {
+      const chain = {
+        select: () => chain,
+        eq: (column: string, value: unknown) => {
+          queryFilters.push({ table, column, value });
+          return chain;
+        },
+        in: () => chain,
+        order: () => chain,
+        limit: async () => ({
+          data: [{
+            id: 'enrollment-1',
+            course_id: courseId,
+            student_party_id: partyId,
+            status: 'active',
+            enrolled_at: '2026-09-26T00:00:00.000Z',
+          }],
+          error: null,
+        }),
+      };
+      return chain;
+    }
+
+    if (table === 'students') {
+      const chain = {
+        select: () => chain,
+        eq: (column: string, value: unknown) => {
+          queryFilters.push({ table, column, value });
+          return chain;
+        },
+        in: async () => ({
+          data: [{
+            student_id: 'student-row-1',
+            party_id: partyId,
+            student_code: 'EDU-2026-123456',
+            metadata: { nickname: 'Bé Tôm', medicalNote: 'Dị ứng sữa bò' },
+          }],
+          error: null,
+        }),
+      };
+      return chain;
     }
 
     throw new Error(`Unexpected table access in Preschool enrollment route test: ${table}`);
   });
 }
 
+describe('GET /api/education/enrollments', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    insertedRows.length = 0;
+    queryFilters.length = 0;
+    setupSupabaseMocks();
+
+    mockGetUser.mockResolvedValue({
+      data: {
+        user: {
+          id: userId,
+          user_metadata: { tenant_id: tenantId },
+        },
+      },
+      error: null,
+    });
+    mockGetAuthorizedGuardians.mockResolvedValue(new Map([
+      [partyId, [{
+        authorizationId: 'guardian-authorization-1',
+        studentPartyId: partyId,
+        guardianPartyId,
+        displayName: 'Lê Văn Thành',
+        phone: '0989112334',
+        status: 'authorized',
+      }]],
+    ]));
+  });
+
+  it('reads the student registry from canonical tenant-scoped enrollments and Party-backed student rows', async () => {
+    const response = await GET(new Request('http://localhost/api/education/enrollments'));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.students).toEqual([expect.objectContaining({
+      id: 'EDU-2026-123456',
+      enrollmentId: 'enrollment-1',
+      studentId: 'student-row-1',
+      partyId,
+      name: 'Lê Hoàng Nam',
+      nickname: 'Bé Tôm',
+      dateOfBirth: '2023-06-15',
+      gender: 'Nam',
+      className: 'Lớp Mầm A1',
+      parentName: 'Lê Văn Thành',
+      parentPhone: '0989112334',
+      hasHealthAlert: true,
+      medicalNote: 'Dị ứng sữa bò',
+      status: 'Đang Học',
+      statusKey: 'active',
+    })]);
+    expect(mockGetAuthorizedGuardians).toHaveBeenCalledWith(tenantId, [partyId]);
+
+    expect(queryFilters).toEqual(expect.arrayContaining([
+      { table: 'edu_enrollments', column: 'tenant_id', value: tenantId },
+      { table: 'party_parties', column: 'tenant_id', value: tenantId },
+      { table: 'students', column: 'tenant_id', value: tenantId },
+      { table: 'edu_courses', column: 'tenant_id', value: tenantId },
+    ]));
+  });
+});
+
 describe('POST /api/education/enrollments', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     insertedRows.length = 0;
+    queryFilters.length = 0;
     setupSupabaseMocks();
 
     mockGetUser.mockResolvedValue({
@@ -159,6 +301,33 @@ describe('POST /api/education/enrollments', () => {
       phone: '0989112334',
       status: 'authorized',
       normalizedPhone: '0989112334',
+    });
+    mockGetAuthorizedGuardians.mockResolvedValue(new Map([
+      [partyId, [{
+        authorizationId: 'guardian-authorization-1',
+        studentPartyId: partyId,
+        guardianPartyId,
+        displayName: 'Lê Văn Thành',
+        phone: '0989112334',
+        status: 'authorized',
+      }]],
+    ]));
+
+    mockAssignEnrollmentToBranch.mockResolvedValue({
+      tenantId,
+      courseId,
+      enrollmentId: 'enrollment-1',
+      branchId,
+      requestId: 'request-1',
+      assignedBy: userId,
+    });
+    mockGetEnrollmentChain.mockResolvedValue({
+      tenantId,
+      courseId,
+      enrollmentId: 'enrollment-1',
+      branchId,
+      requestId: 'request-1',
+      assignedBy: userId,
     });
   });
 
@@ -215,12 +384,47 @@ describe('POST /api/education/enrollments', () => {
       courseId,
       requestId: expect.any(String),
     }));
+    expect(mockAssignEnrollmentToBranch).not.toHaveBeenCalled();
+    expect(mockGetEnrollmentChain).not.toHaveBeenCalled();
     expect(mockGetStudent).toHaveBeenCalledWith(tenantId, partyId);
     expect(mockGetEnrollment).toHaveBeenCalledWith(tenantId, 'enrollment-1');
 
     const accessedTables = mockFrom.mock.calls.map((call) => call[0]);
     expect(accessedTables).not.toContain('persons');
     expect(accessedTables).not.toContain('identity_migration_mapping');
+  });
+
+  it('assigns and reads back the Preschool branch chain when branchId is submitted', async () => {
+    const response = await POST(buildRequest({
+      childName: 'Lê Hoàng Nam',
+      nickname: 'Bé Tôm',
+      dateOfBirth: '2023-06-15',
+      gender: 'Nam',
+      guardianName: 'Lê Văn Thành',
+      guardianPhone: '0989112334',
+      medicalNote: 'Dị ứng sữa bò',
+      courseId,
+      branchId,
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.success).toBe(true);
+    expect(body.chain).toEqual(expect.objectContaining({
+      tenantId,
+      courseId,
+      enrollmentId: 'enrollment-1',
+      branchId,
+    }));
+    expect(mockAssignEnrollmentToBranch).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId,
+      courseId,
+      enrollmentId: 'enrollment-1',
+      branchId,
+      actorUserId: userId,
+      requestId: expect.any(String),
+    }));
+    expect(mockGetEnrollmentChain).toHaveBeenCalledWith(tenantId, 'enrollment-1');
   });
 
   it('does not report success when enrollment read-back fails', async () => {

@@ -17,7 +17,7 @@
  *   5. Tương Tác Phụ Huynh & CSAT (Parent CSAT & Engagement Analytics)
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   BarChart3,
@@ -43,10 +43,108 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 
+interface ExecutiveDashboard {
+  readonly attendance: {
+    readonly todayPresentCount: number;
+    readonly todayAbsentCount: number;
+    readonly todayLateCount: number;
+    readonly presentVsEnrolledRate: number;
+  };
+  readonly careAndSafety: {
+    readonly activeHealthIncidents: number;
+    readonly pendingMedicationDoses: number;
+  };
+  readonly parentEngagement: {
+    readonly unacknowledgedNotices: number;
+    readonly pendingConsentRequests: number;
+  };
+  readonly finance: {
+    readonly invoicedGrossTotal: number;
+    readonly reconciledCashCollected: number;
+    readonly outstandingBalanceTotal: number;
+    readonly overdueAccountsCount: number;
+  };
+}
+
+interface AnalyticsResponse {
+  readonly success: boolean;
+  readonly dashboard?: ExecutiveDashboard;
+  readonly error?: string;
+}
+
+function todayHoChiMinh(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+function formatVndCompact(value: number): string {
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)} Tỷ VNĐ`;
+  if (value >= 1_000_000) return `${Math.round(value / 1_000_000)} Triệu VNĐ`;
+  return `${value.toLocaleString('vi-VN')} VNĐ`;
+}
+
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'finance' | 'health' | 'csat'>('overview');
   const [selectedPeriod, setSelectedPeriod] = useState('Tháng 09/2026');
-  const [selectedCampus, setSelectedCampus] = useState('Bella Preschool — Cơ Sở 1');
+  const [dashboard, setDashboard] = useState<ExecutiveDashboard | null>(null);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadAnalytics() {
+      setAnalyticsLoading(true);
+      setAnalyticsError(null);
+
+      try {
+        const response = await fetch(`/api/education/analytics?date=${encodeURIComponent(todayHoChiMinh())}`, {
+          cache: 'no-store',
+        });
+        const payload = await response.json() as AnalyticsResponse;
+        if (!response.ok || !payload.success || !payload.dashboard) {
+          throw new Error(payload.error ?? 'Không tải được dữ liệu báo cáo');
+        }
+        setDashboard(payload.dashboard);
+      } catch (error) {
+        setAnalyticsError(error instanceof Error ? error.message : 'Không tải được dữ liệu báo cáo');
+        setDashboard(null);
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    }
+
+    void loadAnalytics();
+  }, []);
+
+  const attendanceRate = dashboard?.attendance.presentVsEnrolledRate ?? 0;
+  const presentCount = dashboard?.attendance.todayPresentCount ?? 0;
+  const absentCount = dashboard?.attendance.todayAbsentCount ?? 0;
+  const collectedCash = dashboard?.finance.reconciledCashCollected ?? 0;
+  const invoicedGross = dashboard?.finance.invoicedGrossTotal ?? 0;
+  const outstandingBalance = dashboard?.finance.outstandingBalanceTotal ?? 0;
+  const collectionRate = invoicedGross > 0 ? Math.round((collectedCash / invoicedGross) * 1000) / 10 : 0;
+  const overdueAccounts = dashboard?.finance.overdueAccountsCount ?? 0;
+  const currentAttendanceLabel = analyticsLoading ? 'đang tải' : `${attendanceRate}%`;
+  const currentCollectionLabel = analyticsLoading ? 'đang tải' : `${collectionRate}%`;
+  const attendanceTrend = [
+    { month: 'Thg 4', val: 95.2 },
+    { month: 'Thg 5', val: 96.0 },
+    { month: 'Thg 6', val: 94.8 },
+    { month: 'Thg 7', val: 95.5 },
+    { month: 'Thg 8', val: 95.7 },
+    { month: 'Hiện tại', val: attendanceRate },
+  ];
+  const financeTrend = [
+    { month: 'Thg 4', target: 2.0, actual: 1.88 },
+    { month: 'Thg 5', target: 2.0, actual: 1.92 },
+    { month: 'Thg 6', target: 2.0, actual: 1.85 },
+    { month: 'Thg 7', target: 2.0, actual: 1.80 },
+    { month: 'Thg 8', target: 2.05, actual: 1.89 },
+    { month: 'Hiện tại', target: invoicedGross / 1_000_000_000, actual: collectedCash / 1_000_000_000 },
+  ];
 
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6 pb-12">
@@ -105,9 +203,11 @@ export default function ReportsPage() {
                 <ArrowUpRight className="w-3.5 h-3.5" /> +1.5%
               </span>
             </div>
-            <p className="text-2xl font-extrabold text-slate-900 dark:text-white">97.2% Đi Học</p>
+            <p className="text-2xl font-extrabold text-slate-900 dark:text-white">
+              {analyticsLoading ? 'Đang tải...' : `${attendanceRate}% Đi Học`}
+            </p>
             <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-              Mầm +3.2% • <strong className="text-rose-600">Chồi B2 giảm -4.1% (7 trẻ)</strong>
+              Có mặt: {presentCount} • <strong className="text-rose-600">Vắng: {absentCount}</strong>
             </p>
           </div>
 
@@ -121,9 +221,11 @@ export default function ReportsPage() {
                 <ArrowUpRight className="w-3.5 h-3.5" /> +0.8%
               </span>
             </div>
-            <p className="text-2xl font-extrabold text-slate-900 dark:text-white">94.8% Đạt Chuẩn</p>
+            <p className="text-2xl font-extrabold text-slate-900 dark:text-white">
+              {dashboard?.careAndSafety.activeHealthIncidents ?? 0} Sự Cố
+            </p>
             <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-              265/280 trẻ đạt chuẩn • 15 trẻ có chế độ riêng
+              Thuốc chờ xử lý: {dashboard?.careAndSafety.pendingMedicationDoses ?? 0}
             </p>
           </div>
 
@@ -133,11 +235,11 @@ export default function ReportsPage() {
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-300">
                 3. Học Phí Thực Thu
               </span>
-              <span className="text-xs font-bold text-slate-500">88.5% Collection</span>
+              <span className="text-xs font-bold text-slate-500">{collectionRate}% Collection</span>
             </div>
-            <p className="text-2xl font-extrabold text-slate-900 dark:text-white">1.84 Tỷ VNĐ</p>
+            <p className="text-2xl font-extrabold text-slate-900 dark:text-white">{formatVndCompact(collectedCash)}</p>
             <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-              Phải thu: 2.08 Tỷ • <strong className="text-rose-600">Nợ quá hạn: 240 Triệu</strong>
+              Phải thu: {formatVndCompact(invoicedGross)} • <strong className="text-rose-600">Còn nợ: {formatVndCompact(outstandingBalance)}</strong>
             </p>
           </div>
 
@@ -147,14 +249,24 @@ export default function ReportsPage() {
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300">
                 4. Hài Lòng Phụ Huynh (CSAT)
               </span>
-              <span className="text-xs font-bold text-amber-600">240 Phiếu Khảo Sát</span>
+              <span className="text-xs font-bold text-amber-600">
+                Consent: {dashboard?.parentEngagement.pendingConsentRequests ?? 0}
+              </span>
             </div>
-            <p className="text-2xl font-extrabold text-slate-900 dark:text-white">96 / 100 Điểm</p>
+            <p className="text-2xl font-extrabold text-slate-900 dark:text-white">
+              {dashboard?.parentEngagement.unacknowledgedNotices ?? 0} Chưa ACK
+            </p>
             <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-              Chất lượng chăm sóc & giao tiếp đạt 4.9/5⭐
+              Thông báo/đồng ý cần phụ huynh xử lý
             </p>
           </div>
         </div>
+
+        {analyticsError && (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700">
+            {analyticsError}
+          </div>
+        )}
 
         {/* ── WORKSPACE TABS NAVIGATION ── */}
         <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700/60 overflow-x-auto pb-1">
@@ -230,9 +342,9 @@ export default function ReportsPage() {
               </span>
             </div>
             <p className="text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
-              • <strong>Chuyên cần:</strong> Tỷ lệ đi học toàn trường đạt 97.2% (+1.5% MoM). Phát hiện bất thường tại <strong>Lớp Chồi B2 (giảm -4.1%)</strong> do 5 trẻ có triệu chứng vi rút hô hấp.<br />
-              • <strong>Dòng tiền học phí:</strong> Thực thu 1.84 Tỷ (88.5% Collection Rate). Cần tập trung nhắc 17 khoản nợ quá hạn 240 triệu trước ngày 15/09.<br />
-              • <strong>Công suất trường:</strong> Đã lấp đầy 280/300 chỉ tiêu (93.3% Occupancy). Lớp Lá C1 đã đạt 100% sĩ số.
+              • <strong>Chuyên cần:</strong> Tỷ lệ đi học hiện tại đạt {currentAttendanceLabel}; có mặt {presentCount}, vắng {absentCount}.<br />
+              • <strong>Dòng tiền học phí:</strong> Thực thu {formatVndCompact(collectedCash)} ({currentCollectionLabel} Collection Rate). Còn nợ {formatVndCompact(outstandingBalance)} trên {overdueAccounts} hóa đơn quá hạn.<br />
+              • <strong>Phụ huynh:</strong> {dashboard?.parentEngagement.unacknowledgedNotices ?? 0} thông báo chưa ACK và {dashboard?.parentEngagement.pendingConsentRequests ?? 0} yêu cầu consent đang chờ.
             </p>
           </div>
 
@@ -245,21 +357,14 @@ export default function ReportsPage() {
                   <TrendingUp className="w-4 h-4 text-emerald-500" />
                   Xu Hướng Chuyên Cần 6 Tháng (Tháng 4 ➔ Tháng 9)
                 </h3>
-                <span className="text-xs font-bold text-emerald-600">Trung bình: 96.1%</span>
+                <span className="text-xs font-bold text-emerald-600">Hiện tại: {currentAttendanceLabel}</span>
               </div>
               <div className="h-44 flex items-end justify-between gap-3 pt-4 px-2">
-                {[
-                  { month: 'Thg 4', val: 95.2 },
-                  { month: 'Thg 5', val: 96.0 },
-                  { month: 'Thg 6', val: 94.8 },
-                  { month: 'Thg 7', val: 95.5 },
-                  { month: 'Thg 8', val: 95.7 },
-                  { month: 'Thg 9', val: 97.2 },
-                ].map((item, idx) => (
+                {attendanceTrend.map((item, idx) => (
                   <div key={idx} className="flex-1 flex flex-col items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{item.val}%</span>
                     <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-t-xl overflow-hidden h-28 flex items-end">
-                      <div className="w-full bg-emerald-500 rounded-t-xl transition-all" style={{ height: `${(item.val - 90) * 10}%` }} />
+                      <div className="w-full bg-emerald-500 rounded-t-xl transition-all" style={{ height: `${Math.max(0, Math.min(100, (item.val - 90) * 10))}%` }} />
                     </div>
                     <span className="text-[10px] text-slate-400 font-semibold">{item.month}</span>
                   </div>
@@ -274,17 +379,10 @@ export default function ReportsPage() {
                   <DollarSign className="w-4 h-4 text-rose-500" />
                   Dòng Tiền Thu Học Phí (Phải Thu vs Đã Thu)
                 </h3>
-                <span className="text-xs font-bold text-slate-500">Thu thực tế: 1.84 Tỷ</span>
+                <span className="text-xs font-bold text-slate-500">Thu thực tế: {formatVndCompact(collectedCash)}</span>
               </div>
               <div className="h-44 flex items-end justify-between gap-3 pt-4 px-2">
-                {[
-                  { month: 'Thg 4', target: 2.0, actual: 1.88 },
-                  { month: 'Thg 5', target: 2.0, actual: 1.92 },
-                  { month: 'Thg 6', target: 2.0, actual: 1.85 },
-                  { month: 'Thg 7', target: 2.0, actual: 1.80 },
-                  { month: 'Thg 8', target: 2.05, actual: 1.89 },
-                  { month: 'Thg 9', target: 2.08, actual: 1.84 },
-                ].map((item, idx) => (
+                {financeTrend.map((item, idx) => (
                   <div key={idx} className="flex-1 flex flex-col items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{item.actual}T</span>
                     <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-t-xl overflow-hidden h-28 flex items-end gap-1 px-1">
