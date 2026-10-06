@@ -62,27 +62,10 @@ CREATE TABLE IF NOT EXISTS public.english_center_enrollments (
 -- INDEXES
 -- ============================================================================
 
--- Tenant isolation index (MANDATORY for all Product tables)
-CREATE INDEX CONCURRENTLY idx_english_enrollments_tenant
-  ON public.english_center_enrollments(tenant_id);
 
--- Branch scope index (filter by branch)
-CREATE INDEX CONCURRENTLY idx_english_enrollments_branch
-  ON public.english_center_enrollments(branch_id);
 
--- Canonical enrollment lookup (enforces UNIQUE)
-CREATE INDEX CONCURRENTLY idx_english_enrollments_canonical
-  ON public.english_center_enrollments(canonical_enrollment_id);
 
--- Program filter index
-CREATE INDEX CONCURRENTLY idx_english_enrollments_program
-  ON public.english_center_enrollments(program_id)
-  WHERE program_id IS NOT NULL;
 
--- Class filter index
-CREATE INDEX CONCURRENTLY idx_english_enrollments_class
-  ON public.english_center_enrollments(class_id)
-  WHERE class_id IS NOT NULL;
 
 -- ============================================================================
 -- ROW-LEVEL SECURITY (RLS)

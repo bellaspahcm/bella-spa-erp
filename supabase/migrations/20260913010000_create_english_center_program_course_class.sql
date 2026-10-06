@@ -31,9 +31,6 @@ CREATE TABLE IF NOT EXISTS public.english_center_programs (
   CONSTRAINT uq_program_code UNIQUE (tenant_id, code)
 );
 
-CREATE INDEX CONCURRENTLY idx_programs_tenant ON public.english_center_programs(tenant_id);
-CREATE INDEX CONCURRENTLY idx_programs_code ON public.english_center_programs(code);
-CREATE INDEX CONCURRENTLY idx_programs_status ON public.english_center_programs(status) WHERE status = 'active';
 
 -- ============================================================================
 -- TABLE: english_center_courses
@@ -58,9 +55,6 @@ CREATE TABLE IF NOT EXISTS public.english_center_courses (
   CONSTRAINT uq_course_code UNIQUE (tenant_id, program_id, code)
 );
 
-CREATE INDEX CONCURRENTLY idx_courses_tenant ON public.english_center_courses(tenant_id);
-CREATE INDEX CONCURRENTLY idx_courses_program ON public.english_center_courses(program_id);
-CREATE INDEX CONCURRENTLY idx_courses_status ON public.english_center_courses(status) WHERE status = 'active';
 
 -- ============================================================================
 -- TABLE: english_center_classes
@@ -92,12 +86,6 @@ CREATE TABLE IF NOT EXISTS public.english_center_classes (
   CONSTRAINT chk_dates CHECK (start_date IS NULL OR end_date IS NULL OR start_date <= end_date)
 );
 
-CREATE INDEX CONCURRENTLY idx_classes_tenant ON public.english_center_classes(tenant_id);
-CREATE INDEX CONCURRENTLY idx_classes_branch ON public.english_center_classes(branch_id);
-CREATE INDEX CONCURRENTLY idx_classes_course ON public.english_center_classes(course_id);
-CREATE INDEX CONCURRENTLY idx_classes_teacher ON public.english_center_classes(teacher_id) WHERE teacher_id IS NOT NULL;
-CREATE INDEX CONCURRENTLY idx_classes_status ON public.english_center_classes(status);
-CREATE INDEX CONCURRENTLY idx_classes_dates ON public.english_center_classes(start_date, end_date) WHERE status = 'active';
 
 -- ============================================================================
 -- ROW-LEVEL SECURITY (RLS)
