@@ -537,6 +537,43 @@ describe('ProductRegistry', () => {
     });
   });
 
+  describe('Bella English Center Product Registration', () => {
+    it('should have bella_english_center registered at module initialization', async () => {
+      jest.resetModules();
+      const freshRegistryModule = await import('../product-registry');
+
+      const retrieved = freshRegistryModule.productRegistry.getRequired('bella_english_center');
+
+      expect(retrieved.productKey).toBe('bella_english_center');
+      expect(retrieved.displayName).toBe('Bella English Center');
+      expect(retrieved.subtitle).toBe('English Center Management');
+      expect(retrieved.requiredModules).toEqual(['bella_education']);
+      expect(retrieved.serviceProfile).toBe('english_center');
+      expect(retrieved.defaultRoute).toBe('/dashboard/english-center');
+      expect(retrieved.navigationProfile).toBe('english-center');
+    });
+
+    it('should keep English product identity distinct from the Education module capability', () => {
+      const englishCenter: ProductDefinition = {
+        productKey: 'bella_english_center',
+        displayName: 'Bella English Center',
+        subtitle: 'English Center Management',
+        requiredModules: ['bella_education'],
+        serviceProfile: 'english_center',
+        defaultRoute: '/dashboard/english-center',
+        navigationProfile: 'english-center'
+      };
+
+      productRegistry.register(englishCenter);
+
+      const retrieved = productRegistry.getRequired('bella_english_center');
+      expect(retrieved.productKey).toBe('bella_english_center');
+      expect(retrieved.requiredModules).toEqual(['bella_education']);
+      expect(retrieved.productKey).not.toBe(retrieved.requiredModules[0]);
+      expect(retrieved.serviceProfile).toBe('english_center');
+    });
+  });
+
   describe('Error Message Quality', () => {
     it('should provide clear error message for duplicate product', () => {
       const product1 = createTestProduct('test_product', 'First');

@@ -482,4 +482,28 @@ describe('ProductResolver', () => {
       expect(resolved.product.navigationProfile).toBe('spa');
     });
   });
+
+  describe('Bella English Center Product Resolution', () => {
+    it('should resolve bella_english_center to the English Center default route without module inference', () => {
+      const englishCenter: ProductDefinition = {
+        productKey: 'bella_english_center',
+        displayName: 'Bella English Center',
+        subtitle: 'English Center Management',
+        requiredModules: ['bella_education'],
+        serviceProfile: 'english_center',
+        defaultRoute: '/dashboard/english-center',
+        navigationProfile: 'english-center'
+      };
+      productRegistry.register(englishCenter);
+
+      const tenant = createMockTenant('tenant-english-center', 'bella_english_center');
+      const resolved = productResolver.resolve(tenant);
+
+      expect(resolved.product.productKey).toBe('bella_english_center');
+      expect(resolved.product.requiredModules).toEqual(['bella_education']);
+      expect(resolved.product.serviceProfile).toBe('english_center');
+      expect(resolved.product.defaultRoute).toBe('/dashboard/english-center');
+      expect(resolved.product.navigationProfile).toBe('english-center');
+    });
+  });
 });

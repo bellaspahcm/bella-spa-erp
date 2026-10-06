@@ -494,9 +494,29 @@ const bellaPreschoolProduct: ProductDefinition = {
   navigationProfile: 'education'
 };
 
+/**
+ * Bella English Center Product Definition.
+ *
+ * @remarks
+ * English Center is a product identity on top of the Education product/module
+ * surface. Product-specific enrollment, timetable, attendance, tuition,
+ * engagement, and command-center capabilities live under
+ * `src/products/bella-english-center` and consume Education/Platform contracts.
+ */
+const bellaEnglishCenterProduct: ProductDefinition = {
+  productKey: 'bella_english_center',
+  displayName: 'Bella English Center',
+  subtitle: 'English Center Management',
+  requiredModules: ['bella_education'],
+  serviceProfile: 'english_center',
+  defaultRoute: '/dashboard/english-center',
+  navigationProfile: 'english-center'
+};
+
 // Register products
 productRegistry.register(bellaHaircutProduct);
 productRegistry.register(bellaBabycareProduct);
 productRegistry.register(bellaNailProduct);
 productRegistry.register(bellaSpaProduct);
 productRegistry.register(bellaPreschoolProduct);
+productRegistry.register(bellaEnglishCenterProduct);
