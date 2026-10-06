@@ -1,10 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { randomUUID } from 'node:crypto';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/integrations/supabase/types';
 
 let mockSupabaseAdminClient: SupabaseClient<Database>;
+let mockActionSupabaseClient: SupabaseClient<Database>;
 
 const mockGetCurrentUser = jest.fn();
 const mockRevalidatePath = jest.fn();
@@ -18,6 +20,9 @@ jest.mock('@/lib/revalidate', () => ({
 }));
 jest.mock('@/lib/supabase-server', () => ({
   createClient: () => mockSupabaseAdminClient,
+}));
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: () => Promise.resolve(mockActionSupabaseClient),
 }));
 jest.mock('@/services/user-actions', () => ({
   getCurrentUser: () => mockGetCurrentUser(),
@@ -80,11 +85,16 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
   const created = {
     tenants: [] as string[],
     branches: [] as string[],
+    people: [] as string[],
+    authUsers: [] as string[],
     users: [] as string[],
     customers: [] as string[],
     packages: [] as string[],
     bookings: [] as string[],
+    attendance: [] as string[],
   };
+  const branchByTenant = new Map<string, string>();
+  const passwordByUserId = new Map<string, string>();
 
   beforeAll(() => {
     const { url, adminKey } = requireSupabaseAdminEnv();
@@ -110,20 +120,31 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
       await mockSupabaseAdminClient.from('bookings').delete().eq('id', bookingId);
     }
 
+    if (created.attendance.length > 0) {
+      await mockSupabaseAdminClient.from('attendance').delete().in('id', created.attendance);
+    }
     if (created.packages.length > 0) {
       await mockSupabaseAdminClient.from('packages').delete().in('id', created.packages);
     }
     if (created.customers.length > 0) {
       await mockSupabaseAdminClient.from('customers').delete().in('id', created.customers);
     }
+    if (created.people.length > 0) {
+      await mockSupabaseAdminClient.from('org_relationships').delete().in('from_id', created.people);
+      await mockSupabaseAdminClient.from('people_directory').delete().in('id', created.people);
+    }
     if (created.users.length > 0) {
       await mockSupabaseAdminClient.from('users').delete().in('id', created.users);
     }
     if (created.branches.length > 0) {
       await mockSupabaseAdminClient.from('branches').delete().in('id', created.branches);
+      await mockSupabaseAdminClient.from('org_units').delete().in('id', created.branches);
     }
     if (created.tenants.length > 0) {
       await mockSupabaseAdminClient.from('tenants').delete().in('id', created.tenants);
+    }
+    for (const userId of created.authUsers) {
+      await mockSupabaseAdminClient.auth.admin.deleteUser(userId);
     }
   });
 
@@ -133,6 +154,7 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
       .insert({
         name: `${marker}-${label}`,
         status: 'active',
+        product_key: 'bella_haircut',
         enabled_modules: {
           babycare: false,
           beauty_spa: true,
@@ -147,20 +169,21 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
     expect(data?.id).toBeTruthy();
     created.tenants.push(data!.id);
 
-    const { data: branchData } = await mockSupabaseAdminClient
-      .from('branches')
-      .insert({
-        tenant_id: data!.id,
-        name: `${marker}-${label} Branch`,
-        code: `BR-${label.toUpperCase()}-${Math.floor(Math.random() * 10000)}`,
-        status: 'active',
-      })
-      .select('id')
-      .single();
+    const branchId = randomUUID();
+    branchByTenant.set(data!.id, branchId);
+    created.branches.push(branchId);
 
-    if (branchData?.id) {
-      created.branches.push(branchData.id);
-    }
+    const { error: orgUnitError } = await mockSupabaseAdminClient
+      .from('org_units')
+      .insert({
+        id: branchId,
+        tenant_id: data!.id,
+        unit_type: 'branch',
+        name: `${marker}-${label} Branch`,
+        code: `ORG-${label.toUpperCase()}-${Math.floor(Math.random() * 10000)}`,
+        is_active: true,
+      });
+    expect(orgUnitError).toBeNull();
 
     return data!.id;
   }
@@ -168,9 +191,22 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
   async function insertUser(tenantId: string, role: string, label: string): Promise<TestUser> {
     const email = `${marker}-${label}@example.com`;
     const fullName = `Haircut ${label}`;
+    const password = `${randomUUID()}A1!`;
+    const authResult = await mockSupabaseAdminClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    expect(authResult.error).toBeNull();
+    expect(authResult.data.user?.id).toBeTruthy();
+    const userId = authResult.data.user!.id;
+    created.authUsers.push(userId);
+    passwordByUserId.set(userId, password);
+
     const { data, error } = await mockSupabaseAdminClient
       .from('users')
       .insert({
+        id: userId,
         tenant_id: tenantId,
         email,
         full_name: fullName,
@@ -184,7 +220,58 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
     expect(error).toBeNull();
     expect(data?.id).toBeTruthy();
     created.users.push(data!.id);
+    if (role === 'ktv' || role === 'admin') {
+      const branchId = branchByTenant.get(tenantId);
+      expect(branchId).toBeTruthy();
+      const { data: personData, error: personError } = await mockSupabaseAdminClient
+        .from('people_directory')
+        .insert({
+          tenant_id: tenantId,
+          user_id: data!.id,
+          person_type: 'employee',
+          display_name: fullName,
+          is_active: true,
+        })
+        .select('id')
+        .single();
+      expect(personError).toBeNull();
+      expect(personData?.id).toBeTruthy();
+      created.people.push(personData!.id);
+
+      const { error: relationshipError } = await mockSupabaseAdminClient
+        .from('org_relationships')
+        .insert({
+          tenant_id: tenantId,
+          from_id: personData!.id,
+          from_type: 'person',
+          to_id: branchId!,
+          to_type: 'unit',
+          rel_type: 'belongs_to',
+          since: new Date().toISOString().slice(0, 10),
+        });
+      expect(relationshipError).toBeNull();
+    }
     return data!;
+  }
+
+  async function setCurrentUser(user: TestUser) {
+    mockGetCurrentUser.mockResolvedValue(user);
+    const url = getSupabaseAdminUrl();
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const password = passwordByUserId.get(user.id);
+    expect(url).toBeTruthy();
+    expect(anonKey).toBeTruthy();
+    expect(password).toBeTruthy();
+    const client = createSupabaseClient<Database>(url, anonKey!, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const signIn = await client.auth.signInWithPassword({
+      email: user.email,
+      password: password!,
+    });
+    expect(signIn.error).toBeNull();
+    expect(signIn.data.session?.access_token).toBeTruthy();
+    mockActionSupabaseClient = client;
   }
 
   async function insertPackage(tenantId: string): Promise<string> {
@@ -218,7 +305,7 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
     const ktvB = await insertUser(tenantB, 'ktv', 'ktv-b');
     const packageId = await insertPackage(tenantA);
 
-    mockGetCurrentUser.mockResolvedValue(adminA);
+    await setCurrentUser(adminA);
 
     const customerResult = await createCustomer({
       name_mother: `${marker} customer`,
@@ -250,6 +337,29 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
 
     const bookingId = String(bookingResult.data!.id);
     created.bookings.push(bookingId);
+    const tenantABranchId = branchByTenant.get(tenantA);
+    expect(tenantABranchId).toBeTruthy();
+    const today = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+    const attendanceId = randomUUID();
+    const attendanceInsert = await mockSupabaseAdminClient
+      .from('attendance')
+      .insert({
+        id: attendanceId,
+        tenant_id: tenantA,
+        ktv_id: ktvA.id,
+        branch_id: tenantABranchId!,
+        date: today,
+        status: 'present',
+        checkin_time: `${today}T08:45:00+07:00`,
+        checkout_time: `${today}T18:00:00+07:00`,
+      });
+    expect(attendanceInsert.error).toBeNull();
+    created.attendance.push(attendanceId);
 
     const { data: storedBooking } = await mockSupabaseAdminClient
       .from('bookings')
@@ -388,7 +498,7 @@ describeWithRealSupabase('Haircut Go-Live real operational flow', () => {
     expect(remainingPayments).toHaveLength(1);
     expect(remainingPayments[0].amount).toBe(200_000);
 
-    mockGetCurrentUser.mockResolvedValue(adminB);
+    await setCurrentUser(adminB);
 
     const crossTenantBookingUpdate = await updateBooking(bookingId, {
       assigned_ktv_id: ktvB.id,

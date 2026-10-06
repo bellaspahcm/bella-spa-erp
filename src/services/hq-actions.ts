@@ -6,10 +6,12 @@ import { getCurrentUser } from './user-actions';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from './audit-actions';
 import { isHqTenant } from '@/lib/business-rules/hq-tenant';
+import type { HqDashboardStats, HqTenantRecord } from '@/types/domain';
 import type { Database } from '@/types/database.types';
 
 type TenantRow = Database['public']['Tables']['tenants']['Row'];
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
+type HqSupabaseClient = Awaited<ReturnType<typeof createDevelopmentBypassClient>>;
 type TenantStatusAuditData = {
   id: string;
   name: string;
@@ -33,6 +35,131 @@ function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định')
     if (typeof message === 'string' && message.length > 0) return message;
   }
   return fallback;
+}
+
+function countByTenant(rows: readonly { tenant_id: string | null }[] | null) {
+  const counts = new Map<string, number>();
+  for (const row of rows || []) {
+    if (!row.tenant_id) continue;
+    counts.set(row.tenant_id, (counts.get(row.tenant_id) || 0) + 1);
+  }
+  return counts;
+}
+
+function sumRevenueByTenant(rows: readonly { tenant_id: string | null; amount: number | string | null }[] | null) {
+  const sums = new Map<string, number>();
+  for (const row of rows || []) {
+    if (!row.tenant_id) continue;
+    sums.set(row.tenant_id, (sums.get(row.tenant_id) || 0) + Number(row.amount || 0));
+  }
+  return sums;
+}
+
+async function fetchHqTenants(supabase: HqSupabaseClient): Promise<TenantRow[]> {
+  const { data: tenants, error } = await supabase
+    .from('tenants')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return tenants || [];
+}
+
+async function fetchTenantAggregates(supabase: HqSupabaseClient) {
+  const [staffResult, customerResult, revenueResult] = await Promise.all([
+    supabase.from('users').select('tenant_id'),
+    supabase.from('customers').select('tenant_id'),
+    supabase.from('revenue').select('tenant_id, amount'),
+  ]);
+
+  if (staffResult.error) {
+    console.warn(`[hq-actions] Warning bulk counting staff: ${staffResult.error.message}`);
+  }
+
+  if (customerResult.error) {
+    console.warn(`[hq-actions] Warning bulk counting customers: ${customerResult.error.message}`);
+  }
+
+  if (revenueResult.error) {
+    console.warn(`[hq-actions] Warning bulk fetching revenue: ${revenueResult.error.message}`);
+  }
+
+  const revenueRows = revenueResult.error ? [] : revenueResult.data || [];
+
+  return {
+    staffCounts: countByTenant(staffResult.error ? [] : staffResult.data || []),
+    customerCounts: countByTenant(customerResult.error ? [] : customerResult.data || []),
+    revenueSums: sumRevenueByTenant(revenueRows),
+    totalRevenue: revenueRows.reduce((acc, item) => acc + Number(item.amount || 0), 0),
+  };
+}
+
+function buildHqTenantRecords(
+  tenants: readonly TenantRow[],
+  aggregates: Awaited<ReturnType<typeof fetchTenantAggregates>>
+): HqTenantRecord[] {
+  return tenants.map((tenant) => ({
+    ...tenant,
+    staffCount: aggregates.staffCounts.get(tenant.id) || 0,
+    customerCount: aggregates.customerCounts.get(tenant.id) || 0,
+    revenueSum: aggregates.revenueSums.get(tenant.id) || 0,
+  }));
+}
+
+async function buildHqDashboardStats(
+  supabase: HqSupabaseClient,
+  tenants: readonly TenantRow[],
+  totalRevenue: number
+): Promise<HqDashboardStats> {
+  const [sessionsResult, bookingsResult] = await Promise.all([
+    supabase.from('session_logs').select('*', { count: 'exact', head: true }),
+    supabase.from('bookings').select('*', { count: 'exact', head: true }),
+  ]);
+
+  if (sessionsResult.error) {
+    throw new Error(`Failed to count session logs: ${sessionsResult.error.message}`);
+  }
+
+  if (bookingsResult.error) {
+    throw new Error(`Failed to count bookings: ${bookingsResult.error.message}`);
+  }
+
+  const totalSpas = tenants.length;
+  const activeSpas = tenants.filter((tenant) => tenant.status === 'active').length;
+  const suspendedSpas = tenants.filter((tenant) => tenant.status === 'suspended').length;
+  const totalBookings = bookingsResult.count || 0;
+  const months = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'];
+  const spaGrowthData = [1, 2, 3, 4, 4, totalSpas];
+
+  return {
+    totalSpas,
+    activeSpas,
+    suspendedSpas,
+    totalRevenue,
+    totalSessions: sessionsResult.count || 0,
+    zaloSmsUsed: totalBookings * 4 + 87,
+    spaGrowthData: months.map((month, index) => ({ month, spas: spaGrowthData[index] || 0 })),
+  };
+}
+
+export async function getHqDashboardPayload(): Promise<{
+  stats: HqDashboardStats;
+  tenants: HqTenantRecord[];
+}> {
+  const auth = await checkHqAuth();
+  if (!auth.authorized) {
+    throw new Error(auth.error || 'Unauthorized');
+  }
+
+  const supabase = await createDevelopmentBypassClient();
+  const tenants = await fetchHqTenants(supabase);
+  const aggregates = await fetchTenantAggregates(supabase);
+  const stats = await buildHqDashboardStats(supabase, tenants, aggregates.totalRevenue);
+
+  return {
+    stats,
+    tenants: buildHqTenantRecords(tenants, aggregates),
+  };
 }
 
 /**
@@ -76,57 +203,10 @@ export async function getHqDashboardStats() {
   }
 
   const supabase = await createDevelopmentBypassClient();
+  const tenants = await fetchHqTenants(supabase);
+  const aggregates = await fetchTenantAggregates(supabase);
 
-  // 1. Get tenants list
-  const { data: tenants, error: tenantsErr } = await supabase
-    .from('tenants')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (tenantsErr) throw tenantsErr;
-
-  // 2. Count active and suspended
-  const totalSpas = tenants.length;
-  const activeSpas = tenants.filter(t => t.status === 'active').length;
-  const suspendedSpas = tenants.filter(t => t.status === 'suspended').length;
-
-  // 3. System Total Revenue
-  const { data: revenueData, error: revErr } = await supabase
-    .from('revenue')
-    .select('amount');
-  
-  if (revErr) throw new Error(`Failed to fetch system revenue: ${revErr.message}`);
-  const totalRevenue = (revenueData || []).reduce((acc, item) => acc + Number(item.amount), 0);
-
-  // 4. System Total Sessions
-  const { count: totalSessions, error: sessErr } = await supabase
-    .from('session_logs')
-    .select('*', { count: 'exact', head: true });
-
-  if (sessErr) throw new Error(`Failed to count session logs: ${sessErr.message}`);
-
-  // 5. System Bookings (to calculate Zalo SMS used)
-  const { count: totalBookings, error: bookingsErr } = await supabase
-    .from('bookings')
-    .select('*', { count: 'exact', head: true });
-
-  if (bookingsErr) throw new Error(`Failed to count bookings: ${bookingsErr.message}`);
-
-  const zaloSmsUsed = (totalBookings || 0) * 4 + 87; // Beautiful dynamic proxy count
-
-  // 6. Growth data by month (simulate or parse tenants created_at)
-  const months = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'];
-  const spaGrowthData = [1, 2, 3, 4, 4, totalSpas]; // dynamic growth
-
-  return {
-    totalSpas,
-    activeSpas,
-    suspendedSpas,
-    totalRevenue,
-    totalSessions: totalSessions || 0,
-    zaloSmsUsed,
-    spaGrowthData: months.map((m, idx) => ({ month: m, spas: spaGrowthData[idx] || 0 }))
-  };
+  return buildHqDashboardStats(supabase, tenants, aggregates.totalRevenue);
 }
 
 /**
@@ -139,60 +219,10 @@ export async function getAllTenants() {
   }
 
   const supabase = await createDevelopmentBypassClient();
+  const tenants = await fetchHqTenants(supabase);
+  const aggregates = await fetchTenantAggregates(supabase);
 
-  // Fetch all tenants
-  const { data: tenants, error } = await supabase
-    .from('tenants')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-
-  // For each tenant, query aggregate data: users (staff), customers, revenue
-  const tenantsList = await Promise.all(
-    (tenants || []).map(async (t) => {
-      // Staff count
-      const { count: staffCount, error: staffCountError } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .eq('tenant_id', t.id);
-
-      if (staffCountError) {
-        console.warn(`[hq-actions] Warning counting staff for tenant ${t.id}: ${staffCountError.message}`);
-      }
-
-      // Customer count
-      const { count: customerCount, error: customerCountError } = await supabase
-        .from('customers')
-        .select('*', { count: 'exact', head: true })
-        .eq('tenant_id', t.id);
-
-      if (customerCountError) {
-        console.warn(`[hq-actions] Warning counting customers for tenant ${t.id}: ${customerCountError.message}`);
-      }
-
-      // Revenue sum
-      const { data: revData, error: revenueError } = await supabase
-        .from('revenue')
-        .select('amount')
-        .eq('tenant_id', t.id);
-
-      if (revenueError) {
-        console.warn(`[hq-actions] Warning fetching revenue for tenant ${t.id}: ${revenueError.message}`);
-      }
-
-      const revenueSum = (revData || []).reduce((acc, item) => acc + Number(item.amount), 0);
-
-      return {
-        ...t,
-        staffCount: staffCount || 0,
-        customerCount: customerCount || 0,
-        revenueSum
-      };
-    })
-  );
-
-  return tenantsList;
+  return buildHqTenantRecords(tenants, aggregates);
 }
 
 /**

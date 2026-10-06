@@ -12,6 +12,7 @@ import {
   getCachedCurrentUser,
   getCachedTenantSettings,
 } from '@/lib/dashboard-client-context';
+import { isHqTenant } from '@/lib/business-rules/hq-tenant';
 
 const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';
 
@@ -111,6 +112,11 @@ export default function DashboardLayout({
         try {
           // Reuse the already-in-flight tenant settings promise (no extra fetch)
           const tenant = await tenantWarmupPromise;
+
+          if (isHqTenant(tenant)) {
+            router.replace('/hq');
+            return;
+          }
           
           // ── Auto-upgrade legacy theme colors ──
           if (tenant) {

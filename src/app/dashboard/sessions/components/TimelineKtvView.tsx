@@ -396,7 +396,7 @@ export function TimelineKtvView({
           <div className={cn("grid border-b border-slate-200 bg-slate-50/80 sticky top-0 z-20", 
             activeKtvs.length === 0 ? "grid-cols-2" : `grid-cols-${Math.min(6, activeKtvs.length + 2)}`
           )}
-          style={{ gridTemplateColumns: `100px 220px repeat(${activeKtvs.length}, minmax(200px, 1fr))` }}
+          style={{ gridTemplateColumns: `100px repeat(${activeKtvs.length + 1}, minmax(220px, 1fr))` }}
           >
             <div className="p-4 border-r border-slate-200 font-black text-xs text-slate-500 uppercase tracking-wider flex items-center justify-between">
               <span>Giờ</span>
@@ -439,23 +439,35 @@ export function TimelineKtvView({
           {/* Time Grid Rows & Absolute Cards */}
           <div className="relative">
             {/* Live Current Time Line (if viewing today) */}
-            {selectedDateStr === todayStr && (
-              <div className="absolute left-0 right-0 top-[260px] z-30 pointer-events-none flex items-center">
-                <span className="bg-rose-600 text-white font-black text-[9px] px-2 py-0.5 rounded-r-md shadow-md">
-                  {currentTimeStr}
-                </span>
-                <div className="h-0.5 flex-1 bg-rose-500 shadow-sm" />
-                <div className="w-2.5 h-2.5 rounded-full bg-rose-600 -ml-1 border-2 border-white" />
-              </div>
-            )}
+            {selectedDateStr === todayStr && (() => {
+              const nowMinutes = parseTimeMinutes(currentTimeStr);
+              const gridStartMinutes = 8 * 60; // 08:00
+              const gridEndMinutes = 18 * 60 + 30; // 18:30
+              if (nowMinutes < gridStartMinutes || nowMinutes > gridEndMinutes) return null;
+
+              const currentTop = Math.floor(((nowMinutes - gridStartMinutes) / 30) * 72);
+
+              return (
+                <div
+                  style={{ top: `${currentTop}px` }}
+                  className="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
+                >
+                  <span className="bg-rose-600 text-white font-black text-[9px] px-2 py-0.5 rounded-r-md shadow-md">
+                    {currentTimeStr}
+                  </span>
+                  <div className="h-0.5 flex-1 bg-rose-500 shadow-sm" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-rose-600 -ml-1 border-2 border-white" />
+                </div>
+              );
+            })()}
 
             {timeSlots.map((time, idx) => (
               <div 
                 key={idx} 
-                className="grid border-b border-slate-100 min-h-[52px]"
-                style={{ gridTemplateColumns: `100px 220px repeat(${activeKtvs.length}, minmax(200px, 1fr))` }}
+                className="grid border-b border-slate-100 h-[72px]"
+                style={{ gridTemplateColumns: `100px repeat(${activeKtvs.length + 1}, minmax(220px, 1fr))` }}
               >
-                <div className="p-2 border-r border-slate-200 text-[11px] font-bold text-slate-400 bg-slate-50/40">
+                <div className="p-2 border-r border-slate-200 text-[11px] font-bold text-slate-400 bg-slate-50/40 flex items-start pt-2">
                   {time}
                 </div>
                 <div className="border-r border-slate-200 bg-slate-50/20" />
@@ -475,14 +487,19 @@ export function TimelineKtvView({
               const totalCount = Number(session.bookings?.total_sessions) || 15;
               const isCompleted = session.status === 'completed';
 
-              // Calculate Y position based on time
+              // Calculate Y position based on time & duration
               const preferredTime = session.assigned_time || session.bookings?.preferred_time || '09:00';
               const startMinutes = parseTimeMinutes(preferredTime);
               const gridStartMinutes = 8 * 60; // 08:00
-              const rowHeight = 52; // height per 30 mins
-              const topOffset = Math.max(10, Math.floor(((startMinutes - gridStartMinutes) / 30) * rowHeight));
+              const rowHeight = 72; // height per 30 mins (spacious spacing)
+              const topOffset = Math.max(0, Math.floor(((startMinutes - gridStartMinutes) / 30) * rowHeight));
+
+              // Standard care session duration is 60 minutes (2 slots = 144px - 8px margin = 136px)
+              const durationMinutes = 60;
+              const cardHeight = Math.max(rowHeight - 6, Math.floor((durationMinutes / 30) * rowHeight) - 8);
 
               const isUnassigned = !getAssignedKtvId(session);
+              const totalCols = activeKtvs.length + 1;
 
               return (
                 <div
@@ -490,11 +507,12 @@ export function TimelineKtvView({
                   onClick={() => onSelectBooking(session)}
                   style={{
                     top: `${topOffset}px`,
-                    left: `calc(100px + ${colIndex} * ((100% - 100px) / ${activeKtvs.length + 1}))`,
-                    width: `calc((100% - 100px) / ${activeKtvs.length + 1} - 8px)`,
+                    height: `${cardHeight}px`,
+                    left: `calc(100px + ${colIndex} * ((100% - 100px) / ${totalCols}) + 4px)`,
+                    width: `calc((100% - 100px) / ${totalCols} - 8px)`,
                   }}
                   className={cn(
-                    "absolute p-3 rounded-2xl shadow-md cursor-pointer transition-all hover:scale-[1.02] hover:z-40 border z-10",
+                    "absolute p-3 rounded-2xl shadow-md cursor-pointer transition-all hover:scale-[1.02] hover:z-40 border z-10 overflow-hidden flex flex-col justify-between",
                     isUnassigned
                       ? "bg-amber-50 border-2 border-amber-300 text-slate-900"
                       : isCompleted
@@ -502,18 +520,20 @@ export function TimelineKtvView({
                       : "bg-blue-600 text-white border-blue-500"
                   )}
                 >
-                  <div className="flex justify-between items-start text-[10px] font-bold opacity-90">
-                    <span>{preferredTime}</span>
-                    <span>#{session.bookings?.booking_number || session.booking_id.slice(0, 8)}</span>
+                  <div>
+                    <div className="flex justify-between items-start text-[10px] font-bold opacity-90">
+                      <span>{preferredTime}</span>
+                      <span>#{session.bookings?.booking_number || session.booking_id.slice(0, 8)}</span>
+                    </div>
+                    <h5 className="font-black text-xs mt-1 truncate">
+                      {getCustomerName(session)}
+                    </h5>
+                    <p className="text-[10px] font-medium opacity-80 truncate">{getPackageName(session)}</p>
                   </div>
-                  <h5 className="font-black text-xs mt-1 truncate">
-                    {getCustomerName(session)}
-                  </h5>
-                  <p className="text-[10px] font-medium opacity-80 truncate">{getPackageName(session)}</p>
                   
-                  <div className="flex items-center justify-between mt-2 text-[9px] font-black">
+                  <div className="flex items-center justify-between mt-1 text-[9px] font-black">
                     <span className={cn(
-                      "px-2 py-0.5 rounded-md uppercase tracking-wider",
+                      "px-2 py-0.5 rounded-md uppercase tracking-wider truncate",
                       isUnassigned ? "bg-amber-200 text-amber-900" : "bg-white/20 text-white"
                     )}>
                       {isUnassigned ? 'Chưa phân KTV' : isCompleted ? 'Hoàn thành' : `Buổi ${completedCount}/${totalCount}`}

@@ -1,4 +1,4 @@
-import { checkHqAuth, getHqDashboardStats, getAllTenants } from '@/services/hq-actions';
+import { checkHqAuth, getHqDashboardPayload } from '@/services/hq-actions';
 import { redirect } from 'next/navigation';
 import HqDashboardClient from './hq-dashboard-client';
 import { HqDashboardStats, HqTenantRecord } from '@/types/domain';
@@ -19,8 +19,9 @@ export default async function HqPage() {
   let stats: HqDashboardStats;
   let tenants: HqTenantRecord[] = [];
   try {
-    stats = await getHqDashboardStats();
-    tenants = await getAllTenants() as unknown as HqTenantRecord[];
+    const payload = await getHqDashboardPayload();
+    stats = payload.stats;
+    tenants = payload.tenants;
   } catch (error) {
     console.error('Error loading HQ data:', error);
     // Fallback default structure to prevent layout crash

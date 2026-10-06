@@ -476,8 +476,27 @@ const bellaSpaProduct: ProductDefinition = {
   navigationProfile: 'spa'
 };
 
+/**
+ * Bella Preschool Product Definition.
+ *
+ * @remarks
+ * Preschool product identity for tenant classification and routing. It enables
+ * the existing Education product surface without modifying the frozen Education
+ * Kernel or creating a new Education contract.
+ */
+const bellaPreschoolProduct: ProductDefinition = {
+  productKey: 'bella_preschool',
+  displayName: 'Bella Preschool',
+  subtitle: 'Preschool Management',
+  requiredModules: ['bella_education'],
+  serviceProfile: 'preschool',
+  defaultRoute: '/dashboard/education',
+  navigationProfile: 'education'
+};
+
 // Register products
 productRegistry.register(bellaHaircutProduct);
 productRegistry.register(bellaBabycareProduct);
 productRegistry.register(bellaNailProduct);
 productRegistry.register(bellaSpaProduct);
+productRegistry.register(bellaPreschoolProduct);

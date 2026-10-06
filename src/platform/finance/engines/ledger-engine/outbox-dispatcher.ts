@@ -35,7 +35,7 @@ interface OutboxRow {
   id: string;
   tenant_id: string;
   event_type: string;
-  payload: string;
+  payload: unknown;
   status: 'PENDING' | 'DISPATCHED' | 'FAILED';
   retry_count: number;
   error?: string | null;
@@ -229,8 +229,10 @@ export class OutboxDispatcher {
    * Parses the raw JSON payload string into a typed FinanceOutboxPayload.
    * Throws if parsing fails or required fields are missing.
    */
-  private parsePayload(payloadStr: string): FinanceOutboxPayload {
-    const raw: unknown = JSON.parse(payloadStr);
+  private parsePayload(payload: unknown): FinanceOutboxPayload {
+    const raw: unknown = typeof payload === 'string'
+      ? JSON.parse(payload)
+      : payload;
 
     if (typeof raw !== 'object' || raw === null) {
       throw new Error('OUTBOX_INVALID_PAYLOAD: payload must be a JSON object');
@@ -253,11 +255,17 @@ export class OutboxDispatcher {
     }
 
     return {
-      eventType: typeof obj.eventType === 'string' ? obj.eventType : '',
-      tenantId: typeof obj.tenantId === 'string' ? obj.tenantId : '',
+      eventType: typeof obj.eventType === 'string'
+        ? obj.eventType
+        : (typeof obj.event_type === 'string' ? obj.event_type : ''),
+      tenantId: typeof obj.tenantId === 'string'
+        ? obj.tenantId
+        : (typeof obj.tenant_id === 'string' ? obj.tenant_id : ''),
       aggregateId,
       aggregateType,
-      eventVersion: typeof obj.eventVersion === 'string' ? obj.eventVersion : undefined,
+      eventVersion: typeof obj.eventVersion === 'string'
+        ? obj.eventVersion
+        : (typeof obj.event_version === 'string' ? obj.event_version : undefined),
       userId: typeof obj.userId === 'string' ? obj.userId : undefined,
       correlationId: typeof obj.correlationId === 'string' ? obj.correlationId : undefined,
       data: typeof obj.data === 'object' && obj.data !== null

@@ -35,6 +35,7 @@ type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type StaffLeaveUpdate = Database['public']['Tables']['staff_leaves']['Update'];
 type UserRow = Database['public']['Tables']['users']['Row'];
+type TenantProductIdentityRow = Pick<Database['public']['Tables']['tenants']['Row'], 'product_key'>;
 
 type MonthlyAttendanceKtv = Pick<
   UserRow,
@@ -71,8 +72,9 @@ type BranchAccessResult =
   | { success: true; context: BranchAccessContext | null }
   | { success: false; error: string };
 
-const ATTENDANCE_BRANCH_REL_TYPES = ['belongs_to', 'manages', 'participates_in'];
 const TENANT_WIDE_BRANCH_ROLES = new Set(['admin', 'super_admin']);
+const ATTENDANCE_BRANCH_REL_TYPES = ['belongs_to', 'manages', 'participates_in'];
+const LEGACY_BRANCHLESS_ATTENDANCE_PRODUCT_KEYS = new Set(['bella_babycare']);
 
 function getErrorMessage(error: unknown, fallback = 'Lá»—i há»‡ thá»‘ng') {
   if (error instanceof Error) return error.message;
@@ -115,6 +117,21 @@ async function resolveAttendanceBranchAccess(
   branchId?: string | null,
 ): Promise<BranchAccessResult> {
   if (!branchId) {
+    const { data: tenantIdentity, error: tenantIdentityError } = await supabase
+      .from('tenants')
+      .select('product_key')
+      .eq('id', tenantId)
+      .maybeSingle();
+
+    if (tenantIdentityError) {
+      return { success: false, error: tenantIdentityError.message };
+    }
+
+    const productKey = (tenantIdentity as TenantProductIdentityRow | null)?.product_key;
+    if (productKey && LEGACY_BRANCHLESS_ATTENDANCE_PRODUCT_KEYS.has(productKey)) {
+      return { success: true, context: null };
+    }
+
     return resolveSingleStaffBranchContext({
       supabase,
       tenantId,

@@ -10,6 +10,7 @@ import {
   type TenantEnabledModules,
   type TenantPrimaryBusinessModuleKey,
 } from '@/lib/business-rules/tenant-modules';
+import { productRegistry } from '@/platform/registry/product-registry';
 import { checkHqAuth } from './hq-actions';
 import type { Database } from '@/types/database.types';
 
@@ -23,8 +24,22 @@ type AdminAuthClient = {
 };
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
 type RegisterTenantBusinessModule = TenantPrimaryBusinessModuleKey;
+type RegisterTenantProductKey =
+  | 'bella_babycare'
+  | 'bella_spa'
+  | 'bella_haircut'
+  | 'bella_nail'
+  | 'bella_preschool';
 
-const BEAUTY_SPA_HQ_ONLY_ERROR = 'Chỉ Admin HQ mới được setup tenant Beauty Spa.';
+const PRODUCT_HQ_ONLY_ERROR = 'Chỉ Admin HQ mới được setup tenant sản phẩm này.';
+
+const PRODUCT_MODULE_MAP: Record<RegisterTenantProductKey, RegisterTenantBusinessModule> = {
+  bella_babycare: 'babycare',
+  bella_spa: 'beauty_spa',
+  bella_haircut: 'beauty_spa',
+  bella_nail: 'beauty_spa',
+  bella_preschool: 'bella_education',
+};
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Lỗi không xác định xảy ra';
@@ -56,6 +71,7 @@ export interface RegisterTenantInput {
   adminPassword?: string;
   branchType?: 'owned' | 'franchise';
   businessModule?: RegisterTenantBusinessModule;
+  productKey?: RegisterTenantProductKey;
   brandName?: string;
   logoUrl?: string;
   primaryColor?: string;
@@ -65,20 +81,44 @@ export interface RegisterTenantInput {
 }
 
 function normalizeBusinessModule(value: unknown): RegisterTenantBusinessModule {
+  if (value === 'bella_education') return 'bella_education';
   return value === 'beauty_spa' ? 'beauty_spa' : 'babycare';
 }
 
-function getEnabledModulesForBusinessModule(moduleKey: RegisterTenantBusinessModule): TenantEnabledModules {
-  return moduleKey === 'beauty_spa'
-    ? { babycare: false, beauty_spa: true, student_training: false, industrial_cleaning: false, real_estate: false, bella_auto: false, bella_healthcare: false, bella_education: false }
-    : { babycare: true, beauty_spa: false, student_training: false, industrial_cleaning: false, real_estate: false, bella_auto: false, bella_healthcare: false, bella_education: false };
+function normalizeProductKey(
+  productKey: unknown,
+  businessModule: unknown,
+): RegisterTenantProductKey {
+  if (typeof productKey === 'string' && productRegistry.has(productKey)) {
+    if (productKey in PRODUCT_MODULE_MAP) {
+      return productKey as RegisterTenantProductKey;
+    }
+  }
+
+  const moduleKey = normalizeBusinessModule(businessModule);
+  if (moduleKey === 'beauty_spa') return 'bella_spa';
+  if (moduleKey === 'bella_education') return 'bella_preschool';
+  return 'bella_babycare';
 }
 
-async function assertBusinessModuleSetupAllowed(moduleKey: RegisterTenantBusinessModule) {
-  if (moduleKey === 'babycare') return null;
+function getEnabledModulesForBusinessModule(moduleKey: RegisterTenantBusinessModule): TenantEnabledModules {
+  return {
+    babycare: moduleKey === 'babycare',
+    beauty_spa: moduleKey === 'beauty_spa',
+    student_training: false,
+    industrial_cleaning: false,
+    real_estate: false,
+    bella_auto: false,
+    bella_healthcare: false,
+    bella_education: moduleKey === 'bella_education',
+  };
+}
+
+async function assertProductSetupAllowed(productKey: RegisterTenantProductKey) {
+  if (productKey === 'bella_babycare') return null;
 
   const hqAuth = await checkHqAuth();
-  return hqAuth.authorized ? null : BEAUTY_SPA_HQ_ONLY_ERROR;
+  return hqAuth.authorized ? null : PRODUCT_HQ_ONLY_ERROR;
 }
 
 /**
@@ -93,10 +133,11 @@ export async function registerNewTenant(input: RegisterTenantInput) {
     if (!input.spaName || !input.adminName || !input.adminEmail) {
       return { success: false, error: 'Vui lòng điền đầy đủ các thông tin bắt buộc.' };
     }
-    const businessModule = normalizeBusinessModule(input.businessModule);
-    const businessModuleAuthError = await assertBusinessModuleSetupAllowed(businessModule);
-    if (businessModuleAuthError) {
-      return { success: false, error: businessModuleAuthError };
+    const productKey = normalizeProductKey(input.productKey, input.businessModule);
+    const businessModule = PRODUCT_MODULE_MAP[productKey];
+    const productAuthError = await assertProductSetupAllowed(productKey);
+    if (productAuthError) {
+      return { success: false, error: productAuthError };
     }
 
     // 2. Auth SignUp
@@ -212,11 +253,13 @@ export async function registerNewTenant(input: RegisterTenantInput) {
     }
 
     // 3.1. Update HQ-managed tenant setup fields after the base onboarding RPC.
-    const postOnboardingUpdate: TenantUpdate = {};
-    if (businessModule === 'beauty_spa') {
-      postOnboardingUpdate.enabled_modules = toTenantModuleJson(
+    const postOnboardingUpdate: TenantUpdate = {
+      product_key: productKey,
+      enabled_modules: toTenantModuleJson(
         getEnabledModulesForBusinessModule(businessModule),
-      );
+      ),
+    };
+    if (businessModule === 'beauty_spa') {
       const brandTheme = normalizeTenantBrandThemeForModule({
         brandName: input.brandName || input.spaName,
         logoUrl: input.logoUrl,
@@ -248,7 +291,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
         console.error('[registerNewTenant] Post-onboarding tenant setup update failed:', updateError.message);
         const setupLabel = input.branchType === 'franchise'
           ? 'cấu hình nhượng quyền'
-          : 'module ngành Beauty Spa';
+          : 'cấu hình sản phẩm tenant';
         return { success: false, error: `Lỗi cập nhật ${setupLabel}: ${updateError.message}` };
       }
     }
@@ -266,6 +309,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
           contact_phone: input.contactPhone,
           address: input.address,
           email: input.email,
+          product_key: productKey,
           business_module: businessModule,
           enabled_modules: getEnabledModulesForBusinessModule(businessModule),
         }
