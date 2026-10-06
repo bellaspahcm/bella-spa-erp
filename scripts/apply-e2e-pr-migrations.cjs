@@ -4,11 +4,32 @@ const { basename } = require('node:path');
 const { Client } = require('pg');
 
 const MIGRATION_PATH = /^supabase\/migrations\/(\d{14})_(.+)\.sql$/;
+const FOUNDATION_ORG_PEOPLE_SCHEMA_MIGRATION =
+  'supabase/migrations/20260801030000_foundation_org_people_schema.sql';
 const BLUEPRINT_CORE_SCHEMA_MIGRATION = 'supabase/migrations/20260806000000_blueprint_core_schema.sql';
 const EDUCATION_SCHEMA_MIGRATION = 'supabase/migrations/20260812060000_create_education_schema.sql';
 const EDUCATION_ENROLLMENT_RPC_MIGRATION = 'supabase/migrations/20260813000040_create_enrollment_transaction_rpc.sql';
 const PRESCHOOL_GUARDIAN_AUTHORIZATION_MIGRATION =
   'supabase/migrations/20260927010000_preschool_guardian_pickup_authorizations.sql';
+const USER_ORG_UNIT_ACCESS_PROJECTION_MIGRATION =
+  'supabase/migrations/20260914_create_user_org_unit_access_projection.sql';
+const PLATFORM_RULE_DOMAIN_TYPE_SQL = `
+DO $$ BEGIN
+  CREATE TYPE public.platform_rule_domain AS ENUM (
+    'spa.booking',
+    'spa.commission',
+    'spa.notification',
+    'finance.commission',
+    'finance.payment',
+    'hr.payroll',
+    'notification.routing',
+    'crm.sla',
+    'bella_auto.sales',
+    'babycare.booking',
+    'platform.system'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+`;
 
 function parseArgs(argv) {
   const baseIndex = argv.indexOf('--base');
@@ -143,6 +164,21 @@ async function functionExists(client, schemaName, functionName) {
   return result.rowCount > 0;
 }
 
+async function typeExists(client, schemaName, typeName) {
+  const result = await client.query(
+    `
+      SELECT 1
+      FROM pg_type t
+      JOIN pg_namespace n ON n.oid = t.typnamespace
+      WHERE n.nspname = $1
+        AND t.typname = $2
+      LIMIT 1
+    `,
+    [schemaName, typeName],
+  );
+  return result.rowCount > 0;
+}
+
 function needsEducationRuntimeBaseline(migrations) {
   return migrations.some((migration) => (
     migration.sql.includes('public.edu_courses')
@@ -156,6 +192,12 @@ function needsPreschoolAdmissionBaseline(migrations) {
 }
 
 async function canonicalMigrationIsNeeded(client, file) {
+  if (file === FOUNDATION_ORG_PEOPLE_SCHEMA_MIGRATION) {
+    return !(await relationExists(client, 'public', 'org_units'))
+      || !(await relationExists(client, 'public', 'org_relationships'))
+      || !(await relationExists(client, 'public', 'people_directory'));
+  }
+
   if (file === BLUEPRINT_CORE_SCHEMA_MIGRATION) {
     return !(await relationExists(client, 'public', 'party_parties'));
   }
@@ -175,7 +217,23 @@ async function canonicalMigrationIsNeeded(client, file) {
     return !(await relationExists(client, 'public', 'edu_preschool_pickup_authorizations'));
   }
 
+  if (file === USER_ORG_UNIT_ACCESS_PROJECTION_MIGRATION) {
+    return !(await relationExists(client, 'public', 'user_org_unit_access'));
+  }
+
   throw new Error(`Unsupported E2E baseline repair migration: ${file}`);
+}
+
+async function ensurePlatformRuleDomainType(client) {
+  if (await typeExists(client, 'public', 'platform_rule_domain')) {
+    return;
+  }
+
+  console.log(
+    'Repairing isolated E2E baseline with canonical type public.platform_rule_domain '
+    + 'from migration 20260808000012 (create_rule_engine_tables): required by Education enrollment RPC.',
+  );
+  await client.query(PLATFORM_RULE_DOMAIN_TYPE_SQL);
 }
 
 async function applyCanonicalBaselineMigration(client, file, reason) {
@@ -199,6 +257,11 @@ async function ensureRequiredE2eBaseline(client, migrations) {
   if (needsEducationRuntimeBaseline(migrations)) {
     await applyCanonicalBaselineMigration(
       client,
+      FOUNDATION_ORG_PEOPLE_SCHEMA_MIGRATION,
+      'required by canonical Platform branch/org-unit dependencies',
+    );
+    await applyCanonicalBaselineMigration(
+      client,
       BLUEPRINT_CORE_SCHEMA_MIGRATION,
       'required by canonical Education student party dependency',
     );
@@ -207,6 +270,7 @@ async function ensureRequiredE2eBaseline(client, migrations) {
       EDUCATION_SCHEMA_MIGRATION,
       'required by canonical Education course/enrollment dependencies',
     );
+    await ensurePlatformRuleDomainType(client);
     await applyCanonicalBaselineMigration(
       client,
       EDUCATION_ENROLLMENT_RPC_MIGRATION,
@@ -219,6 +283,11 @@ async function ensureRequiredE2eBaseline(client, migrations) {
       client,
       PRESCHOOL_GUARDIAN_AUTHORIZATION_MIGRATION,
       'required by Preschool admission guardian authorization flow',
+    );
+    await applyCanonicalBaselineMigration(
+      client,
+      USER_ORG_UNIT_ACCESS_PROJECTION_MIGRATION,
+      'required by Platform branch authorization read-back',
     );
   }
 }
