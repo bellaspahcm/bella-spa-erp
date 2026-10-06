@@ -39,7 +39,11 @@ class UserOrgUnitAccessQuery {
     try {
       await client.query('BEGIN');
       await client.query(
-        "SELECT set_config('app.current_user_id', $1, true), set_config('app.current_tenant_id', $2, true)",
+        `SELECT
+           set_config('app.current_user_id', $1, true),
+           set_config('app.current_tenant_id', $2, true),
+           set_config('request.jwt.claim.sub', $1, true),
+           set_config('request.jwt.claim.role', 'authenticated', true)`,
         [userId, tenantId],
       );
       const result = await client.query(
