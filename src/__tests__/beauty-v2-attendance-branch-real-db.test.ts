@@ -6,6 +6,7 @@ import { getSupabaseAdminKey, getSupabaseAdminUrl, requireSupabaseAdminEnv } fro
 import { ktvCheckIn, ktvCheckOut } from '@/services/attendance-actions';
 import type { Database } from '@/types/database.types';
 import { runRealDbSql } from './utils/real-db-sql';
+import { createUserOrgUnitAccessRuntimeClient } from './utils/user-org-unit-access-runtime-client';
 
 jest.mock('server-only', () => ({}), { virtual: true });
 jest.mock('next/cache', () => ({
@@ -26,7 +27,6 @@ type CurrentUserStub = {
 
 let supabase: SupabaseClient<Database>;
 let adminSupabase: SupabaseClient<Database>;
-let ktvSupabase: SupabaseClient<Database>;
 let mockCurrentUser: CurrentUserStub | null = null;
 
 jest.mock('@/services/user-actions', () => ({
@@ -66,18 +66,6 @@ function requireUuid(value: string, label: string): string {
   return value;
 }
 
-function createRuntimeWriterClient(): SupabaseClient<Database> {
-  const client = {
-    auth: ktvSupabase.auth,
-    from: (table: string) => (
-      table === 'user_org_unit_access' ? ktvSupabase : adminSupabase
-    ).from(table as keyof Database['public']['Tables'] & keyof Database['public']['Views']),
-    rpc: (...args: Parameters<SupabaseClient<Database>['rpc']>) => adminSupabase.rpc(...args),
-  };
-
-  return client as unknown as SupabaseClient<Database>;
-}
-
 describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
   const marker = `beauty-v2-attendance-${Date.now()}`;
   const tenantId = randomUUID();
@@ -90,7 +78,6 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
   const personId = randomUUID();
   const relationshipId = randomUUID();
   const email = `${marker}-ktv@example.test`;
-  const password = `${randomUUID()}A1!`;
   let ktvUserId = '';
 
   const today = new Intl.DateTimeFormat('en-CA', {
@@ -141,11 +128,6 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-    if (!anonKey) {
-      throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY is required for attendance branch proof');
-    }
-
     adminSupabase = createSupabaseClient<Database>(url, adminKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
@@ -153,22 +135,14 @@ describeWithRealSupabase('Beauty V2 Attendance branch Real DB proof', () => {
 
     const authUser = await supabase.auth.admin.createUser({
       email,
-      password,
+      password: randomUUID(),
       email_confirm: true,
     });
     if (authUser.error || !authUser.data.user) {
       throw new Error(`auth user fixture failed: ${authUser.error?.message ?? 'missing auth user'}`);
     }
     ktvUserId = authUser.data.user.id;
-
-    ktvSupabase = createSupabaseClient<Database>(url, anonKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const ktvSignIn = await ktvSupabase.auth.signInWithPassword({ email, password });
-    if (ktvSignIn.error) {
-      throw new Error(`ktv auth sign-in failed: ${ktvSignIn.error.message}`);
-    }
-    supabase = createRuntimeWriterClient();
+    supabase = createUserOrgUnitAccessRuntimeClient(adminSupabase, { tenantId, userId: ktvUserId });
 
     await cleanupStep('tenant insert', supabase.from('tenants').insert([
       {

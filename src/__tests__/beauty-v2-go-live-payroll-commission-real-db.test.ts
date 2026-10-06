@@ -7,6 +7,7 @@ import { getSupabaseAdminKey, getSupabaseAdminUrl, requireSupabaseAdminEnv } fro
 import type { Database } from '@/types/database.types';
 import { createAuthenticatedClient } from '../../tests/utils/test-jwt-helper';
 import { runRealDbSql } from './utils/real-db-sql';
+import { createUserOrgUnitAccessRuntimeClient } from './utils/user-org-unit-access-runtime-client';
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
@@ -54,21 +55,6 @@ function requireUuid(value: string, label: string): string {
   return value;
 }
 
-function createRuntimeWriterClient(
-  adminSupabase: SupabaseClient<Database>,
-  accessSupabase: SupabaseClient<Database>,
-): SupabaseClient<Database> {
-  const client = {
-    auth: accessSupabase.auth,
-    from: (table: string) => (
-      table === 'user_org_unit_access' ? accessSupabase : adminSupabase
-    ).from(table as keyof Database['public']['Tables'] & keyof Database['public']['Views']),
-    rpc: (...args: Parameters<SupabaseClient<Database>['rpc']>) => adminSupabase.rpc(...args),
-  };
-
-  return client as unknown as SupabaseClient<Database>;
-}
-
 jest.mock('@/lib/supabase-dev-bypass-server', () => ({
   createDevelopmentBypassClient: jest.fn(async () => supabaseForRuntime),
 }));
@@ -78,7 +64,6 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
   const adminEmail = `${marker}-admin@example.test`;
   const ktvEmail = `${marker}-ktv@example.test`;
   const otherEmail = `${marker}-other@example.test`;
-  const ktvPassword = `${randomUUID()}A1!`;
   const customerId = randomUUID();
   const bookingId = randomUUID();
   const sessionId = randomUUID();
@@ -103,7 +88,6 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
   let adminUserId = '';
   let ktvUserId = '';
   let otherUserId = '';
-  let ktvSupabase: SupabaseClient<Database>;
 
   async function ensureTenant(name: string) {
     const existing = await supabase
@@ -216,18 +200,10 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-    if (!anonKey) {
-      throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY is required for payroll branch proof');
-    }
-
     supabase = createSupabaseClient<Database>(url, adminKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     supabaseForRuntime = supabase;
-    ktvSupabase = createSupabaseClient<Database>(url, anonKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
     tenantId = await ensureTenant('Beauty V2 Go Live Payroll Proof Tenant');
     otherTenantId = await ensureTenant('Beauty V2 Go Live Payroll Proof Other Tenant');
     await cleanup();
@@ -258,22 +234,9 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
     expect(tenantUpdate.error).toBeNull();
 
     adminUserId = await createAuthUser(adminEmail);
-    const ktvAuth = await supabase.auth.admin.createUser({
-      email: ktvEmail,
-      password: ktvPassword,
-      email_confirm: true,
-    });
-    if (ktvAuth.error || !ktvAuth.data.user) {
-      throw new Error(`auth user fixture failed for ${ktvEmail}: ${ktvAuth.error?.message ?? 'missing auth user'}`);
-    }
-    ktvUserId = ktvAuth.data.user.id;
+    ktvUserId = await createAuthUser(ktvEmail);
     otherUserId = await createAuthUser(otherEmail);
-    const ktvSignIn = await ktvSupabase.auth.signInWithPassword({
-      email: ktvEmail,
-      password: ktvPassword,
-    });
-    if (ktvSignIn.error) throw new Error(`ktv auth sign-in failed: ${ktvSignIn.error.message}`);
-    supabaseForRuntime = createRuntimeWriterClient(supabase, ktvSupabase);
+    supabaseForRuntime = createUserOrgUnitAccessRuntimeClient(supabase, { tenantId, userId: ktvUserId });
 
     const userInsert = await supabase.from('users').upsert([
       {
