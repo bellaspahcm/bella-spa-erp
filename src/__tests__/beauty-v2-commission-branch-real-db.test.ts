@@ -78,6 +78,7 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
   const nullBranchKtvEmail = `${marker}-null@example.test`;
   const multiBranchKtvEmail = `${marker}-multi@example.test`;
   let supabase: SeedClient;
+  let successWriterSupabase: SeedClient;
   let successKtvId = '';
   let mismatchKtvId = '';
   let nullBranchKtvId = '';
@@ -223,7 +224,7 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
 
   async function createServiceSourceViaWriter(ktvId: string, bookingId: string, amount: number) {
     const result = await createBookingServiceItems({
-      supabase,
+      supabase: successWriterSupabase,
       booking: {
         id: bookingId,
         tenant_id: tenantId,
@@ -452,7 +453,7 @@ describeWithRealSupabase('Beauty V2 Commission branch Real DB proof', () => {
     await selectExistingProofTenants();
 
     successKtvId = await createAuthUser(successKtvEmail);
-    const successWriterSupabase = createUserOrgUnitAccessRuntimeClient(supabase, {
+    successWriterSupabase = createUserOrgUnitAccessRuntimeClient(supabase, {
       tenantId,
       userId: successKtvId,
     });
