@@ -140,13 +140,23 @@ describeWithRealDb('Haircut P4.7 F3 debt real DB diagnostic', () => {
       [FINANCE_RECEIVABLE_SEMANTICS.TRADE_RECEIVABLE, '131'],
       [FINANCE_RECEIVABLE_SEMANTICS.SERVICE_REVENUE, '511'],
     ] as const) {
-      const { error } = await supabase.rpc('finance_save_accounting_semantic_gl_mapping', {
-        p_tenant_id: tenantId,
-        p_semantic_key: semanticKey,
-        p_account_code: accountCode,
-        p_effective_from: '2026-01-01',
-        p_authority_version: 'VI_TT99_2025|99/2025/TT-BTC|PROVEN',
-      });
+      const deleteResult = await supabase
+        .from('finance_control_account_mappings')
+        .delete()
+        .eq('tenant_id', tenantId)
+        .eq('control_type', semanticKey);
+      expect(deleteResult.error).toBeNull();
+
+      const { error } = await supabase
+        .from('finance_control_account_mappings')
+        .insert({
+          tenant_id: tenantId,
+          control_type: semanticKey,
+          account_code: accountCode,
+          effective_from: '2026-01-01',
+          effective_to: null,
+          authority_version: 'VI_TT99_2025|99/2025/TT-BTC|PROVEN',
+        });
       expect(error).toBeNull();
     }
   }

@@ -3475,10 +3475,10 @@ Targeted verification for this CI remediation:
 
 # ARCHITECTURE GATE RESULT — BELLA FINANCE OS KERNEL F1
 
-> **Status:** APPROVED BY HUMAN ARCHITECT  
-> **Milestone:** Phase F1.1 & F1.2 Initialization  
-> **Author:** Architecture Review AI (Antigravity)  
-> **Date:** 2026-08-15  
+> **Status:** APPROVED BY HUMAN ARCHITECT
+> **Milestone:** Phase F1.1 & F1.2 Initialization
+> **Author:** Architecture Review AI (Antigravity)
+> **Date:** 2026-08-15
 
 ---
 
@@ -4170,3 +4170,168 @@ No migration. No production data mutation.
 - Gate 9 Secret Hygiene: no credentials touched.
 - Gate 10 Targeted Regression: static source guard for dashboard HQ redirect.
 - Gate 11 Type Safety: run targeted Jest and type-focused verification as available.
+
+---
+
+## Additional Architecture Gate - Timeline KTV Presentation Alignment
+
+> **Status:** PASS
+> **Date:** 2026-10-06
+> **Scope:** Presentation Layer (`TimelineKtvView.tsx`) - synchronize timeline grid slot heights, card positioning, card height, and live current-time line position.
+
+### 1. Bella OS/Product Development Process Gate
+- **Constitution:** Bella AI Coding Constitution (`docs/governance/BELLA_AI_CODING_CONSTITUTION.md`) read before source modification.
+- **Truth / Evidence:** Timeline cards used time-derived positioning that no longer matched the visible row height, causing misalignment in the daily KTV schedule view.
+- **Source of Truth:** `TimelineSession` read DTO plus the existing timeline UI layout contract.
+- **Canonical Contract:** Presentation layer reads `assigned_time` / `preferred_time` and renders it without changing booking/session persistence.
+- **Gate Result:** `PASS`.
+
+### 2. Product Manifest
+- **Product:** Bella Spa ERP (`/dashboard/bookings` timeline view).
+- **Capability:** Daily schedule timeline visualization.
+- **Scope:** UI-only alignment for row height, card top offset, card height, and current-time line.
+
+### 3. Ownership Map
+- **Data Owner:** Beauty OS / Bella Spa booking and session services.
+- **UI Owner:** `src/app/dashboard/sessions/components/TimelineKtvView.tsx`.
+
+### 4. Contract Dependency Map
+`Product UI (TimelineKtvView)` -> `TimelineSession DTO` -> read-only booking/session data.
+
+### 5. Change Authority
+- Authorized layer: presentation layer only.
+- Not authorized and not modified: database schema, service contracts, Product Registry, Healthcare H1-H12, Logistics E7.
+
+### 6. UI -> Contract Reconciliation
+| UI Element | UI Expectation | Canonical Contract | Conclusion |
+|---|---|---|---|
+| Card time offset | Card `top` matches assigned/preferred time | `TimelineSession.assigned_time` / `bookings.preferred_time` | `MATCH` |
+| Timeline row height | Spacious 30-minute rows | UI layout constant | `UI FIX` |
+| Card height | Session card fits standard care duration | Presentation math only | `UI FIX` |
+| Live time line | Current-time indicator follows live clock | `currentTimeStr` | `UI FIX` |
+
+### 7. Additive Migration Plan
+No migration.
+
+### 8. 11 Automated Verification Gates Plan
+1. Verify no data/API/schema contract changes.
+2. Verify row height and card offset use the same slot scale.
+3. Verify card height does not overflow compact content.
+4. Verify current-time line uses the same time scale.
+5. Verify text remains truncated inside card bounds.
+6. Verify no Healthcare/Logistics frozen files touched.
+7. Verify `git diff --check`.
+8. Verify targeted lint where available.
+9. Verify booking/session DTO access remains read-only.
+10. Verify merge conflict markers absent.
+11. Verify final PR checks after push.
+
+### Conclusion
+`PASS`
+
+---
+
+## 2026-10-06 Runtime CSS Scan Gate
+
+### 1. Bella OS/Product Development Process Gate
+- **Constitution:** `docs/governance/BELLA_AI_CODING_CONSTITUTION.md` read before source modification.
+- **Problem:** Local Next.js dev server loads slowly, hangs, and crashes during Tailwind/PostCSS compilation.
+- **Truth / Evidence:** Fresh `.next` rebuild failed with `src/app/globals.css` generated CSS parse error from a corrupted arbitrary utility token `.p-[...]`; repository binary scan evidence showed matching `p-[...]` byte sequences inside tracked binary artifacts such as PNG/APK assets.
+- **Source of Truth:** Tailwind v4 source detection contract and observed dev-server compiler output.
+- **Canonical Contract:** Tailwind should scan application source files for utility classes, not root-level binary assets, APKs, logs, or generated artifacts.
+- **Gate Result:** `PASS`.
+
+### 2. Product Manifest
+- **Product:** Bella ERP web app.
+- **Capability:** Global CSS / Tailwind utility generation.
+- **Scope:** Tooling/presentation build configuration only.
+- **Non-goals:** No Product identity change, no UI redesign, no domain/API/schema/auth change.
+
+### 3. Ownership Map
+- **Owner:** Shared Web UI / frontend build surface.
+- **Runtime Owner:** Next.js + Tailwind CSS build pipeline.
+
+### 4. Contract Dependency Map
+`src/app/globals.css` -> Tailwind CSS v4 source detection -> generated utility CSS -> Next.js app layout.
+
+### 5. Change Authority
+- Authorized layers: frontend build/style source detection.
+- Not authorized and not modified: Platform Core, Product Registry, Beauty OS, Healthcare H1-H12, Logistics E7, database migrations, API contracts.
+
+### 6. UI -> Contract Reconciliation
+- No data-bound or action-bound UI element is changed.
+- Visual semantics are unchanged; only scanner input scope is corrected.
+
+### 7. Additive Migration Plan
+No migration.
+
+### 8. 11 Automated Verification Gates Plan
+1. Confirm root cause via dev-server compiler output.
+2. Confirm offending class-like tokens appear in non-source binary/tracked artifacts.
+3. Apply minimal Tailwind source scope correction.
+4. Rebuild local `.next` from clean cache.
+5. Verify `/`, `/login`, `/dashboard`, and `/api/tenant/context` respond.
+6. Verify dev server remains running after route requests.
+7. Verify no Healthcare/Logistics frozen files touched.
+8. Verify `git diff --check`.
+9. Verify targeted lint where available.
+10. Report remaining auth/session warnings separately from CSS compile status.
+11. Verify final PR checks after push.
+
+### Conclusion
+`PASS`
+
+---
+
+## 2026-10-06 HQ Local Load Gate
+
+### 1. Bella OS/Product Development Process Gate
+- **Constitution:** `docs/governance/BELLA_AI_CODING_CONSTITUTION.md` read before source modification.
+- **Problem:** `/hq` did not load reliably in local dev. Server log showed `/hq` requests taking 74-76s in application code, with many `hq-actions` per-tenant customer/staff/revenue warnings and Supabase/Cloudflare 522 timeouts.
+- **Truth / Evidence:** `src/app/hq/page.tsx` called `checkHqAuth()`, `getHqDashboardStats()`, and `getAllTenants()` sequentially. `getHqDashboardStats()` and `getAllTenants()` each called `checkHqAuth()` again. `getAllTenants()` performed three aggregate queries per tenant.
+- **Source of Truth:** HQ server action code and observed dev-server request timings.
+- **Canonical Contract:** `/hq` must return HQ dashboard stats plus tenant rows shaped as `HqDashboardStats` and `HqTenantRecord[]`; the UI contract does not require one remote query per tenant.
+- **Gate Result:** `PASS`.
+
+### 2. Product Manifest
+- **Product:** Bella HQ Portal.
+- **Capability:** Read-only HQ dashboard load.
+- **Scope:** Server-side read aggregation performance and duplicate-auth removal.
+- **Non-goals:** No HQ permissions change, no tenant status mutation change, no schema/API/RLS change, no financial semantics change.
+
+### 3. Ownership Map
+- **Owner:** Platform/HQ portal server actions.
+- **Data Owners:** Existing `tenants`, `users`, `customers`, `revenue`, `session_logs`, and `bookings` tables.
+- **Consumer:** `src/app/hq/page.tsx` and `HqDashboardClient`.
+
+### 4. Contract Dependency Map
+`/hq` -> `checkHqAuth()` -> `getHqDashboardPayload()` -> existing Supabase tables -> `HqDashboardClient`.
+
+### 5. Change Authority
+- Authorized layers: HQ read action orchestration and route data loading.
+- Not authorized and not modified: database schema, Product Registry, Healthcare H1-H12, Logistics E7, write actions, tenant authorization rules.
+
+### 6. UI -> Contract Reconciliation
+| UI Element | UI Expectation | Canonical Contract | Backend Reality | Conclusion |
+|---|---|---|---|---|
+| HQ KPI cards | `HqDashboardStats` | Existing stats shape | Same fields preserved | `MATCH` |
+| Branch table counts | `staffCount`, `customerCount`, `revenueSum` | `HqTenantRecord[]` | Same fields populated via bulk read | `MATCH` |
+
+### 7. Additive Migration Plan
+No migration.
+
+### 8. 11 Automated Verification Gates Plan
+1. Verify `/hq` no longer performs duplicate page-level auth.
+2. Verify tenant rows preserve `staffCount/customerCount/revenueSum`.
+3. Verify dashboard stats preserve existing fields.
+4. Verify unauthenticated behavior remains redirect to `/hq/login`.
+5. Verify no write action semantics changed.
+6. Verify no Healthcare/Logistics frozen files touched.
+7. Verify local `/hq` response timing improves.
+8. Verify `/login` and `/dashboard` still respond.
+9. Verify targeted HQ action tests.
+10. Verify dev server remains running after `/hq`.
+11. Classify external Supabase timeout as environment dependency if it recurs.
+
+### Conclusion
+`PASS`

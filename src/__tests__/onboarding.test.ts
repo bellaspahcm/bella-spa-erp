@@ -1,5 +1,5 @@
 /**
- * Tests for Branch Onboarding, Owned vs Franchise Selection, and post-onboarding updates.
+ * Tests for Tenant Onboarding, Product Selection, and post-onboarding updates.
  * Mocks: next/cache, @sentry/nextjs, @/lib/supabase-server, and audit actions.
  */
 
@@ -78,7 +78,7 @@ const mockCreateSupabaseJsClient = createSupabaseJsClient as jest.Mock;
 const mockCreateUser = jest.fn();
 const mockDeleteUser = jest.fn();
 
-describe('Branch Onboarding System (Owned vs Franchise)', () => {
+describe('Tenant Onboarding System (Product Selection)', () => {
   let tenantQueryMock: MockQueryBuilder;
 
   beforeEach(() => {
@@ -127,7 +127,7 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
   });
 
-  it('should successfully onboard an Owned branch without updating franchise details', async () => {
+  it('should successfully onboard a BabyCare tenant with explicit product identity', async () => {
     const input = {
       spaName: 'Bella Spa Quận 2',
       contactPhone: '0912345678',
@@ -136,7 +136,8 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
       adminName: 'Vy Nguyễn',
       adminEmail: 'vy.nguyen@bellaspa.vn',
       adminPassword: 'Password123!',
-      branchType: 'owned' as const,
+      productKey: 'bella_babycare' as const,
+      businessModule: 'babycare' as const,
     };
 
     const result = await registerNewTenant(input);
@@ -151,13 +152,21 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
       p_admin_name: 'Vy Nguyễn',
     }));
 
-    // Verify that the table was NOT updated (since it is owned, not franchise)
-    expect(mockFrom).not.toHaveBeenCalledWith('tenants');
-    expect(tenantQueryMock.updateSpy).not.toHaveBeenCalled();
+    expect(mockFrom).toHaveBeenCalledWith('tenants');
+    expect(tenantQueryMock.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      product_key: 'bella_babycare',
+      enabled_modules: expect.objectContaining({ babycare: true, beauty_spa: false, bella_education: false }),
+    }));
+    expect(tenantQueryMock.eqSpy).toHaveBeenCalledWith('id', 'mock-tenant-id-123');
     expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       action: 'INSERT',
       table_name: 'tenants',
       record_id: 'mock-tenant-id-123',
+      new_data: expect.objectContaining({
+        product_key: 'bella_babycare',
+        business_module: 'babycare',
+        enabled_modules: expect.objectContaining({ babycare: true, beauty_spa: false, bella_education: false }),
+      }),
     }));
     expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard');
     expect(mockRecordAuditLog.mock.invocationCallOrder[0]).toBeLessThan(
@@ -180,13 +189,13 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
       adminName: 'Beauty Admin',
       adminEmail: 'beauty.admin@external.vn',
       adminPassword: 'Password123!',
-      branchType: 'owned',
+      productKey: 'bella_spa',
       businessModule: 'beauty_spa',
     });
 
     expect(result).toEqual({
       success: false,
-      error: 'Chỉ Admin HQ mới được setup tenant Beauty Spa.',
+      error: 'Chỉ Admin HQ mới được setup tenant sản phẩm này.',
     });
     expect(mockCheckHqAuth).toHaveBeenCalledTimes(1);
     expect(mockCreateUser).not.toHaveBeenCalled();
@@ -205,7 +214,7 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
       adminName: 'Beauty Admin',
       adminEmail: 'beauty.admin@spa.vn',
       adminPassword: 'Password123!',
-      branchType: 'owned',
+      productKey: 'bella_spa',
       businessModule: 'beauty_spa',
     });
 
@@ -213,6 +222,7 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
     expect(mockCheckHqAuth).toHaveBeenCalledTimes(1);
     expect(mockFrom).toHaveBeenCalledWith('tenants');
     expect(tenantQueryMock.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      product_key: 'bella_spa',
       enabled_modules: expect.objectContaining({ babycare: false, beauty_spa: true, student_training: false, industrial_cleaning: false, real_estate: false }),
     }));
     expect(tenantQueryMock.updateSpy).not.toHaveBeenCalledWith(expect.objectContaining({
@@ -221,11 +231,69 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
     expect(tenantQueryMock.eqSpy).toHaveBeenCalledWith('id', 'mock-tenant-id-123');
     expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       new_data: expect.objectContaining({
+        product_key: 'bella_spa',
         business_module: 'beauty_spa',
         enabled_modules: expect.objectContaining({ babycare: false, beauty_spa: true, student_training: false, industrial_cleaning: false, real_estate: false }),
       }),
     }));
     expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('should map Haircut, Nail, and Preschool product keys to their required modules', async () => {
+    const cases = [
+      {
+        productKey: 'bella_haircut' as const,
+        businessModule: 'beauty_spa' as const,
+        enabled: { beauty_spa: true, babycare: false, bella_education: false },
+      },
+      {
+        productKey: 'bella_nail' as const,
+        businessModule: 'beauty_spa' as const,
+        enabled: { beauty_spa: true, babycare: false, bella_education: false },
+      },
+      {
+        productKey: 'bella_preschool' as const,
+        businessModule: 'bella_education' as const,
+        enabled: { beauty_spa: false, babycare: false, bella_education: true },
+      },
+    ];
+
+    for (const item of cases) {
+      jest.clearAllMocks();
+      tenantQueryMock = new MockQueryBuilder({ success: true });
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'tenants') return tenantQueryMock;
+        return new MockQueryBuilder();
+      });
+      mockCheckHqAuth.mockResolvedValue({
+        authorized: true,
+        user: { id: 'hq-admin-1', role: 'admin', tenant_id: 'hq-tenant' },
+      });
+
+      const result = await registerNewTenant({
+        spaName: `${item.productKey} Tenant`,
+        contactPhone: '0912345678',
+        address: '123 Product',
+        email: `${item.productKey}@tenant.vn`,
+        adminName: 'Product Admin',
+        adminEmail: `${item.productKey}.admin@tenant.vn`,
+        adminPassword: 'Password123!',
+        productKey: item.productKey,
+      });
+
+      expect(result.success).toBe(true);
+      expect(tenantQueryMock.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+        product_key: item.productKey,
+        enabled_modules: expect.objectContaining(item.enabled),
+      }));
+      expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+        new_data: expect.objectContaining({
+          product_key: item.productKey,
+          business_module: item.businessModule,
+          enabled_modules: expect.objectContaining(item.enabled),
+        }),
+      }));
+    }
   });
 
   it('should successfully onboard a Franchise branch and update agreement date and royalty type', async () => {

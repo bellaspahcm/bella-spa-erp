@@ -98,7 +98,9 @@ describe('HQ actions data loading', () => {
     mockFrom
       .mockReturnValueOnce(new MockQueryBuilder({ product_key: 'bella_hq' }, null))
       .mockReturnValueOnce(new MockQueryBuilder([hqTenant, branchTenant], null))
-      .mockReturnValueOnce(new MockQueryBuilder([{ amount: 1000000 }], null))
+      .mockReturnValueOnce(new MockQueryBuilder([{ tenant_id: 'branch-1' }], null))
+      .mockReturnValueOnce(new MockQueryBuilder([{ tenant_id: 'branch-1' }], null))
+      .mockReturnValueOnce(new MockQueryBuilder([{ tenant_id: 'branch-1', amount: 1000000 }], null))
       .mockReturnValueOnce(new MockQueryBuilder(null, null, 7))
       .mockReturnValueOnce(new MockQueryBuilder(null, null, 3));
 
@@ -118,8 +120,14 @@ describe('HQ actions data loading', () => {
       .mockReturnValueOnce(new MockQueryBuilder({ product_key: 'bella_hq' }, null))
       .mockReturnValueOnce(new MockQueryBuilder([hqTenant], null))
       .mockReturnValueOnce(new MockQueryBuilder(null, { message: 'staff count failed' }))
-      .mockReturnValueOnce(new MockQueryBuilder(null, null, 5))
-      .mockReturnValueOnce(new MockQueryBuilder([{ amount: 1000000 }], null));
+      .mockReturnValueOnce(new MockQueryBuilder([
+        { tenant_id: 'hq-tenant' },
+        { tenant_id: 'hq-tenant' },
+        { tenant_id: 'hq-tenant' },
+        { tenant_id: 'hq-tenant' },
+        { tenant_id: 'hq-tenant' },
+      ], null))
+      .mockReturnValueOnce(new MockQueryBuilder([{ tenant_id: 'hq-tenant', amount: 1000000 }], null));
 
     const tenants = await getAllTenants();
     expect(tenants[0].staffCount).toBe(0);
