@@ -4,6 +4,10 @@ const { basename } = require('node:path');
 const { Client } = require('pg');
 
 const MIGRATION_PATH = /^supabase\/migrations\/(\d{14})_(.+)\.sql$/;
+const EDUCATION_SCHEMA_MIGRATION = 'supabase/migrations/20260812060000_create_education_schema.sql';
+const EDUCATION_ENROLLMENT_RPC_MIGRATION = 'supabase/migrations/20260813000040_create_enrollment_transaction_rpc.sql';
+const PRESCHOOL_GUARDIAN_AUTHORIZATION_MIGRATION =
+  'supabase/migrations/20260927010000_preschool_guardian_pickup_authorizations.sql';
 
 function parseArgs(argv) {
   const baseIndex = argv.indexOf('--base');
@@ -100,6 +104,115 @@ async function recordMigration(client, migration) {
   );
 }
 
+async function relationExists(client, schemaName, relationName) {
+  const result = await client.query(
+    'SELECT to_regclass($1) IS NOT NULL AS exists',
+    [`${schemaName}.${relationName}`],
+  );
+  return result.rows[0]?.exists === true;
+}
+
+async function columnExists(client, schemaName, tableName, columnName) {
+  const result = await client.query(
+    `
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = $1
+        AND table_name = $2
+        AND column_name = $3
+      LIMIT 1
+    `,
+    [schemaName, tableName, columnName],
+  );
+  return result.rowCount > 0;
+}
+
+async function functionExists(client, schemaName, functionName) {
+  const result = await client.query(
+    `
+      SELECT 1
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = $1
+        AND p.proname = $2
+      LIMIT 1
+    `,
+    [schemaName, functionName],
+  );
+  return result.rowCount > 0;
+}
+
+function needsEducationRuntimeBaseline(migrations) {
+  return migrations.some((migration) => (
+    migration.sql.includes('public.edu_courses')
+    || migration.sql.includes('public.edu_enrollments')
+    || migration.sql.includes('preschool_chain_')
+  ));
+}
+
+function needsPreschoolAdmissionBaseline(migrations) {
+  return migrations.some((migration) => migration.sql.includes('preschool_chain_'));
+}
+
+async function canonicalMigrationIsNeeded(client, file) {
+  if (file === EDUCATION_SCHEMA_MIGRATION) {
+    return !(await relationExists(client, 'public', 'edu_courses'))
+      || !(await relationExists(client, 'public', 'edu_enrollments'));
+  }
+
+  if (file === EDUCATION_ENROLLMENT_RPC_MIGRATION) {
+    return !(await columnExists(client, 'public', 'edu_courses', 'current_enrollment'))
+      || !(await columnExists(client, 'public', 'edu_enrollments', 'request_id'))
+      || !(await functionExists(client, 'public', 'edu_enroll_student_v3'));
+  }
+
+  if (file === PRESCHOOL_GUARDIAN_AUTHORIZATION_MIGRATION) {
+    return !(await relationExists(client, 'public', 'edu_preschool_pickup_authorizations'));
+  }
+
+  throw new Error(`Unsupported E2E baseline repair migration: ${file}`);
+}
+
+async function applyCanonicalBaselineMigration(client, file, reason) {
+  if (!(await canonicalMigrationIsNeeded(client, file))) {
+    return;
+  }
+
+  const migration = parseMigration(file);
+  const recorded = await hasRecordedMigration(client, migration.version);
+  const historyState = recorded ? 'recorded migration history exists' : 'migration history missing';
+  console.log(
+    `Repairing isolated E2E baseline with canonical migration ${migration.version} (${migration.name}): `
+    + `${reason}; ${historyState}.`,
+  );
+
+  await client.query(migration.sql);
+  await recordMigration(client, migration);
+}
+
+async function ensureRequiredE2eBaseline(client, migrations) {
+  if (needsEducationRuntimeBaseline(migrations)) {
+    await applyCanonicalBaselineMigration(
+      client,
+      EDUCATION_SCHEMA_MIGRATION,
+      'required by canonical Education course/enrollment dependencies',
+    );
+    await applyCanonicalBaselineMigration(
+      client,
+      EDUCATION_ENROLLMENT_RPC_MIGRATION,
+      'required by canonical Education enrollment idempotency RPC',
+    );
+  }
+
+  if (needsPreschoolAdmissionBaseline(migrations)) {
+    await applyCanonicalBaselineMigration(
+      client,
+      PRESCHOOL_GUARDIAN_AUTHORIZATION_MIGRATION,
+      'required by Preschool admission guardian authorization flow',
+    );
+  }
+}
+
 async function applyMigration(client, migration) {
   if (await hasRecordedMigration(client, migration.version)) {
     console.log(`Skipping already-recorded E2E migration ${migration.version} (${migration.name}).`);
@@ -143,8 +256,10 @@ async function main() {
   await client.connect();
   try {
     await ensureMigrationHistory(client);
-    for (const file of files) {
-      await applyMigration(client, parseMigration(file));
+    const migrations = files.map((file) => parseMigration(file));
+    await ensureRequiredE2eBaseline(client, migrations);
+    for (const migration of migrations) {
+      await applyMigration(client, migration);
     }
   } finally {
     await client.end();
@@ -159,6 +274,8 @@ if (require.main === module) {
 }
 
 module.exports = {
+  canonicalMigrationIsNeeded,
+  ensureRequiredE2eBaseline,
   listChangedMigrationFiles,
   parseMigration,
 };
