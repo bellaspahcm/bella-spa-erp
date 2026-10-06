@@ -4,6 +4,7 @@ const { basename } = require('node:path');
 const { Client } = require('pg');
 
 const MIGRATION_PATH = /^supabase\/migrations\/(\d{14})_(.+)\.sql$/;
+const BLUEPRINT_CORE_SCHEMA_MIGRATION = 'supabase/migrations/20260806000000_blueprint_core_schema.sql';
 const EDUCATION_SCHEMA_MIGRATION = 'supabase/migrations/20260812060000_create_education_schema.sql';
 const EDUCATION_ENROLLMENT_RPC_MIGRATION = 'supabase/migrations/20260813000040_create_enrollment_transaction_rpc.sql';
 const PRESCHOOL_GUARDIAN_AUTHORIZATION_MIGRATION =
@@ -155,6 +156,10 @@ function needsPreschoolAdmissionBaseline(migrations) {
 }
 
 async function canonicalMigrationIsNeeded(client, file) {
+  if (file === BLUEPRINT_CORE_SCHEMA_MIGRATION) {
+    return !(await relationExists(client, 'public', 'party_parties'));
+  }
+
   if (file === EDUCATION_SCHEMA_MIGRATION) {
     return !(await relationExists(client, 'public', 'edu_courses'))
       || !(await relationExists(client, 'public', 'edu_enrollments'));
@@ -192,6 +197,11 @@ async function applyCanonicalBaselineMigration(client, file, reason) {
 
 async function ensureRequiredE2eBaseline(client, migrations) {
   if (needsEducationRuntimeBaseline(migrations)) {
+    await applyCanonicalBaselineMigration(
+      client,
+      BLUEPRINT_CORE_SCHEMA_MIGRATION,
+      'required by canonical Education student party dependency',
+    );
     await applyCanonicalBaselineMigration(
       client,
       EDUCATION_SCHEMA_MIGRATION,
