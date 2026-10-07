@@ -4,7 +4,13 @@ import { motion } from 'framer-motion';
 import { Baby, Building2, GraduationCap, Mail, MapPin, Paintbrush, Phone, RefreshCw, Scissors, Sparkles, User, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
-type TenantProductKey = 'bella_babycare' | 'bella_spa' | 'bella_haircut' | 'bella_nail' | 'bella_preschool';
+type TenantProductKey =
+  | 'bella_babycare'
+  | 'bella_spa'
+  | 'bella_haircut'
+  | 'bella_nail'
+  | 'bella_preschool'
+  | 'bella_english_center';
 
 export type HqBranchRegistrationInput = {
   spaName: string;
@@ -65,6 +71,13 @@ const productOptions: Array<{
     businessModule: 'bella_education',
     label: 'Preschool',
     description: 'Trường mầm non, vận hành giáo dục',
+    icon: GraduationCap,
+  },
+  {
+    productKey: 'bella_english_center',
+    businessModule: 'bella_education',
+    label: 'English Center',
+    description: 'Trung tâm tiếng Anh, lớp học, học phí',
     icon: GraduationCap,
   },
 ];

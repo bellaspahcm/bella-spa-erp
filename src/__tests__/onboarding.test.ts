@@ -50,6 +50,7 @@ type MockQueryResult = {
 class MockQueryBuilder {
   public data: unknown;
   public error: unknown;
+  public insertSpy = jest.fn().mockReturnThis();
   public updateSpy = jest.fn().mockReturnThis();
   public eqSpy = jest.fn().mockReturnThis();
 
@@ -60,6 +61,7 @@ class MockQueryBuilder {
 
   select() { return this; }
   eq(...args: unknown[]) { this.eqSpy(...args); return this; }
+  insert(...args: unknown[]) { this.insertSpy(...args); return this; }
   update(...args: unknown[]) { this.updateSpy(...args); return this; }
 
   then(onfulfilled: (value: MockQueryResult) => unknown) {
@@ -80,6 +82,7 @@ const mockDeleteUser = jest.fn();
 
 describe('Tenant Onboarding System (Product Selection)', () => {
   let tenantQueryMock: MockQueryBuilder;
+  let orgUnitQueryMock: MockQueryBuilder;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -105,11 +108,14 @@ describe('Tenant Onboarding System (Product Selection)', () => {
           deleteUser: mockDeleteUser,
         },
       },
+      from: mockFrom,
     });
 
     tenantQueryMock = new MockQueryBuilder({ success: true });
+    orgUnitQueryMock = new MockQueryBuilder({ success: true });
     mockFrom.mockImplementation((table: string) => {
       if (table === 'tenants') return tenantQueryMock;
+      if (table === 'org_units') return orgUnitQueryMock;
       return new MockQueryBuilder();
     });
 
@@ -205,6 +211,36 @@ describe('Tenant Onboarding System (Product Selection)', () => {
     expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
   });
 
+  it('should block English Center onboarding outside Admin HQ before auth and database writes', async () => {
+    mockCheckHqAuth.mockResolvedValueOnce({
+      authorized: false,
+      error: 'Trang này chỉ dành cho quản trị viên Tổng bộ.',
+    });
+
+    const result = await registerNewTenant({
+      spaName: 'English Center External',
+      contactPhone: '0912345678',
+      address: '123 English',
+      email: 'english@external.vn',
+      adminName: 'English Admin',
+      adminEmail: 'english.admin@external.vn',
+      adminPassword: 'Password123!',
+      productKey: 'bella_english_center',
+      businessModule: 'bella_education',
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Chỉ Admin HQ mới được setup tenant sản phẩm này.',
+    });
+    expect(mockCheckHqAuth).toHaveBeenCalledTimes(1);
+    expect(mockCreateUser).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
   it('should allow Admin HQ to onboard a Beauty Spa tenant locked to Beauty Spa only', async () => {
     const result = await registerNewTenant({
       spaName: 'Beauty Spa Premium',
@@ -256,13 +292,20 @@ describe('Tenant Onboarding System (Product Selection)', () => {
         businessModule: 'bella_education' as const,
         enabled: { beauty_spa: false, babycare: false, bella_education: true },
       },
+      {
+        productKey: 'bella_english_center' as const,
+        businessModule: 'bella_education' as const,
+        enabled: { beauty_spa: false, babycare: false, bella_education: true },
+      },
     ];
 
     for (const item of cases) {
       jest.clearAllMocks();
       tenantQueryMock = new MockQueryBuilder({ success: true });
+      orgUnitQueryMock = new MockQueryBuilder({ success: true });
       mockFrom.mockImplementation((table: string) => {
         if (table === 'tenants') return tenantQueryMock;
+        if (table === 'org_units') return orgUnitQueryMock;
         return new MockQueryBuilder();
       });
       mockCheckHqAuth.mockResolvedValue({
@@ -294,6 +337,43 @@ describe('Tenant Onboarding System (Product Selection)', () => {
         }),
       }));
     }
+  });
+
+  it('should create a default Platform branch when Admin HQ onboards English Center', async () => {
+    const result = await registerNewTenant({
+      spaName: 'English Center HQ Runtime',
+      contactPhone: '0912345678',
+      address: '123 English Runtime',
+      email: 'english.runtime@tenant.vn',
+      adminName: 'English Runtime Admin',
+      adminEmail: 'english.runtime.admin@tenant.vn',
+      adminPassword: 'Password123!',
+      productKey: 'bella_english_center',
+      businessModule: 'bella_education',
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockFrom).toHaveBeenCalledWith('org_units');
+    expect(orgUnitQueryMock.insertSpy).toHaveBeenCalledWith(expect.objectContaining({
+      tenant_id: 'mock-tenant-id-123',
+      unit_type: 'branch',
+      name: 'English Center HQ Runtime',
+      code: 'MAIN',
+      is_active: true,
+      metadata: expect.objectContaining({
+        source: 'hq_onboarding',
+        productKey: 'bella_english_center',
+        address: '123 English Runtime',
+        phone: '0912345678',
+        email: 'english.runtime@tenant.vn',
+      }),
+    }));
+    expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      new_data: expect.objectContaining({
+        product_key: 'bella_english_center',
+        business_module: 'bella_education',
+      }),
+    }));
   });
 
   it('should successfully onboard a Franchise branch and update agreement date and royalty type', async () => {
