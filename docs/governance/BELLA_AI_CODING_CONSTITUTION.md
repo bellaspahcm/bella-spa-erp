@@ -94,6 +94,63 @@ Before changing a field, type, schema, relation, query, API, RPC, DTO, domain mo
 
 Only then modify code.
 
+### Business Semantic Gate
+
+Before any AI Agent implements or creates tests for business-critical behavior, it must produce a business semantic proof that is independent from the current implementation.
+
+The proof must identify:
+
+```text
+Business invariant
+Canonical source of truth
+Public contract
+Domain semantic
+Persistence semantic
+Expected positive behavior
+Expected negative behavior
+Tenant / authorization invariant when relevant
+Evidence source
+```
+
+The AI Agent must not derive business truth solely from:
+
+```text
+existing implementation
+existing tests
+database columns
+naming conventions
+foreign keys without semantic resolution
+inferred relationships
+```
+
+Existing code can be evidence of current behavior, but it is not enough to prove intended business semantics.
+
+If authoritative evidence is insufficient:
+
+```text
+BUSINESS_SEMANTICS = NOT_PROVEN
+```
+
+STOP.
+
+Do not implement.
+
+Do not create a passing test to establish the semantic.
+
+For business-critical tests, the agent must first state a Business Test Contract:
+
+```text
+Business rule
+Canonical source
+Expected invariant
+Positive case
+Negative case
+Tenant / authorization invariant when relevant
+Evidence source
+```
+
+The expected values in that contract must come from approved business invariants, canonical contracts, canonical data sources, authoritative fixtures, or approved architectural decisions.
+
 The complete Bella reasoning model is:
 
 ```text
@@ -1209,6 +1266,31 @@ When production code is corrected to the canonical contract, fixtures and mocks 
 
 Do not revert production to an obsolete contract merely because old tests fail.
 
+## 16A. Tests Must Be Independent From Implementation
+
+A test must not use the implementation under test as the source of truth for its expected result.
+
+Expected values must come from:
+
+```text
+approved business invariant
+canonical contract
+canonical data source
+authoritative fixture
+approved architectural decision
+```
+
+Do not write expectations such as:
+
+```text
+expected = repositoryMappedValue
+actual   = repositoryResult
+```
+
+when the repository, mapper, service, or consumer is the behavior being tested.
+
+For business-critical mappings, the expected value must be derived from the canonical semantic source. For example, a Laboratory result patient link must be checked against the patient of the canonical clinical order, not against a value reconstructed by the Laboratory repository being tested.
+
 ## 17. Test Doubles Must Model the Boundary They Replace
 
 Database mocks that cover multiple tables must be table-aware. Do not let `.from('anything')` return the same fixture for every table.
@@ -1311,6 +1393,7 @@ frozen scope
 contract gap or contract drift
 generated artifact
 DB / RLS / business contract
+business semantic not proven
 core-adjacent boundary
 governance-required decision
 ```
@@ -1557,6 +1640,7 @@ Fix requires unapproved compatibility alias or public contract expansion
 Residual cleanup crosses a classified residual-boundary record
 UI requires an unverified status, action, KPI, or workflow
 New business semantics would need to be invented
+Business semantic proof is insufficient or only derived from implementation/tests
 Execution environment cannot satisfy the test contract
 Verification evidence is stale or unavailable
 ```
