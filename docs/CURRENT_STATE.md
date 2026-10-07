@@ -11,12 +11,12 @@ update_trigger: "Sau mỗi architecture milestone"
 # BELLA PLATFORM — CURRENT STATE
 ### Trạng thái kiến trúc thực tế (không phải kế hoạch)
 
-> **Last Verified:** 2026-10-07 00:00 ICT
-> **Source of Truth:** Code + DB migrations + committed evidence docs + read-only product identity audit
-> **⚠️ Nguyên tắc:** File này phản ánh thực tế codebase, không phải tài liệu mong muốn.  
+> **Last Verified:** 2026-10-07 18:10 ICT
+> **Source of Truth:** Code + DB migrations + committed evidence docs + targeted test results
+> **⚠️ Nguyên tắc:** File này phản ánh thực tế codebase, không phải tài liệu mong muốn.
 > Mọi mục có dấu `?` hoặc `⚠️` là **chưa được xác minh tự động** và cần kiểm tra lại.
 
-> **2026-10-07 audit boundary:** Current product status below is read-only source/doc evidence. No fresh runtime gates, CI jobs, Real DB suites, browser smoke, or production deployment checks were executed for this update. Historical evidence is kept only with its original scope and date.
+> **2026-10-07 audit boundary:** The product identity map was refreshed from source/doc evidence. English Center is the targeted exception in this update: HQ runtime proof was executed and sealed at commit `7004f8349`. Whole-repo CI, production deployment checks, and unrelated product gates were not rerun by this file update.
 
 ---
 
@@ -66,7 +66,7 @@ tenant.product_key
 | `bella_haircut` | Bella Haircut Shop | `beauty_spa` | `/dashboard` | Registered runtime identity. Haircut chain seal is SEALED; focused Real DB integration boundary set is PROVEN. Production go-live status is not changed by that evidence. |
 | `bella_nail` | Bella Nail Shop | `beauty_spa` | `/dashboard/nail` | Registered runtime identity. Nail chain seal is SEALED by product-specific Real DB proof. Payroll/finance/go-live remain separate scopes. |
 | `bella_preschool` | Bella Preschool | `bella_education` | `/dashboard/education` | Registered runtime identity. Preschool Chain Real DB proof is sealed in current evidence history; broader Education architecture debt remains separate. |
-| `bella_english_center` | Bella English Center | `bella_education` | `/dashboard/english-center` | Registered runtime identity. Product identity chain is PROVEN by focused registry tests; operational chain is NOT_PROVEN in this worktree without fresh Real DB/browser evidence. |
+| `bella_english_center` | Bella English Center | `bella_education` | `/dashboard/english-center` | ✅ GO-LIVE READY for current canonical boundary: identity, operational chain, Real DB, browser E2E, HQ onboarding, HQ runtime create flow, HQ → branch → product, and tuition finance contract proven. Evidence commit: `7004f8349`. |
 
 ### Product / Vertical Surfaces Not In ProductRegistry
 
@@ -90,9 +90,10 @@ bella_haircut
 bella_nail
 bella_babycare
 bella_preschool
+bella_english_center
 ```
 
-`bella_english_center` is registered in `ProductRegistry`, but is not yet exposed in the current HQ tenant registration selection or onboarding product map. Treat this as product-identity/onboarding drift, not as an English Center business capability failure.
+`bella_english_center` is registered in `ProductRegistry` and exposed in HQ tenant registration selection/onboarding product map. Focused HQ runtime proof at commit `7004f8349` verifies HQ login → English Center selection → tenant creation → `tenant.product_key = bella_english_center` → default branch → English admin branch access.
 
 ---
 
@@ -430,6 +431,47 @@ Constitution: docs/architecture/EDUCATION_VERTICAL_CODING_CONSTITUTION.md
 
 > Education OS đang active development — chưa có freeze milestone.
 
+### Education Product — Bella English Center
+
+```
+BELLA ENGLISH CENTER
+────────────────────────────────────────────────────────────
+Canonical Product:       bella_english_center
+Product Identity:        ✅ PROVEN
+Operational Chain:       ✅ PROVEN
+Real Database:           ✅ PASS
+Browser E2E:             ✅ PROVEN
+Tenant Isolation:        ✅ PROVEN for tested boundary
+HQ Onboarding Code:      ✅ PROVEN
+HQ Runtime Create Flow:  ✅ PROVEN
+HQ → Branch → Product:   ✅ PROVEN
+Finance Tuition:         ✅ PASS for current tuition contract
+Overall:                 ✅ GO-LIVE READY
+Last Verified:           2026-10-07
+Evidence Commit:         7004f8349
+```
+
+#### English Center — Current Evidence
+
+| Boundary | Status | Evidence |
+|---|---|---|
+| Product registry/resolver | ✅ PROVEN | Focused registry/resolver tests: 73/73 |
+| Operational chain | ✅ PROVEN | English Center post-RC chain evidence baseline |
+| Real DB | ✅ PASS | `test:english-center-post-rc-real-db` |
+| Browser E2E | ✅ PROVEN | English Center post-RC browser validation: 2/2 |
+| HQ onboarding code | ✅ PROVEN | `onboarding.test.ts`: 11/11 |
+| HQ runtime create flow | ✅ PROVEN | `e2e/tests/32-english-center-hq-runtime.spec.ts`: 1/1 |
+| HQ → Branch → Product | ✅ PROVEN | HQ creates English tenant, `product_key=bella_english_center`, default `org_units` branch, admin `user_org_unit_access`, command-center HTTP 200 |
+| Finance tuition contract | ✅ PASS | Tuition billing contract test: 8/8 |
+
+#### English Center — Non-Claims
+
+```
+Legal Accounting: NOT_REQUIRED / no blocker identified for current tuition contract
+Backup / Restore: NOT English-specific blocker identified
+Healthcare / Logistics Kernel: NOT TOUCHED
+```
+
 ---
 
 ## 🏢 REAL ESTATE OS
@@ -484,14 +526,13 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  BELLA PLATFORM — ARCHITECTURE STATUS (2026-10-07 READ-ONLY)     │
+│  BELLA PLATFORM — ARCHITECTURE STATUS (2026-10-07 18:10 ICT)     │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  Platform Core     ✅ OPERATIONAL                                │
 │                                                                  │
 │  Product Identity  ✅ 6 canonical registry products              │
-│                    ⚠️ English Center registry exists but HQ      │
-│                    onboarding product selection not yet exposed  │
+│                    ✅ English Center HQ onboarding/runtime proven │
 │                    ⚠️ Medical/Dental/Hospital/Land/Auto are      │
 │                    code/route surfaces, not ProductRegistry keys │
 │                                                                  │
@@ -512,6 +553,9 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 │                    ⚠️ Layer 3 (git hook) + Layer 4 (CI) TODO    │
 │                                                                  │
 │  Education OS      🟡 ACTIVE DEVELOPMENT                        │
+│    → English Center ✅ GO-LIVE READY                             │
+│                    Identity/Chain/Real DB/Browser/HQ runtime     │
+│                    proven at commit 7004f8349                    │
 │                                                                  │
 │  Real Estate OS    🟢 IMPLEMENTED                               │
 │                                                                  │
@@ -523,7 +567,6 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 │  ACTIONS REQUIRED                                                │
 │                                                                  │
 │  ⚠️ VERIFY:   Fresh product gates before claiming current green  │
-│  ⚠️ RECONCILE: English Center HQ onboarding product selection   │
 │  ⚠️ CLASSIFY: Vertical surfaces vs canonical product identities │
 │  🔴 BLOCKED:  F5.6 — Human Architect provides semantic spec     │
 │  🟡 REVIEW:   Dental Phase 1 — Human Architect approval gate    │
@@ -546,7 +589,6 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 | DRIFT-004 | Healthcare — Scheduling | Coverage confirmed | Unverified | Low | HC Team |
 | DRIFT-005 | Finance F5 | 36/36 gates verified | 16/36 verified (44.4%) | Medium | Finance Team |
 | DRIFT-006 | Product identity vs vertical surfaces | Every runtime product should resolve through `tenant.product_key -> ProductRegistry` | Medical, Dental, Hospital, Land, Auto have routes/code surfaces but no ProductRegistry key | Medium | Platform/Product Architecture |
-| DRIFT-007 | English Center onboarding | Registered product should be selectable when HQ creates tenants | `bella_english_center` exists in ProductRegistry but not in HQ registration product list/map | Medium | Platform/HQ |
 | DRIFT-008 | Current verification artifact | Current dashboard should not imply fresh whole-repo green | Existing `test-results.json` is old and failed: 318 suites, 303 passed, 7 failed, 3 runtime-error, 8 pending; fresh gates not run for 2026-10-07 doc update | Medium | Platform QA |
 
 > ⚠️ Drift register là **tự khai báo** — cần được verify định kỳ với codebase thực tế.
@@ -630,6 +672,7 @@ npm run arch:guard:verbose
 
 | Date | Milestone | Changed By |
 |---|---|---|
+| 2026-10-07 18:10 ICT | English Center HQ runtime proof sealed: HQ creates English tenant, product_key, branch, admin access, and command-center runtime; current state updated to GO-LIVE READY for current canonical boundary | AI Agent |
 | 2026-10-07 00:00 ICT | Read-only product identity/runtime state refresh: 6 canonical ProductRegistry products; vertical surface drift and English Center onboarding drift recorded; no fresh runtime gates executed | AI Agent |
 | 2026-08-23 21:30 ICT | Bella Dental Phase 1 COMPLETE (5/5 documents, 2365+ lines) | AI Agent + Architecture Team |
 | 2026-08-23 20:15 ICT | Documentation Control Plane Phase 1–3 complete | AI Agent |
@@ -639,6 +682,6 @@ npm run arch:guard:verbose
 
 ---
 
-*File này phản ánh trạng thái thực tế được xác minh từ codebase tại 2026-10-07 theo audit read-only.*
+*File này phản ánh trạng thái thực tế được xác minh từ codebase tại 2026-10-07; English Center has targeted runtime proof at commit `7004f8349`.*
 *Cập nhật file này sau mỗi milestone kiến trúc quan trọng.*  
 *Nếu file này lỗi thời so với code → đó là architecture drift cần báo cáo.*
