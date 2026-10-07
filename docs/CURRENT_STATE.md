@@ -2,7 +2,7 @@
 tier: MAP
 domain: platform
 status: ACTIVE
-last_verified: "2026-08-23"
+last_verified: "2026-10-07"
 description: "Dashboard trạng thái thực tế của Bella — Kernel-level granularity"
 maintainer: "Platform Architecture Team"
 update_trigger: "Sau mỗi architecture milestone"
@@ -11,10 +11,12 @@ update_trigger: "Sau mỗi architecture milestone"
 # BELLA PLATFORM — CURRENT STATE
 ### Trạng thái kiến trúc thực tế (không phải kế hoạch)
 
-> **Last Verified:** 2026-08-23 21:30 ICT  
-> **Source of Truth:** Code + DB migrations + Test results  
+> **Last Verified:** 2026-10-07 00:00 ICT
+> **Source of Truth:** Code + DB migrations + committed evidence docs + read-only product identity audit
 > **⚠️ Nguyên tắc:** File này phản ánh thực tế codebase, không phải tài liệu mong muốn.  
 > Mọi mục có dấu `?` hoặc `⚠️` là **chưa được xác minh tự động** và cần kiểm tra lại.
+
+> **2026-10-07 audit boundary:** Current product status below is read-only source/doc evidence. No fresh runtime gates, CI jobs, Real DB suites, browser smoke, or production deployment checks were executed for this update. Historical evidence is kept only with its original scope and date.
 
 ---
 
@@ -39,6 +41,58 @@ Runtime                                ✅ IMPLEMENTED
 | Policy Engine | `src/platform/policy-engine/` | ✅ |
 | Registry | `src/platform/registry/` | ✅ |
 | Security | `src/platform/security/` | ✅ |
+
+---
+
+## 🧭 PRODUCT IDENTITY RUNTIME — CURRENT CANONICAL MAP
+
+```
+Canonical Product Identity Contract
+────────────────────────────────────────────────────────────
+tenant.product_key
+  → src/platform/registry/product-registry.ts
+  → ProductResolver
+  → UserProvider.product / PWA / dashboard consumers
+```
+
+`enabled_modules` is capability entitlement only. It is not canonical Product Identity.
+
+### Canonical Product Registry
+
+| Product key | Display name | Required module(s) | Default route | Current evidence status |
+|---|---|---|---|---|
+| `bella_spa` | Bella Beauty Spa v2 | `beauty_spa` | `/dashboard/beauty-spa-v2` | Registered runtime identity. Multiple bounded Beauty V2 proofs exist, but full customer-chain/go-live readiness must not be claimed without fresh targeted evidence. |
+| `bella_babycare` | Bella Mommy Baby Care | `babycare` | `/dashboard` | Registered runtime identity. 2026-10-06 BabyCare post-repair audit is PASS for customer/booking/calendar mapping scope only. |
+| `bella_haircut` | Bella Haircut Shop | `beauty_spa` | `/dashboard` | Registered runtime identity. Haircut chain seal is SEALED; focused Real DB integration boundary set is PROVEN. Production go-live status is not changed by that evidence. |
+| `bella_nail` | Bella Nail Shop | `beauty_spa` | `/dashboard/nail` | Registered runtime identity. Nail chain seal is SEALED by product-specific Real DB proof. Payroll/finance/go-live remain separate scopes. |
+| `bella_preschool` | Bella Preschool | `bella_education` | `/dashboard/education` | Registered runtime identity. Preschool Chain Real DB proof is sealed in current evidence history; broader Education architecture debt remains separate. |
+| `bella_english_center` | Bella English Center | `bella_education` | `/dashboard/english-center` | Registered runtime identity. Product identity chain is PROVEN by focused registry tests; operational chain is NOT_PROVEN in this worktree without fresh Real DB/browser evidence. |
+
+### Product / Vertical Surfaces Not In ProductRegistry
+
+These areas have code, routes, manifests, or vertical services, but are not canonical `tenant.product_key` products in the current `ProductRegistry` audit:
+
+| Surface | Code / route evidence | Current classification |
+|---|---|---|
+| Bella Medical Clinic | `src/products/bella-medical`, `/dashboard/medical` | Healthcare product vertical surface. Not registered as canonical Product Identity in `ProductRegistry`. |
+| Bella Dental Clinic | `src/products/bella-dental`, `/dashboard/dental` | Healthcare product vertical surface. Historical docs say Phase 1 architecture completed / Phase 2 pending review; not registered as canonical Product Identity. |
+| Bella Hospital | `src/products/bella-hospital`, `/dashboard/hospital` | Healthcare product vertical surface. Not registered as canonical Product Identity. |
+| Bella Land / Real Estate | `src/products/bella-land`, `/dashboard/real-estate` | Real Estate product/vertical surface with evidence docs, but not registered as canonical Product Identity. |
+| Bella Auto | `/dashboard/bella-auto`, `bella_auto` module routing | Module/route surface. Not registered as canonical Product Identity. |
+
+### HQ Onboarding Product Selection
+
+Current HQ registration UI and server action support product setup for:
+
+```text
+bella_spa
+bella_haircut
+bella_nail
+bella_babycare
+bella_preschool
+```
+
+`bella_english_center` is registered in `ProductRegistry`, but is not yet exposed in the current HQ tenant registration selection or onboarding product map. Treat this as product-identity/onboarding drift, not as an English Center business capability failure.
 
 ---
 
@@ -430,10 +484,16 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  BELLA PLATFORM — ARCHITECTURE STATUS (2026-08-23 21:30 ICT)     │
+│  BELLA PLATFORM — ARCHITECTURE STATUS (2026-10-07 READ-ONLY)     │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  Platform Core     ✅ OPERATIONAL                                │
+│                                                                  │
+│  Product Identity  ✅ 6 canonical registry products              │
+│                    ⚠️ English Center registry exists but HQ      │
+│                    onboarding product selection not yet exposed  │
+│                    ⚠️ Medical/Dental/Hospital/Land/Auto are      │
+│                    code/route surfaces, not ProductRegistry keys │
 │                                                                  │
 │  Healthcare OS     🔒 FROZEN      52/52 Suites GREEN             │
 │                    H1–H12 all engines present                    │
@@ -462,6 +522,9 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 ├──────────────────────────────────────────────────────────────────┤
 │  ACTIONS REQUIRED                                                │
 │                                                                  │
+│  ⚠️ VERIFY:   Fresh product gates before claiming current green  │
+│  ⚠️ RECONCILE: English Center HQ onboarding product selection   │
+│  ⚠️ CLASSIFY: Vertical surfaces vs canonical product identities │
 │  🔴 BLOCKED:  F5.6 — Human Architect provides semantic spec     │
 │  🟡 REVIEW:   Dental Phase 1 — Human Architect approval gate    │
 │  ⚠️ TODO:     Logistics Layer 3 (git hook) implementation       │
@@ -482,6 +545,9 @@ Routine: CURRENT_STATE.md update ✅ ACTIVE
 | DRIFT-003 | Healthcare — Imaging | Coverage confirmed | Unverified | Low | HC Team |
 | DRIFT-004 | Healthcare — Scheduling | Coverage confirmed | Unverified | Low | HC Team |
 | DRIFT-005 | Finance F5 | 36/36 gates verified | 16/36 verified (44.4%) | Medium | Finance Team |
+| DRIFT-006 | Product identity vs vertical surfaces | Every runtime product should resolve through `tenant.product_key -> ProductRegistry` | Medical, Dental, Hospital, Land, Auto have routes/code surfaces but no ProductRegistry key | Medium | Platform/Product Architecture |
+| DRIFT-007 | English Center onboarding | Registered product should be selectable when HQ creates tenants | `bella_english_center` exists in ProductRegistry but not in HQ registration product list/map | Medium | Platform/HQ |
+| DRIFT-008 | Current verification artifact | Current dashboard should not imply fresh whole-repo green | Existing `test-results.json` is old and failed: 318 suites, 303 passed, 7 failed, 3 runtime-error, 8 pending; fresh gates not run for 2026-10-07 doc update | Medium | Platform QA |
 
 > ⚠️ Drift register là **tự khai báo** — cần được verify định kỳ với codebase thực tế.
 
@@ -508,6 +574,16 @@ src/platform/
 ├── notification-hub/
 ├── policy-engine/
 └── [40+ other modules]
+
+src/products/
+├── beauty-spa-v2/        ← Canonical key: bella_spa
+├── nail/                 ← Canonical key: bella_nail
+├── bella-education/      ← Canonical key: bella_preschool uses /dashboard/education
+├── bella-english-center/ ← Canonical key: bella_english_center
+├── bella-medical/        ← Vertical surface; not ProductRegistry key
+├── bella-dental/         ← Vertical surface; not ProductRegistry key
+├── bella-hospital/       ← Vertical surface; not ProductRegistry key
+└── bella-land/           ← Vertical surface; not ProductRegistry key
 ```
 
 ---
@@ -554,6 +630,7 @@ npm run arch:guard:verbose
 
 | Date | Milestone | Changed By |
 |---|---|---|
+| 2026-10-07 00:00 ICT | Read-only product identity/runtime state refresh: 6 canonical ProductRegistry products; vertical surface drift and English Center onboarding drift recorded; no fresh runtime gates executed | AI Agent |
 | 2026-08-23 21:30 ICT | Bella Dental Phase 1 COMPLETE (5/5 documents, 2365+ lines) | AI Agent + Architecture Team |
 | 2026-08-23 20:15 ICT | Documentation Control Plane Phase 1–3 complete | AI Agent |
 | 2026-08-23 | F5.5 AR_GL_BALANCE FROZEN (8/8 tests PASS) | Architecture Review |
@@ -562,6 +639,6 @@ npm run arch:guard:verbose
 
 ---
 
-*File này phản ánh trạng thái thực tế được xác minh từ codebase tại 2026-08-23.*  
+*File này phản ánh trạng thái thực tế được xác minh từ codebase tại 2026-10-07 theo audit read-only.*
 *Cập nhật file này sau mỗi milestone kiến trúc quan trọng.*  
 *Nếu file này lỗi thời so với code → đó là architecture drift cần báo cáo.*
