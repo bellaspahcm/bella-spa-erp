@@ -4402,6 +4402,96 @@ No migration.
 
 ---
 
+## 2026-10-07 English Center Residual Go-Live Boundary Gate
+
+### 1. Bella OS/Product Development Process Gate
+- Constitution read before source modification: `docs/governance/BELLA_AI_CODING_CONSTITUTION.md`.
+- Education constitution read because Bella English Center is an Education product vertical boundary.
+- PR #244 baseline evidence is preserved: English Center marker-scoped Post-RC operational Real DB and Browser E2E are already recorded above and must not be rebuilt.
+- Current root cause found by read-only audit: HQ onboarding allowlists omit `bella_english_center` while Product Registry already contains that canonical product key.
+- Gate result for code change: `PASS_FOR_HQ_ONBOARDING_GAP_FIX`.
+- Gate result for production/customer/backup/legal posting seal: `NOT_PROVEN_UNTIL_EXECUTED_EVIDENCE`.
+
+### 2. Product Manifest
+- Product: `bella_english_center`.
+- Existing proven scope: product identity, schema/RLS, marker-scoped Real DB tenant runtime, branch access, operational seed, and Post-RC Browser E2E.
+- Residual authorized capability: HQ can create/select an English Center tenant/branch using the same onboarding contract used for other product tenants.
+- Non-goals: no English operational chain rebuild, no Education Kernel change, no Finance legal-accounting policy invention, no production/customer mutation without explicit runtime evidence.
+
+### 3. Ownership Map
+- Product identity owner: `ProductRegistry` plus `tenants.product_key`.
+- HQ onboarding owner: `src/app/hq/components/HqBranchRegistrationModal.tsx` and `src/services/onboarding-actions.ts`.
+- Branch/runtime access owner: `org_units`, `users`, `user_org_unit_access`, and existing HQ/tenant auth contracts.
+- English operations owner: `src/products/bella-english-center/**`.
+- Finance posting policy owner: Finance contracts and authoritative accounting specifications, not English product code.
+- Production integrity owner: deployment/operations evidence, backup/restore drill evidence, and production/staging runtime smoke evidence.
+
+### 4. Contract Dependency Map
+`HQ UI product option -> registerNewTenant(input.productKey) -> ProductRegistry.has(productKey) -> PRODUCT_MODULE_MAP -> onboard_tenant -> tenants.product_key -> enabled_modules -> ProductResolver/UserProvider -> /dashboard/english-center -> English operational services -> optional Finance contracts`.
+
+### 5. Change Authority
+- Authorized: add `bella_english_center` to HQ onboarding product selection/type map and targeted onboarding tests.
+- Authorized: preserve existing module mapping by treating English Center as an Education module tenant (`bella_education`) while keeping product identity as `bella_english_center`.
+- Not authorized: modify `src/platform/education/**`, Healthcare H1-H12, Logistics E7 kernels, ProductRegistry semantics, database schema, production data, or accounting legal-source mappings.
+
+### 6. UI -> Contract Reconciliation
+| UI / Contract Surface | Expected Product Truth | Current Audit Result | Action |
+|---|---|---|---|
+| HQ product selector | Offers canonical products including `bella_english_center` | Missing English option | Add option only |
+| `registerNewTenant.productKey` | Accepts canonical product key if registered and allowed | Type/map omit English | Add key/map only |
+| Tenant module flags | Education products use `bella_education` module flag | Preschool already maps to `bella_education` | Reuse same module flag |
+| Product identity | Persist exact `tenants.product_key` | PR #244 proves English identity/runtime fixture | Preserve |
+
+### 7. Additive Migration Plan
+No migration. No schema/RLS/grant changes are authorized by this gate.
+
+### 8. 11 Automated Verification Gates Plan
+1. Verify HQ UI allowlist includes English Center.
+2. Verify server-side `RegisterTenantProductKey` accepts `bella_english_center`.
+3. Verify `registerNewTenant` persists `product_key = 'bella_english_center'`.
+4. Verify English onboarding enables `bella_education` and not BabyCare/Beauty modules.
+5. Verify non-HQ user cannot set up English Center before auth/database writes.
+6. Verify BabyCare remains self-service compatible.
+7. Verify Beauty/Haircut/Nail/Preschool mappings remain unchanged.
+8. Verify ProductRegistry/ProductResolver focused tests still pass.
+9. Verify English tuition/finance contract unit tests still pass without invented legal posting.
+10. Verify existing English Real DB/Browser evidence is cited but not overclaimed as production/customer proof unless rerun.
+11. Verify `git diff --check` and inspect touched files only.
+
+### Conclusion
+`PASS_FOR_HQ_ONBOARDING_GAP_FIX`
+
+### Verification Result - 2026-10-07
+- `npm test -- src\__tests__\onboarding.test.ts --runInBand`: PASS, 10/10 tests.
+- `npm test -- src\platform\registry\__tests__\product-registry.test.ts src\platform\registry\__tests__\product-resolver.test.ts --runInBand`: PASS, 73/73 tests.
+- `npm test -- src\products\bella-english-center\__tests__\tuition-billing.service.test.ts --runInBand`: PASS, 8/8 tests.
+- `npm run typecheck:changed`: PASS, full TypeScript scope passed with zero diagnostics.
+- `git diff --check`: PASS.
+- Changed-file `any` scan: PASS; no `as any`/explicit-any introduced in touched source/test files.
+- `npm run check:any-types`: NOT_PROVEN for repo-wide gate because existing baseline reports 91 violations in 21 unrelated files; no touched file is in the report.
+- `E2E_ENV_FILE=<secure local .env.e2e> npm run test:english-center-post-rc-real-db`: PASS against canonical project `bmnbqbcdbuklhopfbopv`.
+- `E2E_TENANT_PRODUCT_KEY=bella_english_center E2E_PORT=3110 E2E_REUSE_SERVER=0 npm run e2e:english-center-post-rc`: PASS, 2/2 Playwright tests, after installing real worktree dependencies instead of using an out-of-root `node_modules` junction.
+- HQ runtime precondition audit: canonical E2E DB has 1 `bella_english_center` tenant and 0 `bella_hq` tenants. Because `checkHqAuth()` authorizes only `product_key = 'bella_hq'`, the live HQ -> register English tenant flow remains NOT_PROVEN without creating a new HQ fixture. No HQ fixture was created in this workstream.
+- Production/customer runtime, backup/restore, and legal accounting posting seal: NOT_PROVEN in this workstream; no blocker is proven for the current English decision, and no English-specific scope expansion is authorized without executable evidence.
+
+### HQ Runtime Residual Gate - 2026-10-07
+- **Problem:** The only remaining English Center boundary is `HQ RUNTIME = NOT_PROVEN`.
+- **Truth / Evidence:** Canonical E2E DB has no `bella_hq` tenant, while `checkHqAuth()` requires an admin user whose tenant has `product_key = 'bella_hq'`.
+- **Root Cause:** This is an evidence fixture gap first. Read-only code audit also shows `registerNewTenant()` persists `tenants.product_key` after `onboard_tenant()`, but the base onboarding RPC does not create Platform `org_units`. English Center branch identity and branch RLS depend on `org_units` and `user_org_unit_access`.
+- **Authorized Minimal Change:** Add only the runtime proof surface needed for HQ -> English Center onboarding: a focused Playwright E2E with an HQ fixture, and a default branch bootstrap inside existing HQ onboarding using existing `org_units` schema. No registry, product architecture, Finance, backup/restore, Healthcare, Logistics, or Education kernel change is authorized.
+- **Verification Plan:** Run focused onboarding unit tests, focused HQ runtime Playwright E2E, changed-file typecheck, and diff whitespace checks. Do not rerun or reopen the already proven English browser E2E unless this focused flow depends on it.
+- **Verification Result:**
+  - `npm test -- src\__tests__\onboarding.test.ts --runInBand`: PASS, 11/11 tests.
+  - `E2E_ENV_FILE=<secure local .env.e2e> E2E_PORT=3112 E2E_REUSE_SERVER=0 npx playwright test e2e/tests/32-english-center-hq-runtime.spec.ts`: PASS, 1/1 test.
+  - Runtime proof covered HQ dev-bypass login through canonical `bella_hq` fixture, selecting `English Center`, creating the tenant through the actual HQ modal/server action, persisting `tenant.product_key = 'bella_english_center'`, creating default Platform branch `org_units(code='MAIN')`, authenticating the created English admin with Supabase Auth, reading `user_org_unit_access` as `tenant_admin`, and opening `/dashboard/english-center/command-center` with HTTP 200.
+  - `npm run typecheck:changed`: PASS, full TypeScript scope passed with zero diagnostics.
+  - `git diff --check`: PASS.
+  - Changed-file `any` scan: PASS; no `as any`/explicit-any introduced in touched source/test files.
+- **Conclusion:** `HQ_RUNTIME_PROVEN_FOR_ENGLISH_CENTER`
+
+
+---
+
 ## 2026-10-07 PR #244 CI Security Dependency Gate
 
 ### 1. Bella OS/Product Development Process Gate

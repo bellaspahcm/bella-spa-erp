@@ -13,6 +13,7 @@ import {
 import { productRegistry } from '@/platform/registry/product-registry';
 import { checkHqAuth } from './hq-actions';
 import type { Database } from '@/types/database.types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 type AuthUser = { id: string };
 type AdminAuthClient = {
@@ -23,13 +24,15 @@ type AdminAuthClient = {
   };
 };
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
+type OrgUnitInsert = Database['public']['Tables']['org_units']['Insert'];
 type RegisterTenantBusinessModule = TenantPrimaryBusinessModuleKey;
 type RegisterTenantProductKey =
   | 'bella_babycare'
   | 'bella_spa'
   | 'bella_haircut'
   | 'bella_nail'
-  | 'bella_preschool';
+  | 'bella_preschool'
+  | 'bella_english_center';
 
 const PRODUCT_HQ_ONLY_ERROR = 'Chỉ Admin HQ mới được setup tenant sản phẩm này.';
 
@@ -39,6 +42,7 @@ const PRODUCT_MODULE_MAP: Record<RegisterTenantProductKey, RegisterTenantBusines
   bella_haircut: 'beauty_spa',
   bella_nail: 'beauty_spa',
   bella_preschool: 'bella_education',
+  bella_english_center: 'bella_education',
 };
 
 function getErrorMessage(error: unknown) {
@@ -58,6 +62,34 @@ async function rollbackCreatedAuthUser(
   }
 
   const { error } = await supabaseAdmin.auth.admin.deleteUser(authUserId);
+  return error?.message || '';
+}
+
+async function bootstrapDefaultBranchForTenant(
+  supabase: SupabaseClient<Database>,
+  tenantId: string,
+  input: RegisterTenantInput,
+  productKey: RegisterTenantProductKey,
+) {
+  const defaultBranch: OrgUnitInsert = {
+    tenant_id: tenantId,
+    unit_type: 'branch',
+    name: input.spaName,
+    code: 'MAIN',
+    is_active: true,
+    metadata: {
+      source: 'hq_onboarding',
+      productKey,
+      address: input.address || null,
+      phone: input.contactPhone || null,
+      email: input.email || null,
+    },
+  };
+
+  const { error } = await supabase
+    .from('org_units')
+    .insert(defaultBranch);
+
   return error?.message || '';
 }
 
@@ -146,6 +178,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
     const password = input.adminPassword || 'Password123!';
     let authUser: AuthUser | null = null;
     let supabaseAdminForAuthRollback: AdminAuthClient | null = null;
+    let supabaseAdminForTenantSetup: SupabaseClient<Database> | null = null;
     const adminUrl = getSupabaseAdminUrl();
     const serviceRoleKey = getSupabaseAdminKey();
 
@@ -163,6 +196,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
         }
       );
       supabaseAdminForAuthRollback = supabaseAdmin as AdminAuthClient;
+      supabaseAdminForTenantSetup = supabaseAdmin;
 
       const { data: adminData, error: adminError } = await supabaseAdmin.auth.admin.createUser({
         email: input.adminEmail,
@@ -253,6 +287,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
     }
 
     // 3.1. Update HQ-managed tenant setup fields after the base onboarding RPC.
+    const tenantSetupClient = supabaseAdminForTenantSetup ?? supabase;
     const postOnboardingUpdate: TenantUpdate = {
       product_key: productKey,
       enabled_modules: toTenantModuleJson(
@@ -282,7 +317,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
     }
 
     if (Object.keys(postOnboardingUpdate).length > 0) {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await tenantSetupClient
         .from('tenants')
         .update(postOnboardingUpdate)
         .eq('id', tenantId as string);
@@ -293,6 +328,18 @@ export async function registerNewTenant(input: RegisterTenantInput) {
           ? 'cấu hình nhượng quyền'
           : 'cấu hình sản phẩm tenant';
         return { success: false, error: `Lỗi cập nhật ${setupLabel}: ${updateError.message}` };
+      }
+    }
+
+    if (productKey !== 'bella_babycare') {
+      const branchBootstrapError = await bootstrapDefaultBranchForTenant(
+        tenantSetupClient,
+        tenantId as string,
+        input,
+        productKey,
+      );
+      if (branchBootstrapError) {
+        return { success: false, error: `Lỗi tạo chi nhánh mặc định: ${branchBootstrapError}` };
       }
     }
  
