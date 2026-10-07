@@ -128,6 +128,96 @@ UI reconciliation:
 
 ---
 
+## Additional Architecture Gate - English Operational Real DB Target Normalization
+
+> **Status:** PASS - test/infrastructure configuration repair authorized
+> **Date:** 2026-10-06
+> **Scope:** Normalize the English Post-RC Real DB proof command to the canonical E2E Supabase project used by Browser E2E evidence. Do not create tenants, mutate data, modify English product runtime code, or expose secrets.
+
+- Bella OS/Product Development Process Gate: PASS. This is a verification-target repair only. It does not change Product, Platform, Education Kernel, schema, or business behavior.
+- Product Manifest: Bella English Center remains unchanged. Existing product identity and schema/RLS proof surfaces are consumed only for verification.
+- Ownership Map: `package.json` owns local command routing. `scripts/run-english-center-post-rc-real-db.cjs` owns English-specific verification environment normalization. Supabase credentials and Postgres connection strings remain external secret configuration and are not committed.
+- Contract Dependency Map: `npm run test:english-center-post-rc-real-db` -> English verification env wrapper -> `.env.e2e` / `E2E_ENV_FILE` -> Supabase project `bmnbqbcdbuklhopfbopv` -> existing Jest Real DB validation.
+- Change Authority: authorized to modify test/infrastructure command routing and add a small wrapper script. Not authorized to modify `src/products/bella-english-center`, `src/platform/education`, HQ onboarding, migrations, production/customer data, or E2E tenant bootstrap.
+- UI -> Contract Reconciliation: none.
+- Additive Migration Plan: none.
+- 11 Automated Verification Gates Plan: assert canonical project ref before test execution, require a runnable Postgres URL for the same project, run the focused English Real DB gate, run `git diff --check`, and inspect worktree status.
+
+---
+
+## Additional Architecture Gate - English Migration Packaging Contract Repair
+
+> **Status:** PASS - migration packaging repair authorized; DB apply not authorized in this step
+> **Date:** 2026-10-06
+> **Scope:** Convert existing English Center migration files into the repository's approved E2E migration-runner contract without changing English product runtime code, creating tenants, resetting any database, or manually writing migration ledger rows.
+
+- Bella OS/Product Development Process Gate: PASS. This is a schema-migration packaging repair only. It does not change Product service/API behavior, Education Kernel code, Platform contracts, or business semantics.
+- Product Manifest: Bella English Center schema remains product-owned additive schema. The packaging repair preserves the existing English Center tables, RLS policies, grants, triggers, comments, and concurrent-index intent.
+- Ownership Map: `supabase/migrations/*english_center*.sql` owns English product schema packaging. `scripts/apply-e2e-pr-migrations.cjs` owns the approved E2E apply contract requiring 14-digit migration versions and ledger recording after successful apply.
+- Contract Dependency Map: existing English SQL -> valid 14-digit migration files -> approved E2E apply script -> canonical E2E DB `bmnbqbcdbuklhopfbopv` -> English Real DB schema/RLS validation.
+- Change Authority: authorized to rename/split English migration files and separate `CREATE INDEX CONCURRENTLY` statements into standalone migration files so the existing runner can apply them one file at a time. Not authorized to modify `src/products/bella-english-center`, create tenants, mutate E2E DB in this step, reset DB, use `--include-all`, or manually alter migration history.
+- UI -> Contract Reconciliation: none.
+- Additive Migration Plan: no new schema semantics; packaging only. Existing `CREATE TABLE`, RLS, grants, triggers, and indexes remain additive.
+- 11 Automated Verification Gates Plan: validate all English migration filenames against the approved parser, prove no duplicate migration versions, prove concurrent-index statements are standalone and outside explicit transactions, run script syntax checks, run migration/scope validation where local-only, run `git diff --check`, then stop before DB mutation.
+
+---
+
+## Additional Architecture Gate - English E2E Migration Apply Evidence
+
+> **Status:** PASS_FOR_SCHEMA_RLS_AND_REAL_DB_GATE
+> **Date:** 2026-10-06
+> **Scope:** Apply the validated English Center migration set only to the canonical E2E Supabase project `bmnbqbcdbuklhopfbopv` using the approved E2E migration runner. No tenant bootstrap, production/customer mutation, reset/drop, manual ledger writes, or English product runtime changes are authorized.
+
+- Bella OS/Product Development Process Gate: PASS. The DB mutation is limited to applying existing product-owned English Center schema migrations through the approved E2E process.
+- Product Manifest: Bella English Center runtime/product code remains unchanged. This step proves schema/RLS availability on the canonical E2E DB only.
+- Ownership Map: `supabase/migrations/*english_center*.sql` owns schema objects. `scripts/apply-e2e-pr-migrations.cjs` owns ordered apply and ledger recording. The canonical E2E database owns remote verification state.
+- Contract Dependency Map: validated English migration set -> approved E2E migration runner -> `bmnbqbcdbuklhopfbopv` -> remote table/RLS/policy/ledger evidence -> `npm run test:english-center-post-rc-real-db`.
+- Change Authority: authorized DB mutation is limited to those 31 English Center migrations. Not authorized: tenant creation, seed data, browser E2E, production/customer DB mutation, `--include-all`, manual ledger writes, or unrelated duplicate-version cleanup.
+- UI -> Contract Reconciliation: none.
+- Additive Migration Plan: applied 31 English Center migrations in repository order. Remote read-back found 20/20 `english_center_*` tables, RLS enabled on all checked tables, at least one policy per table, and 31/31 English migration ledger rows.
+- Verification Gates: target project confirmed as `bmnbqbcdbuklhopfbopv`; approved apply completed; `npm run test:english-center-post-rc-real-db` PASS on `.env.e2e`; tenant bootstrap remains NOT_STARTED.
+- Grant Evidence Boundary: service-role DML privileges are present for all 20 checked English tables. Authenticated DML grants are present for the core/program/course/class/enrollment/teacher/timetable/learning/tuition tables and absent for the four engagement tables because `20260914190000_create_english_center_engagement.sql` does not grant authenticated table privileges. Do not claim full authenticated engagement grant proof from this step.
+
+---
+
+## Additional Architecture Gate - English E2E Tenant Bootstrap Evidence
+
+> **Status:** PASS_FOR_TENANT_RUNTIME_AND_POST_RC_BROWSER_GATE
+> **Date:** 2026-10-07
+> **Scope:** Bootstrap exactly one marker-scoped Bella English Center verification tenant on canonical E2E Supabase project `bmnbqbcdbuklhopfbopv`, then verify tenant, branch, auth/user, operational seed read-back, Real DB gate, and Browser E2E. No production/customer database mutation and no English product runtime code change are authorized.
+
+- Bella OS/Product Development Process Gate: PASS. This is an authorized E2E test-data/bootstrap mutation only, following existing tenant/user/branch seed patterns and preserving product/runtime code.
+- Product Manifest: Bella English Center product identity remains `bella_english_center`. The bootstrap tenant is a verification fixture, not a production/customer tenant.
+- Ownership Map: `tenants.product_key` owns product identity. `org_units` owns branch runtime. `users` plus Supabase Auth own test admin identity. English Center product tables own marker-scoped operational seed rows.
+- Contract Dependency Map: `bella_english_center` tenant -> branch `org_units` -> admin user/auth -> `user_org_unit_access` -> English product operational tables -> Post-RC browser/API validation.
+- Change Authority: authorized to create one E2E tenant fixture and minimal operational seed on `bmnbqbcdbuklhopfbopv`. Not authorized: production/customer mutation, BabyCare fallback, English runtime code edits, grant repair without authenticated runtime failure evidence, or extra tenant creation.
+- Additive Migration Plan: none. No schema changes in this step.
+- Bootstrap Evidence: one tenant exists for `product_key = 'bella_english_center'`; branch count 1; admin DB user count 1; Supabase Auth user created for the same admin id; marker-scoped E2-E8 operational rows read back with count >= 1 for program, course, class, enrollment, teacher, teacher-branch, room, session, attendance, progress, tuition plan, tuition assignment, tuition invoice, tuition payment, engagement template, engagement message, engagement recipient, and engagement response.
+- Branch/Auth Evidence: `user_org_unit_access` read-back under `app.current_tenant_id` and `app.current_user_id` returned branch access through both `belongs_to` and `tenant_admin`.
+- Verification Gates: `npm run test:english-center-post-rc-real-db` PASS on `.env.e2e`; `E2E_TENANT_PRODUCT_KEY=bella_english_center npm run e2e:english-center-post-rc` PASS with 2/2 Playwright tests. Browser evidence includes `/dashboard/english-center/learning`, `/tuition`, `/engagement`, `/command-center` rendering <400 without runtime errors, and API probes returning expected statuses including `/api/english-center/command-center` = 200.
+- Residual Boundary: this proves the Post-RC tenant/runtime/browser path on the seeded E2E fixture. It does not convert production/customer readiness or unrelated authenticated E8 engagement table grants into PASS beyond the runtime exercised here.
+
+---
+
+## Canonical Seal - English Center Operational Chain
+
+> **Status:** ENGLISH CENTER OPERATIONAL CHAIN = PROVEN_FOR_MARKER_SCOPED_E2E_POST_RC
+> **Date:** 2026-10-07
+
+- Proven Scope: Product Identity, Schema/RLS, 31/31 migrations, migration ledger, Real DB gate, marker-scoped E2E tenant, branch, admin/auth fixture, operational seed, branch access, and Post-RC Browser E2E.
+- Base/Main Commit: `77231ba1b93f889ecc797242e4b0d8cf0f8a703f`.
+- Pull Request: NOT_CREATED in this step.
+- Canonical E2E DB: `bmnbqbcdbuklhopfbopv`.
+- Product Identity: `tenants.product_key = 'bella_english_center'`.
+- Real DB Evidence: `npm run test:english-center-post-rc-real-db` PASS against `.env.e2e`.
+- Browser Evidence: `E2E_TENANT_PRODUCT_KEY=bella_english_center npm run e2e:english-center-post-rc` PASS, 2/2 Playwright tests.
+- Production/Customer Runtime: NOT_CLAIMED.
+- Go-Live: NOT_CLAIMED.
+- E8 Authenticated Grant Boundary: EVIDENCE GAP remains recorded for the four engagement tables. No grant repair is authorized unless a later authenticated runtime path proves it is a root cause.
+- Scope Decision: STOP. Do not continue coding English Center in this workstream.
+
+---
+
 ## Additional Architecture Gate - Preschool Class Canonical Course Read-Back
 
 > **Status:** PASS - app route canonical course reconciliation authorized
@@ -4225,6 +4315,62 @@ No migration.
 9. Verify booking/session DTO access remains read-only.
 10. Verify merge conflict markers absent.
 11. Verify final PR checks after push.
+
+### Conclusion
+`PASS`
+
+---
+
+## 2026-10-07 PR #244 CI Security Dependency Gate
+
+### 1. Bella OS/Product Development Process Gate
+- **Problem:** PR #244 CI failed at `Trivy filesystem` and `Security Gates`.
+- **Truth / Evidence:** Trivy reported fixable high/critical advisories in lockfiles only: `sharp@0.35.4`, `source-map-js@1.2.1`, `@modelcontextprotocol/sdk@1.29.0`, `proxy-addr@2.0.7`, `compression@1.8.1`, and `shell-quote@1.10.0`.
+- **Root Cause:** Dependency security drift in root and `mcp-server` lockfiles; not an English Center product/runtime regression.
+- **Gate Result:** `PASS`.
+
+### 2. Product Manifest
+- **Product:** None.
+- **Capability:** CI security dependency gate remediation.
+- **Scope:** `package.json`, `package-lock.json`, `mcp-server/package.json`, `mcp-server/package-lock.json`, `apps/mobile/package.json`, and `apps/mobile/package-lock.json`.
+- **Non-goals:** No English product code, no tenant data, no migration SQL, no production/customer DB mutation.
+
+### 3. Ownership Map
+- **Owner:** Repository dependency governance.
+- **Data Owner:** N/A.
+
+### 4. Contract Dependency Map
+`CI Security Gate` -> `npm audit --omit=dev` / Trivy filesystem scan -> npm lockfiles.
+
+### 5. Change Authority
+- Authorized layers: dependency metadata and lockfiles required to unblock CI security scan.
+- Not authorized and not modified: Platform Core, Education runtime, Product Registry, tenant bootstrap data, Healthcare H1-H12, Logistics E7.
+
+### 6. UI -> Contract Reconciliation
+No UI change.
+
+### 7. Additive Migration Plan
+No migration.
+
+### 8. 11 Automated Verification Gates Plan
+1. Inspect failed PR check names.
+2. Inspect Trivy failure log.
+3. Identify direct vulnerable packages and fixed versions.
+4. Confirm dependency paths from root and `mcp-server` lockfiles.
+5. Apply minimal dependency override/package metadata changes.
+6. Regenerate lockfiles using npm.
+7. Verify lockfile versions are at or above fixed versions.
+8. Run `npm run security:audit`.
+9. Run `git diff --check`.
+10. Commit and push to PR branch.
+11. Wait for refreshed CI security gates.
+
+### Verification
+- `package-lock.json`: `sharp=0.35.5`, `source-map-js=1.2.2`, `@modelcontextprotocol/sdk=1.32.1`, `proxy-addr=2.0.8`.
+- `mcp-server/package-lock.json`: `@modelcontextprotocol/sdk=1.32.1`, `proxy-addr=2.0.8`.
+- `apps/mobile/package-lock.json`: `compression=1.8.2`, `shell-quote=1.12.0`, `source-map-js=1.2.2`.
+- `npm run security:audit` -> PASS.
+- `git diff --check` -> PASS.
 
 ### Conclusion
 `PASS`

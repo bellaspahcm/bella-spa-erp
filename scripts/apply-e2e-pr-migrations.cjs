@@ -39,10 +39,19 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 function parseArgs(argv) {
   const baseIndex = argv.indexOf('--base');
+  const filesIndex = argv.indexOf('--files');
   const dryRun = argv.includes('--dry-run');
+  const explicitFiles = filesIndex >= 0
+    ? (argv[filesIndex + 1] || '')
+      .split(/[;,\n]/)
+      .map((file) => file.trim().replace(/\\/g, '/'))
+      .filter(Boolean)
+    : [];
+
   return {
     baseRef: baseIndex >= 0 ? argv[baseIndex + 1] : process.env.BASE_REF || 'HEAD^',
     dryRun,
+    explicitFiles,
   };
 }
 
@@ -64,6 +73,17 @@ function listChangedMigrationFiles(baseRef) {
     })
     .filter((file) => MIGRATION_PATH.test(file))
     .sort();
+}
+
+function listExplicitMigrationFiles(files) {
+  const normalizedFiles = files.map((file) => file.replace(/\\/g, '/'));
+  const invalidFiles = normalizedFiles.filter((file) => !MIGRATION_PATH.test(file));
+
+  if (invalidFiles.length > 0) {
+    throw new Error(`Invalid explicit migration file path(s): ${invalidFiles.join(', ')}`);
+  }
+
+  return normalizedFiles.sort();
 }
 
 function parseMigration(file) {
@@ -456,15 +476,21 @@ async function reloadPostgrestSchema(client) {
 }
 
 async function main() {
-  const { baseRef, dryRun } = parseArgs(process.argv.slice(2));
-  const files = listChangedMigrationFiles(baseRef);
+  const { baseRef, dryRun, explicitFiles } = parseArgs(process.argv.slice(2));
+  const files = explicitFiles.length > 0
+    ? listExplicitMigrationFiles(explicitFiles)
+    : listChangedMigrationFiles(baseRef);
 
   if (files.length === 0) {
     console.log('No changed Supabase migrations to apply to isolated E2E database.');
     return;
   }
 
-  console.log(`Changed Supabase migrations since ${baseRef}:`);
+  console.log(
+    explicitFiles.length > 0
+      ? 'Explicit Supabase migrations for isolated E2E database:'
+      : `Changed Supabase migrations since ${baseRef}:`,
+  );
   for (const file of files) {
     console.log(`- ${file}`);
   }

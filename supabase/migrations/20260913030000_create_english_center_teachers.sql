@@ -143,11 +143,3 @@ CREATE TRIGGER trg_teachers_updated_at BEFORE UPDATE ON public.english_center_te
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 COMMIT;
-
--- Indexes created outside transaction for zero-downtime
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teachers_tenant ON public.english_center_teachers(tenant_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teachers_party ON public.english_center_teachers(party_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teachers_status ON public.english_center_teachers(status);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teacher_branches_tenant ON public.english_center_teacher_branches(tenant_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teacher_branches_teacher ON public.english_center_teacher_branches(teacher_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teacher_branches_branch ON public.english_center_teacher_branches(branch_id);

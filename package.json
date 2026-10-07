@@ -44,7 +44,7 @@
     "test:runtime:3c": "vitest run tests/e2e/runtime",
     "test:runtime:3c:watch": "vitest tests/e2e/runtime",
     "test:runtime:3c:infra": "vitest run tests/e2e/runtime/3c-1-happy-path.e2e.test.ts",
-    "test:english-center-post-rc-real-db": "jest --config jest.real-db.config.ts src/app/api/english-center/__tests__/post-rc-real-db-validation.test.ts --runInBand",
+    "test:english-center-post-rc-real-db": "node scripts/run-english-center-post-rc-real-db.cjs",
     "test:integration:registry": "jest PolicyRegistry.integration.test.ts --runInBand",
     "test:real-db-e2e": "jest --config jest.real-db.config.ts --runInBand",
     "test:critical": "jest src/__tests__/payment-webhook.test.ts src/__tests__/accounting-outbox.test.ts src/__tests__/finance.test.ts src/__tests__/finance-transaction-mutations.test.ts src/__tests__/admin-salary-actions.test.ts src/__tests__/salary-recalculation-lifecycle.test.ts src/__tests__/salary-surface-parity.test.ts src/__tests__/salary-reconciliation.test.ts src/__tests__/salary-reconciliation-summary.test.ts src/__tests__/auth-guards.test.ts src/__tests__/tenant-actions.test.ts src/__tests__/meta-ads-actions.test.ts src/__tests__/meta-ads-ui.test.ts src/__tests__/business-invariants-check.test.ts src/__tests__/ai-autopilot-cron.test.ts src/__tests__/test-upcoming-route.test.ts src/__tests__/portal-payment-utils.test.ts --runInBand",
@@ -228,8 +228,11 @@
     "vitest": "^4.1.10"
   },
   "overrides": {
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "postcss": "^8.5.28",
-    "sharp": "^0.35.4",
+    "proxy-addr": "^2.0.8",
+    "sharp": "^0.35.5",
+    "source-map-js": "^1.2.2",
     "@hono/node-server": "^2.0.5",
     "brace-expansion": "^1.1.20",
     "browserslist": "^4.28.9",
