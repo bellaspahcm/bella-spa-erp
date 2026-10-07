@@ -49,6 +49,7 @@ import {
 import { createCustomer, deleteCustomer, getCustomers, updateCustomer } from '@/services/customer-actions';
 import type { Database } from '@/types/database.types';
 import {
+  calculateCustomerBookingProgress,
   isActiveCareBooking,
   selectCustomerDisplayBooking,
 } from './customer-list-rules';
@@ -72,6 +73,7 @@ type CustomerListItem = CustomerRow & {
   bookings?: CustomerBookingSummary[] | null;
   deposit_amount?: number | '';
   package_name?: string;
+  package_progress_percent?: number;
   is_in_care?: boolean;
   is_fully_paid?: boolean;
 };
@@ -159,11 +161,13 @@ export default function CustomersPage() {
         : null;
       const displayDepositAmount: number | '' = displayPaymentState?.totalPaid ?? '';
       const displayPackageName = displayBooking?.package_name || '';
+      const displayProgress = calculateCustomerBookingProgress(displayBooking);
 
       return {
         ...c,
         deposit_amount: displayDepositAmount,
         package_name: displayPackageName,
+        package_progress_percent: displayProgress.percent,
         is_in_care: isActiveCareBooking(displayBooking),
         is_fully_paid: displayPaymentState ? !displayPaymentState.hasOutstandingDebt : false
       };
@@ -980,10 +984,10 @@ export default function CustomersPage() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                       <span>Tiến độ buổi</span>
-                      <span className="text-primary font-bold">80%</span>
+                      <span className="text-primary font-bold">{customer.package_progress_percent ?? 0}%</span>
                     </div>
                     <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: '80%' }} />
+                      <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${customer.package_progress_percent ?? 0}%` }} />
                     </div>
                   </div>
                 </div>

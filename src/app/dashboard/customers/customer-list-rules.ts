@@ -40,6 +40,38 @@ export function isActiveCareBooking(booking: CustomerListBookingCandidate | null
   );
 }
 
+export function calculateCustomerBookingProgress(booking: CustomerListBookingCandidate | null | undefined) {
+  if (!booking) {
+    return {
+      completedSessions: 0,
+      totalSessions: 0,
+      percent: 0,
+    };
+  }
+
+  const rawCompletedSessions = Number(booking.completed_sessions ?? 0);
+  const rawTotalSessions = Number(booking.total_sessions ?? 0);
+
+  if (!Number.isFinite(rawTotalSessions) || rawTotalSessions <= 0) {
+    return {
+      completedSessions: Number.isFinite(rawCompletedSessions) ? Math.max(0, Math.round(rawCompletedSessions)) : 0,
+      totalSessions: 0,
+      percent: 0,
+    };
+  }
+
+  const totalSessions = Math.round(rawTotalSessions);
+  const completedSessions = Number.isFinite(rawCompletedSessions)
+    ? Math.min(totalSessions, Math.max(0, Math.round(rawCompletedSessions)))
+    : 0;
+
+  return {
+    completedSessions,
+    totalSessions,
+    percent: Math.min(100, Math.round((completedSessions / totalSessions) * 100)),
+  };
+}
+
 export function selectCustomerDisplayBooking<T extends CustomerListBookingCandidate>(
   bookings: T[] | null | undefined,
 ) {
