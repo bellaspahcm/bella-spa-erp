@@ -1,3 +1,84 @@
+# ARCHITECTURE GATE RESULT - BABYCARE CUSTOMER CARD PROGRESS
+
+> **Status:** PASS - product UI consumer correction authorized
+> **Date:** 2026-10-07
+> **Scope:** Fix BabyCare customer-list active package progress card so it renders persisted booking progress instead of hardcoded 80%.
+
+## Bella OS/Product Development Process Gate
+
+- Truth: Customer package progress for the customer list is derived from the selected booking's `completed_sessions` and `total_sessions`.
+- Source of Truth: `bookings` rows returned by `getCustomers`, existing customer detail/booking selector UI behavior, and Bella architecture constitution.
+- Canonical Contract: Product UI consumes customer rows with tenant-scoped nested `bookings`; progress is `completed_sessions / total_sessions`, clamped from 0 to 100.
+- Gate result: `PASS` for product UI and focused helper/test changes only.
+
+## Product Manifest
+
+- Product: Bella BabyCare customer CRM list.
+- Capability in scope: active package summary card on `/dashboard/customers`.
+- Existing capability: customer list loads tenant-scoped `bookings` with `package_name`, `status`, `is_in_care`, `total_sessions`, `completed_sessions`, and payment data.
+- Requested correction: remove hardcoded progress display and bind it to the selected display booking.
+
+## Ownership Map
+
+| Data / Behavior | Owner | Decision |
+|---|---|---|
+| `customers` rows | Product CRM persistence | consume only |
+| `bookings.completed_sessions` / `bookings.total_sessions` | Booking/session product persistence | consume only |
+| Customer-list selected booking | `customer-list-rules.ts` product UI rule | may extend helper logic |
+| Active package card rendering | `/dashboard/customers` product UI | may modify |
+| Healthcare/Education/Logistics kernels | Frozen OS kernels | do not touch |
+
+## Contract Dependency Map
+
+```text
+/dashboard/customers UI
+  -> getCustomers()
+  -> tenant-scoped customers + nested bookings
+  -> selectCustomerDisplayBooking()
+  -> calculateCustomerBookingProgress()
+  -> active package card progress text/bar
+```
+
+## Change Authority
+
+Authorized:
+- Modify `src/app/dashboard/customers/customer-list-rules.ts`.
+- Modify `src/app/dashboard/customers/page.tsx`.
+- Add focused tests for progress calculation and selected booking display state.
+
+Not authorized:
+- Database migration or schema changes.
+- Platform/Core changes.
+- Healthcare, Education, or Logistics kernel changes.
+- Broad BabyCare redesign or unrelated CRM behavior changes.
+
+## UI -> Contract Reconciliation
+
+- UI currently uses real booking data for package name and active status, but hardcodes progress at 80%.
+- Correct UI contract is to render progress from the same selected display booking used for package/status.
+- Missing or invalid totals must not invent progress; use 0 percent and clamp valid computed values.
+
+## Additive Migration Plan
+
+- No migration required.
+- No table, index, RLS, or generated type change required.
+
+## 11 Automated Verification Gates Plan
+
+1. Architecture Compliance: confirm no frozen kernel/platform files are touched.
+2. Contract Boundary: UI consumes existing `getCustomers` booking payload only.
+3. Tenant Isolation: preserve existing `getCustomers().eq('tenant_id', tenantId)` filtering.
+4. RLS & Authorization: no auth/RLS changes.
+5. Database Migration Safety: no migration.
+6. Event-After-Persistence: no write path or event path touched.
+7. Domain Safety Routing: not applicable; no Healthcare/Education/Logistics domain route touched.
+8. Temporal Provenance: not applicable; no historical mutation.
+9. Rule Governance: not applicable; no governed rule change.
+10. Audit & Evidence Integrity: focused source/test evidence for UI calculation.
+11. Regression: run focused customer-list tests and a targeted TypeScript check where feasible.
+
+---
+
 # ARCHITECTURE GATE RESULT - PRESCHOOL CHAIN AUDIT & COMPLETION
 
 > **Status:** PASS - product-layer Preschool Chain completion authorized
