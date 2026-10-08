@@ -10,19 +10,16 @@
 -- - No Imaging public contract changes.
 -- - No Hospital product workaround.
 
-ALTER TABLE public.hc_imaging_orders ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS tenant_isolation_hc_imaging_orders ON public.hc_imaging_orders;
-DROP POLICY IF EXISTS tenant_isolation_select ON public.hc_imaging_orders;
-DROP POLICY IF EXISTS tenant_isolation_write ON public.hc_imaging_orders;
-
-CREATE POLICY tenant_isolation_select
-  ON public.hc_imaging_orders
-  FOR SELECT
-  USING (tenant_id = ((auth.jwt() ->> 'tenant_id')::uuid));
-
-CREATE POLICY tenant_isolation_write
-  ON public.hc_imaging_orders
-  FOR ALL
-  USING (tenant_id = ((auth.jwt() ->> 'tenant_id')::uuid))
-  WITH CHECK (tenant_id = ((auth.jwt() ->> 'tenant_id')::uuid));
+DO $$
+BEGIN
+  IF to_regclass('public.hc_imaging_orders') IS NOT NULL THEN
+    EXECUTE 'ALTER TABLE public.hc_imaging_orders ENABLE ROW LEVEL SECURITY';
+    EXECUTE 'DROP POLICY IF EXISTS tenant_isolation_hc_imaging_orders ON public.hc_imaging_orders';
+    EXECUTE 'DROP POLICY IF EXISTS tenant_isolation_select ON public.hc_imaging_orders';
+    EXECUTE 'DROP POLICY IF EXISTS tenant_isolation_write ON public.hc_imaging_orders';
+    EXECUTE 'CREATE POLICY tenant_isolation_select ON public.hc_imaging_orders FOR SELECT USING (tenant_id = ((auth.jwt() ->> ''tenant_id'')::uuid))';
+    EXECUTE 'CREATE POLICY tenant_isolation_write ON public.hc_imaging_orders FOR ALL USING (tenant_id = ((auth.jwt() ->> ''tenant_id'')::uuid)) WITH CHECK (tenant_id = ((auth.jwt() ->> ''tenant_id'')::uuid))';
+  ELSE
+    RAISE NOTICE 'Skipping hc_imaging_orders RLS repair: table does not exist in this database baseline';
+  END IF;
+END $$;
