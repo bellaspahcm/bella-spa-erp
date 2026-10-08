@@ -4965,3 +4965,80 @@ None.
 9. Static check: targeted ESLint.
 10. Visual check: row layout prevents customer text compression in the highlighted card.
 11. Regression scope: no kernel verification required because frozen kernels are untouched.
+
+# Architecture Gate - Bella Premium Dark Theme Color Standardization (2026-10-08)
+
+> **Status:** PASS - presentation-only dark theme color standardization using the requested Premium Navy / Deep Teal / Champagne Gold palette.
+> **Scope:** shared dashboard dark tokens, dark-mode dashboard surfaces, sidebar dark-mode hardcoded color cleanup, module-scoped dark presentation overrides, and Beauty Spa V2 AI Copilot dark colors. No Light Theme preset changes, no schema, DB, RPC, RLS, API, service, analytics, Healthcare H1-H12, Education Kernel, Logistics Kernel, or Product contract changes.
+
+## 1. Bella OS/Product Development Process Gate
+
+- Problem: current dark theme is inconsistent with the requested color reference; the AI Copilot card still uses a large light lavender surface in dark mode and some global dark colors are older burgundy/gold values.
+- Truth / Source of Truth: `src/app/globals.css` owns shared CSS theme tokens and dark overrides; `src/app/dashboard/components/BeautySpaV2DashboardView.tsx` owns the Beauty Spa V2 dashboard presentation markup.
+- Canonical Contract: Light Mode remains preset-specific. Dark Mode should consume one shared Bella Premium Dark palette for application background, sidebar, surface, border, foreground, accent, and semantic visual states.
+- Non-goals: no new UI structure from the reference image, no new KPIs/statuses/actions, no backend/service/database changes, no ProductRegistry/ProductResolver changes, no tenant/auth/RLS changes.
+
+## 2. Product Manifest
+
+| Product / Surface | Capability | Scope |
+| --- | --- | --- |
+| Shared dashboard shell | Premium dark palette | Use shared dark tokens for viewport, cards, borders, text, and primary action |
+| Sidebar | Premium dark palette | Normalize dark-mode sidebar color independent from light preset identity |
+| Module-scoped dark presentation overrides | Premium dark palette | Replace legacy burgundy/espresso dark surfaces with shared dark palette while preserving product/light preset rules |
+| Beauty Spa V2 AI Copilot | Dark-mode card readability | Keep component structure; replace dark-mode light lavender surface with dark premium surface |
+
+## 3. Ownership Map
+
+| Data / UI Element | Owner | Change Authority |
+| --- | --- | --- |
+| Dark theme color tokens | Shared UI theme CSS | Authorized |
+| Beauty dashboard AI card presentation | Product UI presentation | Authorized |
+| Sidebar and legacy dark presentation overrides | Shared/Product UI presentation | Authorized |
+| Light Theme preset colors | Existing tenant brand/theme resolver | Not authorized |
+| Dashboard data/actions/workflows | Existing analytics/services/actions | Not authorized |
+| Healthcare/Education/Logistics kernels | Frozen Kernel owners | Not authorized |
+
+## 4. Contract Dependency Map
+
+```text
+Dark Mode Dashboard UI
+  -> shared CSS variables in globals.css
+  -> existing tenant brand/light preset data attributes remain unchanged
+  -> product dashboard JSX consumes dark-mode classes only
+```
+
+No Product -> Contract -> Kernel dependency changes are required.
+
+## 5. Change Authority
+
+Authorized layers: shared CSS tokens/dark presentation overrides, sidebar presentation classes, and Beauty Spa V2 dashboard dark-mode classes.
+
+Not authorized: data contracts, APIs, server actions, database schema, migrations, production data, auth/RLS, accounting, booking/inventory workflows, Healthcare/Education/Logistics Kernel files, and Light Theme preset values.
+
+## 6. UI -> Contract Reconciliation
+
+| UI Element | Contract Trace | Result |
+| --- | --- | --- |
+| Dashboard background/surface | CSS semantic dark tokens only | MATCH |
+| Sidebar dark mode | CSS semantic dark tokens only | MATCH |
+| AI Copilot dark surface | Existing component, presentation classes only | MATCH |
+| AI alert counts/inventory values | Existing props | UNCHANGED |
+| Buttons/actions/links | Existing links/callbacks | UNCHANGED |
+
+## 7. Additive Migration Plan
+
+None. This task must not add or modify database migrations.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Architecture boundary: only theme CSS/product presentation file changes.
+2. Contract boundary: no service/API/read-model edits.
+3. Tenant isolation: unchanged.
+4. RLS/AuthZ: unchanged.
+5. Migration safety: no migrations.
+6. Event-after-persistence: unchanged.
+7. UI data/action reconciliation: no new data/action-bound elements.
+8. Type safety: no `any`, casts, or suppressions.
+9. Contrast check: verify key Premium Dark foreground/background pairs reach WCAG AA where applicable.
+10. Static check: targeted ESLint and `git diff --check`.
+11. Regression scope: broad kernel/database gates are not required because frozen kernels and persistence are untouched.

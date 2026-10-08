@@ -94,51 +94,56 @@
 }
 
 .dark {
-  --primary: #F48FB1; /* Deep Velvet Burgundy */
-  --primary-hover: #4D1328;
-  --primary-foreground: oklch(0.205 0 0); /* Off-white/Cream */
-  --dashboard-viewport-bg: #0B1F3A;
-  --dashboard-viewport-bg-soft: #0E2A46;
-  --dashboard-surface: #143A51;
-  --dashboard-surface-muted: #102B44;
-  --dashboard-surface-border: rgba(196, 154, 104, 0.28);
-  --dashboard-foreground: #F8F1E3;
-  --dashboard-muted: #E7D2A7;
+  --primary: #E5B861;
+  --primary-hover: #F2D38D;
+  --primary-foreground: #091A2D;
+  --dashboard-viewport-bg: #091A2D;
+  --dashboard-viewport-bg-soft: #0B252D;
+  --dashboard-surface: #112E43;
+  --dashboard-surface-muted: #193A50;
+  --dashboard-surface-border: #243F52;
+  --dashboard-foreground: #F3F5F7;
+  --dashboard-muted: #A9BBC8;
+  --dashboard-ai-accent: #A99BEB;
+  --dashboard-success: #27C596;
+  --dashboard-warning: #F1AE53;
+  --dashboard-danger: #EF737A;
+  --dashboard-info: #73B5ED;
 
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
 
-  --accent: oklch(0.269 0 0); /* Bronze/Gold */
-  --accent-foreground: oklch(0.985 0 0);
+  --accent: #A99BEB;
+  --accent-foreground: #091A2D;
 
-  --background: oklch(0.145 0 0); /* Pitch black/charcoal */
-  --foreground: oklch(0.985 0 0); /* Off-white/Cream text */
+  --background: #091A2D;
+  --foreground: #F3F5F7;
 
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
+  --card: #112E43;
+  --card-foreground: #F3F5F7;
 
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.78 0 0); /* Lighter warm beige for better contrast */
+  --muted: #193A50;
+  --muted-foreground: #A9BBC8;
 
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: #243F52;
+  --input: #243F52;
+  --ring: #E5B861;
+  --popover: #112E43;
+  --popover-foreground: #F3F5F7;
+  --destructive: #EF737A;
+  --chart-1: #27C596;
+  --chart-2: #73B5ED;
+  --chart-3: #E5B861;
+  --chart-4: #A99BEB;
+  --chart-5: #F1AE53;
+  --sidebar: #0B252D;
+  --sidebar-foreground: #F3F5F7;
+  --sidebar-primary: #E5B861;
+  --sidebar-primary-foreground: #091A2D;
+  --sidebar-accent: #193A50;
+  --sidebar-accent-foreground: #F3F5F7;
+  --sidebar-border: #243F52;
+  --sidebar-ring: #E5B861;
 }
 
 @theme inline {
@@ -238,7 +243,8 @@ body {
 .dark .dashboard-main,
 .dark .bella-dashboard-view {
   background:
-    radial-gradient(circle at 14% 0%, color-mix(in srgb, var(--primary) 18%, transparent) 0%, transparent 34%),
+    radial-gradient(circle at 16% 0%, rgba(39, 197, 150, 0.10) 0%, transparent 34%),
+    radial-gradient(circle at 92% 6%, rgba(229, 184, 97, 0.08) 0%, transparent 28%),
     linear-gradient(180deg, var(--dashboard-viewport-bg-soft) 0%, var(--dashboard-viewport-bg) 42%, var(--dashboard-viewport-bg) 100%) !important;
   color: var(--dashboard-foreground) !important;
 }
@@ -322,18 +328,18 @@ h1, h2, h3, h4, h5, h6 {
    ============================================ */
 .dark .customer-detail-ktv-select .absolute.z-50,
 .dark .customer-detail-ktv-select div[class*="z-50"] {
-  background-color: #1C1B19 !important;
-  border-color: rgba(205, 188, 171, 0.15) !important;
+  background-color: #112E43 !important;
+  border-color: #243F52 !important;
 }
 
 .dark .customer-detail-ktv-select .absolute.z-50 button span,
 .dark .customer-detail-ktv-select div[class*="z-50"] button span {
-  color: #EFE9E1 !important; /* light cream text */
+  color: #F3F5F7 !important;
 }
 
 .dark .customer-detail-ktv-select .absolute.z-50 button:hover,
 .dark .customer-detail-ktv-select div[class*="z-50"] button:hover {
-  background-color: #292623 !important;
+  background-color: #193A50 !important;
 }
 
 .dark .customer-detail-ktv-select .absolute.z-50 button:hover span,
@@ -346,7 +352,7 @@ h1, h2, h3, h4, h5, h6 {
 .dark .customer-detail-ktv-select .absolute.z-50 button[class*="bg-primary/"],
 .dark .customer-detail-ktv-select div[class*="z-50"] button.bg-rose-50,
 .dark .customer-detail-ktv-select div[class*="z-50"] button[class*="bg-primary/"] {
-  background-color: #5D1C34 !important; /* primary dark */
+  background-color: #E5B861 !important;
 }
 
 .dark .customer-detail-ktv-select .absolute.z-50 button.bg-rose-50 span,
@@ -517,7 +523,7 @@ html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
 }
 
 .dark .shadow-premium-card:hover {
-  box-shadow: 0 0 0 1px rgba(166, 125, 68, 0.35), 0 18px 48px -8px rgba(0, 0, 0, 0.85) !important;
+  box-shadow: 0 0 0 1px rgba(229, 184, 97, 0.35), 0 18px 48px -8px rgba(0, 0, 0, 0.85) !important;
 }
 
 .luxury-card-dark {
@@ -868,30 +874,30 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 
 /* Dark Mode Overrides */
 .dark body {
-  background-color: #11100F !important;
+  background-color: #091A2D !important;
   background-image:
-    radial-gradient(circle at 0% 0%, rgba(166, 125, 68, 0.02) 0%, transparent 40%),
-    radial-gradient(circle at 100% 100%, rgba(93, 28, 52, 0.02) 0%, transparent 40%);
+    radial-gradient(circle at 0% 0%, rgba(39, 197, 150, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(229, 184, 97, 0.07) 0%, transparent 40%);
 }
 
 .dark .glass {
-  background: rgba(28, 27, 25, 0.7);
-  border: 1px solid rgba(205, 188, 171, 0.08);
+  background: rgba(17, 46, 67, 0.72);
+  border: 1px solid #243F52;
 }
 
 .dark .glass-pink {
-  background: rgba(28, 27, 25, 0.55);
+  background: rgba(17, 46, 67, 0.68);
   border: 1px solid color-mix(in srgb, var(--primary) 65%, transparent) !important;
 }
 
 .dark .luxury-card-white {
-  background: #1C1B19;
-  border: 1px solid #2E2B27;
+  background: #112E43;
+  border: 1px solid #243F52;
 }
 
 .dark .luxury-card-white:hover {
-  box-shadow: 0 20px 30px -10px rgba(166, 125, 68, 0.05);
-  border-color: rgba(166, 125, 68, 0.2);
+  box-shadow: 0 20px 30px -10px rgba(2, 12, 24, 0.38);
+  border-color: rgba(229, 184, 97, 0.24);
 }
 
 .dark .luxury-box-hover:hover {
@@ -900,15 +906,15 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(205, 188, 171, 0.01);
+  background: rgba(9, 26, 45, 0.64);
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(205, 188, 171, 0.1);
+  background: rgba(229, 184, 97, 0.36);
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(166, 125, 68, 0.2);
+  background: rgba(229, 184, 97, 0.56);
 }
 
 /* =========================================================================
@@ -920,14 +926,14 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 .dark [class*="bg-white/30"],
 .dark [class*="bg-white/10"],
 .dark [class*="glass-pink"] {
-  background-color: rgba(28, 27, 25, 0.6) !important;
+  background-color: rgba(17, 46, 67, 0.72) !important;
   border-color: color-mix(in srgb, var(--primary) 65%, transparent) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
 }
 
 .dark .group.bg-white\/30:hover,
 .dark [class*="bg-white/30"]:hover {
-  background-color: rgba(28, 27, 25, 0.85) !important;
+  background-color: rgba(25, 58, 80, 0.88) !important;
   border-color: var(--primary) !important;
 }
 
@@ -994,54 +1000,54 @@ button[class*="bg-primary"]:not([class*="bg-primary/"]) svg {
 /* Text overrides for contrast and tone - DARK MODE */
 .dark .text-slate-600,
 .dark [class*="text-slate-600"] {
-  color: #E5D5C8 !important; /* Increased brightness from #D4C5B6 for better readability ✅ 10.2:1 contrast on #11100F */
+  color: #D8E3EA !important;
 }
 
 .dark .text-slate-500,
 .dark [class*="text-slate-500"] {
-  color: #E5D5C8 !important; /* Increased brightness from #D4C5B6 for better readability */
+  color: #D8E3EA !important;
 }
 
 .dark .text-slate-400,
 .dark [class*="text-slate-400"] {
-  color: #D4C5B6 !important; /* Solid color instead of rgba(212, 197, 182, 0.90) for better contrast ✅ 7.5:1 contrast */
+  color: #A9BBC8 !important;
 }
 
 /* Gray color overrides for better contrast in dark mode */
 .dark .text-gray-600,
 .dark [class*="text-gray-600"] {
-  color: #E5D5C8 !important; /* Better contrast than default gray-600 */
+  color: #D8E3EA !important;
 }
 
 .dark .text-gray-500,
 .dark [class*="text-gray-500"] {
-  color: #E5D5C8 !important; /* Better contrast than default gray-500 */
+  color: #D8E3EA !important;
 }
 
 .dark .text-gray-400,
 .dark [class*="text-gray-400"] {
-  color: #D4C5B6 !important; /* Solid color instead of rgba for better contrast ✅ 7.5:1 contrast */
+  color: #A9BBC8 !important;
 }
 
 .dark .text-foreground {
-  color: #EFE9E1 !important;
+  color: #F3F5F7 !important;
 }
 
 .dark .border-slate-100 {
-  border-color: #3E3A35 !important;
+  border-color: #243F52 !important;
 }
 
 /* Progress bar inside card */
 .dark .text-primary.bg-primary\/5 {
-  background-color: rgba(93, 28, 52, 0.3) !important;
-  color: #EFE9E1 !important;
-  border-color: rgba(93, 28, 52, 0.5) !important;
+  background-color: rgba(17, 46, 67, 0.72) !important;
+  color: #F3F5F7 !important;
+  border-color: #243F52 !important;
 }
 
 .dark .bg-slate-50\/50 {
-  background-color: #292623 !important;
-  color: #D4C5B6 !important; /* Brighter text for better contrast */
-  border-color: #3E3A35 !important;
+  background-color: #112E43 !important;
+  color: #D8E3EA !important;
+  border-color: #243F52 !important;
 }
 
 /* =========================================================================
@@ -1881,7 +1887,7 @@ html.dark[data-tenant-module="babycare"] .beauty-erp-sidebar::before {
   position: absolute !important;
   inset: 22px !important;
   pointer-events: none !important;
-  border: 1px solid rgba(166, 125, 68, 0.25) !important;
+  border: 1px solid rgba(229, 184, 97, 0.25) !important;
   border-radius: 30px !important;
   z-index: 20 !important;
 }
@@ -1900,9 +1906,9 @@ html.dark[data-tenant-module="baby_care"] aside.beauty-erp-sidebar,
 html.dark[data-tenant-module="babycare"] aside.beauty-erp-sidebar,
 html.dark[data-tenant-module="baby_care"] .beauty-erp-sidebar nav,
 html.dark[data-tenant-module="babycare"] .beauty-erp-sidebar nav {
-  background: linear-gradient(135deg, #1C1B19 0%, #2E2B27 100%) !important;
-  border-color: rgba(166, 125, 68, 0.2) !important;
-  color: #EFE9E1 !important;
+  background: linear-gradient(135deg, #091A2D 0%, #112E43 100%) !important;
+  border-color: #243F52 !important;
+  color: #F3F5F7 !important;
 }
 
 /* Beauty Spa tenant shell: default fallback when no brand preset is selected */
@@ -3094,22 +3100,22 @@ html[data-tenant-module="beauty_spa"] .bella-data-table td {
 /* Beauty Spa dark skin, scoped so Bella ERP keeps its existing dark mode. */
 html.dark[data-tenant-module="beauty_spa"],
 html.dark[data-tenant-module="pending"] {
-  --beauty-night: #0B1F3A;
-  --beauty-deep: #143A51;
+  --beauty-night: #091A2D;
+  --beauty-deep: #112E43;
   --beauty-taupe: #746C6B;
-  --beauty-gold: #C49A68;
-  --beauty-gold-2: #FFD66D;
-  --beauty-em: #FFD66D;
-  --beauty-em-2: #C49A68;
-  --beauty-sap: #0B1F3A;
-  --beauty-sap-2: #143A51;
-  --beauty-bg: #0B1F3A;
-  --beauty-card: #143A51;
-  --beauty-text: #F8F1E3;
-  --beauty-sub: #E7D2A7;
-  --beauty-hint: #C49A68;
-  --beauty-border: rgba(196, 154, 104, 0.3);
-  --beauty-border-strong: rgba(255, 214, 109, 0.48);
+  --beauty-gold: #B68B45;
+  --beauty-gold-2: #E5B861;
+  --beauty-em: #E5B861;
+  --beauty-em-2: #B68B45;
+  --beauty-sap: #091A2D;
+  --beauty-sap-2: #112E43;
+  --beauty-bg: #091A2D;
+  --beauty-card: #112E43;
+  --beauty-text: #F3F5F7;
+  --beauty-sub: #D8E3EA;
+  --beauty-hint: #B68B45;
+  --beauty-border: rgba(36, 63, 82, 0.3);
+  --beauty-border-strong: rgba(229, 184, 97, 0.48);
   --beauty-shadow-sm: 0 10px 28px rgba(2, 12, 24, 0.26);
   --beauty-shadow-md: 0 20px 56px rgba(2, 12, 24, 0.34);
   --beauty-shadow-lg: 0 34px 84px rgba(2, 12, 24, 0.44);
@@ -3124,20 +3130,20 @@ html.dark[data-tenant-module="pending"] {
   --foreground: var(--beauty-text);
   --card: var(--beauty-card);
   --card-foreground: var(--beauty-text);
-  --muted: rgba(20, 58, 81, 0.72);
+  --muted: rgba(17, 46, 67, 0.72);
   --muted-foreground: var(--beauty-sub);
   --border: var(--beauty-border);
-  --input: rgba(196, 154, 104, 0.34);
+  --input: rgba(36, 63, 82, 0.34);
   --ring: var(--beauty-gold-2);
 }
 
 html.dark[data-tenant-module="beauty_spa"] body,
 html.dark[data-tenant-module="pending"] body {
-  background-color: #0B1F3A !important;
+  background-color: #091A2D !important;
   background-image:
-    radial-gradient(circle at 14% 0%, rgba(255, 214, 109, 0.08) 0%, transparent 34%),
-    radial-gradient(circle at 100% 18%, rgba(196, 154, 104, 0.1) 0%, transparent 38%),
-    linear-gradient(135deg, #0B1F3A 0%, #143A51 58%, #0B1F3A 100%) !important;
+    radial-gradient(circle at 14% 0%, rgba(229, 184, 97, 0.08) 0%, transparent 34%),
+    radial-gradient(circle at 100% 18%, rgba(36, 63, 82, 0.1) 0%, transparent 38%),
+    linear-gradient(135deg, #091A2D 0%, #112E43 58%, #091A2D 100%) !important;
   color: var(--beauty-text) !important;
 }
 
@@ -3153,32 +3159,32 @@ html.dark[data-tenant-module="beauty_spa"] .beauty-erp-sidebar,
 html.dark[data-tenant-module="pending"] .beauty-erp-mobile-header,
 html.dark[data-tenant-module="pending"] .beauty-erp-sidebar {
   background:
-    linear-gradient(180deg, rgba(255, 214, 109, 0.05), transparent 30%),
-    linear-gradient(160deg, rgba(11, 31, 58, 0.98), rgba(20, 58, 81, 0.96)) !important;
-  border-color: rgba(196, 154, 104, 0.34) !important;
+    linear-gradient(180deg, rgba(229, 184, 97, 0.05), transparent 30%),
+    linear-gradient(160deg, rgba(9, 26, 45, 0.98), rgba(17, 46, 67, 0.96)) !important;
+  border-color: rgba(36, 63, 82, 0.34) !important;
   box-shadow: 18px 0 56px rgba(2, 12, 24, 0.36) !important;
   color: var(--beauty-text) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-sidebar::before,
 html.dark[data-tenant-module="pending"] .beauty-erp-sidebar::before {
-  border-color: rgba(255, 214, 109, 0.14) !important;
+  border-color: rgba(229, 184, 97, 0.14) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-logo-mark,
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-logo-mark-large,
 html.dark[data-tenant-module="pending"] .beauty-erp-logo-mark,
 html.dark[data-tenant-module="pending"] .beauty-erp-logo-mark-large {
-  background: linear-gradient(145deg, #143A51 0%, #0B1F3A 100%) !important;
-  border: 1px solid rgba(255, 214, 109, 0.34) !important;
+  background: linear-gradient(145deg, #112E43 0%, #091A2D 100%) !important;
+  border: 1px solid rgba(229, 184, 97, 0.34) !important;
   box-shadow: 0 18px 48px rgba(2, 12, 24, 0.42) !important;
-  color: #FFD66D !important;
+  color: #E5B861 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-brand-script,
 html.dark[data-tenant-module="pending"] .beauty-erp-brand-script {
-  color: #FFD66D !important;
-  text-shadow: 0 10px 32px rgba(255, 214, 109, 0.12);
+  color: #E5B861 !important;
+  text-shadow: 0 10px 32px rgba(229, 184, 97, 0.12);
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-brand-subtitle,
@@ -3187,7 +3193,7 @@ html.dark[data-tenant-module="beauty_spa"] .beauty-erp-profile-role,
 html.dark[data-tenant-module="pending"] .beauty-erp-brand-subtitle,
 html.dark[data-tenant-module="pending"] .beauty-erp-nav-header,
 html.dark[data-tenant-module="pending"] .beauty-erp-profile-role {
-  color: #C49A68 !important;
+  color: #B68B45 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item,
@@ -3205,26 +3211,26 @@ html.dark[data-tenant-module="pending"] .beauty-erp-nav-item svg {
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active),
 html.dark[data-tenant-module="pending"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) {
-  background: rgba(255, 214, 109, 0.1) !important;
-  border-color: rgba(255, 214, 109, 0.24) !important;
-  color: #FFD66D !important;
+  background: rgba(229, 184, 97, 0.1) !important;
+  border-color: rgba(229, 184, 97, 0.24) !important;
+  color: #E5B861 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) svg,
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) span,
 html.dark[data-tenant-module="pending"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) svg,
 html.dark[data-tenant-module="pending"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) span {
-  color: #FFD66D !important;
+  color: #E5B861 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active,
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover,
 html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active,
 html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover {
-  background: linear-gradient(135deg, #FFD66D 0%, #C49A68 100%) !important;
-  border-color: rgba(255, 214, 109, 0.54) !important;
-  box-shadow: 0 16px 36px rgba(255, 214, 109, 0.14) !important;
-  color: #0B1F3A !important;
+  background: linear-gradient(135deg, #E5B861 0%, #B68B45 100%) !important;
+  border-color: rgba(229, 184, 97, 0.54) !important;
+  box-shadow: 0 16px 36px rgba(229, 184, 97, 0.14) !important;
+  color: #091A2D !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active svg,
@@ -3235,34 +3241,34 @@ html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active svg,
 html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active span,
 html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover svg,
 html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover span {
-  color: #0B1F3A !important;
+  color: #091A2D !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-profile-card,
 html.dark[data-tenant-module="pending"] .beauty-erp-profile-card {
-  background: rgba(20, 58, 81, 0.82) !important;
-  border-color: rgba(196, 154, 104, 0.38) !important;
+  background: rgba(17, 46, 67, 0.82) !important;
+  border-color: rgba(36, 63, 82, 0.38) !important;
   box-shadow: 0 18px 48px rgba(2, 12, 24, 0.34) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-profile-name,
 html.dark[data-tenant-module="pending"] .beauty-erp-profile-name {
-  color: #F8F1E3 !important;
+  color: #F3F5F7 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-avatar,
 html.dark[data-tenant-module="beauty_spa"] .beauty-erp-icon-button,
 html.dark[data-tenant-module="pending"] .beauty-erp-avatar,
 html.dark[data-tenant-module="pending"] .beauty-erp-icon-button {
-  background: rgba(11, 31, 58, 0.76) !important;
-  border-color: rgba(255, 214, 109, 0.24) !important;
-  color: #FFD66D !important;
+  background: rgba(9, 26, 45, 0.76) !important;
+  border-color: rgba(229, 184, 97, 0.24) !important;
+  color: #E5B861 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] main h1,
 html.dark[data-tenant-module="beauty_spa"] main h2,
 html.dark[data-tenant-module="beauty_spa"] main h3 {
-  color: #F8F1E3 !important;
+  color: #F3F5F7 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] main [class*="text-slate-900"],
@@ -3271,7 +3277,7 @@ html.dark[data-tenant-module="beauty_spa"] main [class*="text-slate-700"],
 html.dark[data-tenant-module="pending"] main [class*="text-slate-900"],
 html.dark[data-tenant-module="pending"] main [class*="text-slate-800"],
 html.dark[data-tenant-module="pending"] main [class*="text-slate-700"] {
-  color: #F8F1E3 !important;
+  color: #F3F5F7 !important;
 }
 
 /* Light mode: Make text-slate-700/600/500 darker for better contrast */
@@ -3304,7 +3310,7 @@ html.dark[data-tenant-module="pending"] .text-muted-foreground,
 html.dark[data-tenant-module="pending"] [class*="text-slate-600"],
 html.dark[data-tenant-module="pending"] [class*="text-slate-500"],
 html.dark[data-tenant-module="pending"] [class*="text-slate-400"] {
-  color: #E7D2A7 !important;
+  color: #D8E3EA !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .glass-pink,
@@ -3320,16 +3326,16 @@ html.dark[data-tenant-module="pending"] .bg-white,
 html.dark[data-tenant-module="pending"] [class*="bg-white"],
 html.dark[data-tenant-module="pending"] .bg-slate-50 {
   background:
-    linear-gradient(180deg, rgba(20, 58, 81, 0.84), rgba(11, 31, 58, 0.78)) !important;
-  border-color: rgba(196, 154, 104, 0.28) !important;
+    linear-gradient(180deg, rgba(17, 46, 67, 0.84), rgba(9, 26, 45, 0.78)) !important;
+  border-color: rgba(36, 63, 82, 0.28) !important;
   box-shadow: var(--beauty-shadow-md) !important;
-  color: #F8F1E3 !important;
+  color: #F3F5F7 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .glass-pink:hover,
 html.dark[data-tenant-module="beauty_spa"] .luxury-card-white:hover,
 html.dark[data-tenant-module="beauty_spa"] .luxury-box-hover:hover {
-  border-color: rgba(255, 214, 109, 0.38) !important;
+  border-color: rgba(229, 184, 97, 0.38) !important;
   box-shadow: var(--beauty-shadow-lg) !important;
 }
 
@@ -3345,10 +3351,10 @@ html.dark[data-tenant-module="pending"] button[class*="bg-primary"]:not([class*=
 html.dark[data-tenant-module="pending"] a[class*="bg-primary"]:not([class*="bg-primary/"]),
 html.dark[data-tenant-module="pending"] button[class*="from-primary"],
 html.dark[data-tenant-module="pending"] a[class*="from-primary"] {
-  background: linear-gradient(135deg, #FFD66D 0%, #C49A68 100%) !important;
-  border-color: rgba(255, 214, 109, 0.52) !important;
-  box-shadow: 0 16px 34px rgba(255, 214, 109, 0.14) !important;
-  color: #0B1F3A !important;
+  background: linear-gradient(135deg, #E5B861 0%, #B68B45 100%) !important;
+  border-color: rgba(229, 184, 97, 0.52) !important;
+  box-shadow: 0 16px 34px rgba(229, 184, 97, 0.14) !important;
+  color: #091A2D !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-customer-add-cta svg,
@@ -3359,7 +3365,7 @@ html.dark[data-tenant-module="pending"] .beauty-customer-add-cta svg,
 html.dark[data-tenant-module="pending"] .beauty-customer-add-cta span,
 html.dark[data-tenant-module="pending"] .beauty-active-care-badge svg,
 html.dark[data-tenant-module="pending"] .beauty-active-care-badge span {
-  color: #0B1F3A !important;
+  color: #091A2D !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-customer-add-cta:hover,
@@ -3368,8 +3374,8 @@ html.dark[data-tenant-module="beauty_spa"] a[class*="bg-primary"]:not([class*="b
 html.dark[data-tenant-module="pending"] .beauty-customer-add-cta:hover,
 html.dark[data-tenant-module="pending"] button[class*="bg-primary"]:not([class*="bg-primary/"]):hover,
 html.dark[data-tenant-module="pending"] a[class*="bg-primary"]:not([class*="bg-primary/"]):hover {
-  background: linear-gradient(135deg, #C49A68 0%, #FFD66D 100%) !important;
-  color: #0B1F3A !important;
+  background: linear-gradient(135deg, #B68B45 0%, #E5B861 100%) !important;
+  color: #091A2D !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] input:not([type="checkbox"]):not([type="radio"]),
@@ -3382,10 +3388,10 @@ html.dark[data-tenant-module="pending"] select,
 html.dark[data-tenant-module="pending"] textarea,
 html.dark[data-tenant-module="pending"] .premium-select,
 html.dark[data-tenant-module="pending"] [role="combobox"] {
-  background-color: rgba(11, 31, 58, 0.72) !important;
-  border-color: rgba(196, 154, 104, 0.34) !important;
-  color: #F8F1E3 !important;
-  box-shadow: inset 0 1px 0 rgba(255, 214, 109, 0.05) !important;
+  background-color: rgba(9, 26, 45, 0.72) !important;
+  border-color: rgba(36, 63, 82, 0.34) !important;
+  color: #F3F5F7 !important;
+  box-shadow: inset 0 1px 0 rgba(229, 184, 97, 0.05) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] input::placeholder,
@@ -3401,42 +3407,42 @@ html.dark[data-tenant-module="beauty_spa"] textarea:focus,
 html.dark[data-tenant-module="pending"] input:not([type="checkbox"]):not([type="radio"]):focus,
 html.dark[data-tenant-module="pending"] select:focus,
 html.dark[data-tenant-module="pending"] textarea:focus {
-  border-color: #FFD66D !important;
-  box-shadow: 0 0 0 4px rgba(255, 214, 109, 0.12) !important;
+  border-color: #E5B861 !important;
+  box-shadow: 0 0 0 4px rgba(229, 184, 97, 0.12) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .bella-data-table th,
 html.dark[data-tenant-module="pending"] .bella-data-table th {
-  background: rgba(11, 31, 58, 0.88) !important;
-  border-color: rgba(196, 154, 104, 0.22) !important;
-  color: #FFD66D !important;
+  background: rgba(9, 26, 45, 0.88) !important;
+  border-color: rgba(36, 63, 82, 0.22) !important;
+  color: #E5B861 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .bella-data-table td,
 html.dark[data-tenant-module="pending"] .bella-data-table td {
-  background: rgba(20, 58, 81, 0.42) !important;
-  border-color: rgba(196, 154, 104, 0.18) !important;
-  color: #F8F1E3 !important;
+  background: rgba(17, 46, 67, 0.42) !important;
+  border-color: rgba(36, 63, 82, 0.18) !important;
+  color: #F3F5F7 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .bella-data-table tr:hover td,
 html.dark[data-tenant-module="pending"] .bella-data-table tr:hover td {
-  background: rgba(255, 214, 109, 0.08) !important;
+  background: rgba(229, 184, 97, 0.08) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar,
 html.dark[data-tenant-module="pending"] .custom-scrollbar {
-  scrollbar-color: rgba(255, 214, 109, 0.72) rgba(11, 31, 58, 0.76);
+  scrollbar-color: rgba(229, 184, 97, 0.72) rgba(9, 26, 45, 0.76);
 }
 
 html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar:has(.bella-data-table),
 html.dark[data-tenant-module="pending"] .custom-scrollbar:has(.bella-data-table) {
   background:
-    linear-gradient(90deg, rgba(11, 31, 58, 0.82), rgba(20, 58, 81, 0.84)) !important;
-  border-color: rgba(196, 154, 104, 0.24) !important;
+    linear-gradient(90deg, rgba(9, 26, 45, 0.82), rgba(17, 46, 67, 0.84)) !important;
+  border-color: rgba(36, 63, 82, 0.24) !important;
   box-shadow:
-    inset -28px 0 26px -30px rgba(255, 214, 109, 0.22),
-    inset 28px 0 26px -30px rgba(255, 214, 109, 0.14) !important;
+    inset -28px 0 26px -30px rgba(229, 184, 97, 0.22),
+    inset 28px 0 26px -30px rgba(229, 184, 97, 0.14) !important;
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
@@ -3444,7 +3450,7 @@ html.dark[data-tenant-module="pending"] .custom-scrollbar:has(.bella-data-table)
 
 html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar:has(.bella-data-table) .bella-data-table,
 html.dark[data-tenant-module="pending"] .custom-scrollbar:has(.bella-data-table) .bella-data-table {
-  background: rgba(20, 58, 81, 0.54);
+  background: rgba(17, 46, 67, 0.54);
   min-width: max-content;
   width: 100%;
 }
@@ -3457,15 +3463,15 @@ html.dark[data-tenant-module="pending"] .custom-scrollbar::-webkit-scrollbar {
 
 html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar::-webkit-scrollbar-track,
 html.dark[data-tenant-module="pending"] .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(11, 31, 58, 0.78) !important;
-  border: 3px solid rgba(20, 58, 81, 0.78);
+  background: rgba(9, 26, 45, 0.78) !important;
+  border: 3px solid rgba(17, 46, 67, 0.78);
   border-radius: 999px;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar::-webkit-scrollbar-thumb,
 html.dark[data-tenant-module="pending"] .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(90deg, #FFD66D, #C49A68) !important;
-  border: 2px solid rgba(11, 31, 58, 0.78);
+  background: linear-gradient(90deg, #E5B861, #B68B45) !important;
+  border: 2px solid rgba(9, 26, 45, 0.78);
   border-radius: 999px;
 }
 
@@ -3476,23 +3482,23 @@ html.dark[data-tenant-module="pending"] .custom-scrollbar::-webkit-scrollbar-thu
 
 html.dark[data-tenant-module="beauty_spa"] .dashboard-schedule-card {
   background:
-    linear-gradient(180deg, rgba(20, 58, 81, 0.88), rgba(11, 31, 58, 0.8)) !important;
-  border-color: rgba(196, 154, 104, 0.3) !important;
+    linear-gradient(180deg, rgba(17, 46, 67, 0.88), rgba(9, 26, 45, 0.8)) !important;
+  border-color: rgba(36, 63, 82, 0.3) !important;
   box-shadow: 0 22px 64px rgba(2, 12, 24, 0.32) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .dashboard-schedule-progress-track {
   background: rgba(248, 241, 227, 0.12) !important;
-  border-color: rgba(196, 154, 104, 0.22) !important;
+  border-color: rgba(36, 63, 82, 0.22) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .dashboard-schedule-progress-fill {
-  background: linear-gradient(90deg, #FFD66D, #C49A68) !important;
+  background: linear-gradient(90deg, #E5B861, #B68B45) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .active-booking-panel {
-  background: linear-gradient(135deg, #143A51 0%, #0B1F3A 100%) !important;
-  border-color: rgba(255, 214, 109, 0.22) !important;
+  background: linear-gradient(135deg, #112E43 0%, #091A2D 100%) !important;
+  border-color: rgba(229, 184, 97, 0.22) !important;
   box-shadow: 0 24px 70px rgba(2, 12, 24, 0.38) !important;
 }
 
@@ -3504,9 +3510,9 @@ html.dark[data-tenant-module="pending"] [class*="bg-background"] {
 html.dark[data-tenant-module="beauty_spa"] .flex.h-screen.w-screen[class*="bg-background"],
 html.dark[data-tenant-module="pending"] .flex.h-screen.w-screen[class*="bg-background"] {
   background:
-    radial-gradient(circle at 14% 0%, rgba(255, 214, 109, 0.08) 0%, transparent 34%),
-    radial-gradient(circle at 100% 18%, rgba(196, 154, 104, 0.1) 0%, transparent 38%),
-    linear-gradient(135deg, #0B1F3A 0%, #143A51 58%, #0B1F3A 100%) !important;
+    radial-gradient(circle at 14% 0%, rgba(229, 184, 97, 0.08) 0%, transparent 34%),
+    radial-gradient(circle at 100% 18%, rgba(36, 63, 82, 0.1) 0%, transparent 38%),
+    linear-gradient(135deg, #091A2D 0%, #112E43 58%, #091A2D 100%) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] [class*="from-white"],
@@ -3520,9 +3526,9 @@ html.dark[data-tenant-module="pending"] [class*="to-white"],
 html.dark[data-tenant-module="pending"] .bg-slate-100,
 html.dark[data-tenant-module="pending"] .bg-slate-200 {
   background:
-    linear-gradient(180deg, rgba(20, 58, 81, 0.86), rgba(11, 31, 58, 0.8)) !important;
-  border-color: rgba(196, 154, 104, 0.28) !important;
-  color: #F8F1E3 !important;
+    linear-gradient(180deg, rgba(17, 46, 67, 0.86), rgba(9, 26, 45, 0.8)) !important;
+  border-color: rgba(36, 63, 82, 0.28) !important;
+  color: #F3F5F7 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .bella-toolbar,
@@ -3530,46 +3536,46 @@ html.dark[data-tenant-module="beauty_spa"] .bella-pagination,
 html.dark[data-tenant-module="pending"] .bella-toolbar,
 html.dark[data-tenant-module="pending"] .bella-pagination {
   background:
-    linear-gradient(180deg, rgba(20, 58, 81, 0.88), rgba(11, 31, 58, 0.78)) !important;
-  border-color: rgba(196, 154, 104, 0.3) !important;
+    linear-gradient(180deg, rgba(17, 46, 67, 0.88), rgba(9, 26, 45, 0.78)) !important;
+  border-color: rgba(36, 63, 82, 0.3) !important;
   box-shadow: 0 20px 56px rgba(2, 12, 24, 0.28) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle,
 html.dark[data-tenant-module="pending"] .beauty-theme-toggle {
-  background: rgba(11, 31, 58, 0.78) !important;
-  border-color: rgba(196, 154, 104, 0.38) !important;
+  background: rgba(9, 26, 45, 0.78) !important;
+  border-color: rgba(36, 63, 82, 0.38) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 214, 109, 0.06),
+    inset 0 1px 0 rgba(229, 184, 97, 0.06),
     0 12px 28px rgba(2, 12, 24, 0.18) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle-skeleton,
 html.dark[data-tenant-module="pending"] .beauty-theme-toggle-skeleton {
-  background: rgba(20, 58, 81, 0.7) !important;
+  background: rgba(17, 46, 67, 0.7) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle-active-light,
 html.dark[data-tenant-module="pending"] .beauty-theme-toggle-active-light {
-  background: linear-gradient(135deg, rgba(255, 214, 109, 0.92), rgba(196, 154, 104, 0.92)) !important;
-  border-color: rgba(255, 214, 109, 0.48) !important;
+  background: linear-gradient(135deg, rgba(229, 184, 97, 0.92), rgba(36, 63, 82, 0.92)) !important;
+  border-color: rgba(229, 184, 97, 0.48) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle-active-dark,
 html.dark[data-tenant-module="pending"] .beauty-theme-toggle-active-dark {
-  background: linear-gradient(135deg, #FFD66D 0%, #C49A68 100%) !important;
-  border-color: rgba(255, 214, 109, 0.52) !important;
-  box-shadow: 0 8px 20px rgba(255, 214, 109, 0.12) !important;
+  background: linear-gradient(135deg, #E5B861 0%, #B68B45 100%) !important;
+  border-color: rgba(229, 184, 97, 0.52) !important;
+  box-shadow: 0 8px 20px rgba(229, 184, 97, 0.12) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle button,
 html.dark[data-tenant-module="pending"] .beauty-theme-toggle button {
-  color: #E7D2A7 !important;
+  color: #D8E3EA !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle-button-active,
 html.dark[data-tenant-module="pending"] .beauty-theme-toggle-button-active {
-  color: #0B1F3A !important;
+  color: #091A2D !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] button[class*="hover:bg-primary/"],
@@ -3580,28 +3586,28 @@ html.dark[data-tenant-module="pending"] button[class*="hover:bg-primary/"],
 html.dark[data-tenant-module="pending"] [class*="bg-primary/5"],
 html.dark[data-tenant-module="pending"] [class*="bg-primary/10"],
 html.dark[data-tenant-module="pending"] [class*="bg-primary/20"] {
-  background: rgba(20, 58, 81, 0.68) !important;
-  border-color: rgba(196, 154, 104, 0.28) !important;
-  color: #F8F1E3 !important;
+  background: rgba(17, 46, 67, 0.68) !important;
+  border-color: rgba(36, 63, 82, 0.28) !important;
+  color: #F3F5F7 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] button[class*="hover:bg-primary/"]:hover,
 html.dark[data-tenant-module="pending"] button[class*="hover:bg-primary/"]:hover {
-  background: rgba(255, 214, 109, 0.12) !important;
-  border-color: rgba(255, 214, 109, 0.38) !important;
-  color: #FFD66D !important;
+  background: rgba(229, 184, 97, 0.12) !important;
+  border-color: rgba(229, 184, 97, 0.38) !important;
+  color: #E5B861 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] [class*="text-primary"],
 html.dark[data-tenant-module="pending"] [class*="text-primary"] {
-  color: #FFD66D !important;
+  color: #E5B861 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] button[class*="bg-primary"]:not([class*="bg-primary/"]) [class*="text-primary"],
 html.dark[data-tenant-module="beauty_spa"] a[class*="bg-primary"]:not([class*="bg-primary/"]) [class*="text-primary"],
 html.dark[data-tenant-module="pending"] button[class*="bg-primary"]:not([class*="bg-primary/"]) [class*="text-primary"],
 html.dark[data-tenant-module="pending"] a[class*="bg-primary"]:not([class*="bg-primary/"]) [class*="text-primary"] {
-  color: #0B1F3A !important;
+  color: #091A2D !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] [class*="border-white"],
@@ -3610,7 +3616,7 @@ html.dark[data-tenant-module="beauty_spa"] [class*="border-slate-200"],
 html.dark[data-tenant-module="pending"] [class*="border-white"],
 html.dark[data-tenant-module="pending"] [class*="border-slate-100"],
 html.dark[data-tenant-module="pending"] [class*="border-slate-200"] {
-  border-color: rgba(196, 154, 104, 0.28) !important;
+  border-color: rgba(36, 63, 82, 0.28) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .fixed.inset-0[class*="bg-[#1A0A0E]"],
@@ -3621,9 +3627,9 @@ html.dark[data-tenant-module="pending"] .fixed.inset-0[class*="bg-[#1A0A0E]"] {
 html.dark[data-tenant-module="beauty_spa"] .beauty-top-ktv-table-wrap,
 html.dark[data-tenant-module="pending"] .beauty-top-ktv-table-wrap {
   width: 100%;
-  border: 1px solid rgba(196, 154, 104, 0.22);
+  border: 1px solid rgba(36, 63, 82, 0.22);
   border-radius: 1.5rem;
-  background: rgba(11, 31, 58, 0.32);
+  background: rgba(9, 26, 45, 0.32);
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-top-ktv-table,
@@ -3635,60 +3641,60 @@ html.dark[data-tenant-module="pending"] .beauty-top-ktv-table {
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-top-ktv-table th,
 html.dark[data-tenant-module="pending"] .beauty-top-ktv-table th {
-  background: rgba(11, 31, 58, 0.92) !important;
+  background: rgba(9, 26, 45, 0.92) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-top-ktv-table td,
 html.dark[data-tenant-module="pending"] .beauty-top-ktv-table td {
-  background: rgba(20, 58, 81, 0.48) !important;
+  background: rgba(17, 46, 67, 0.48) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-alert-item,
 html.dark[data-tenant-module="pending"] .beauty-alert-item {
   background:
-    linear-gradient(135deg, rgba(20, 58, 81, 0.82), rgba(11, 31, 58, 0.78)) !important;
-  border-color: rgba(196, 154, 104, 0.32) !important;
-  color: #F8F1E3 !important;
+    linear-gradient(135deg, rgba(17, 46, 67, 0.82), rgba(9, 26, 45, 0.78)) !important;
+  border-color: rgba(36, 63, 82, 0.32) !important;
+  color: #F3F5F7 !important;
   box-shadow: 0 18px 44px rgba(2, 12, 24, 0.24) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-alert-item[data-alert-tone="warning"],
 html.dark[data-tenant-module="pending"] .beauty-alert-item[data-alert-tone="warning"] {
   background:
-    linear-gradient(135deg, rgba(255, 214, 109, 0.16), rgba(20, 58, 81, 0.78) 44%, rgba(11, 31, 58, 0.82)) !important;
-  border-color: rgba(255, 214, 109, 0.46) !important;
+    linear-gradient(135deg, rgba(229, 184, 97, 0.16), rgba(17, 46, 67, 0.78) 44%, rgba(9, 26, 45, 0.82)) !important;
+  border-color: rgba(229, 184, 97, 0.46) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-alert-item[data-alert-tone="success"],
 html.dark[data-tenant-module="pending"] .beauty-alert-item[data-alert-tone="success"] {
   background:
-    linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(20, 58, 81, 0.78) 44%, rgba(11, 31, 58, 0.82)) !important;
+    linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(17, 46, 67, 0.78) 44%, rgba(9, 26, 45, 0.82)) !important;
   border-color: rgba(74, 222, 128, 0.36) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-alert-item[data-alert-tone="info"],
 html.dark[data-tenant-module="pending"] .beauty-alert-item[data-alert-tone="info"] {
   background:
-    linear-gradient(135deg, rgba(96, 165, 250, 0.14), rgba(20, 58, 81, 0.78) 44%, rgba(11, 31, 58, 0.82)) !important;
+    linear-gradient(135deg, rgba(96, 165, 250, 0.14), rgba(17, 46, 67, 0.78) 44%, rgba(9, 26, 45, 0.82)) !important;
   border-color: rgba(147, 197, 253, 0.34) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-alert-title,
 html.dark[data-tenant-module="pending"] .beauty-alert-title {
-  color: #F8F1E3 !important;
+  color: #F3F5F7 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-alert-message,
 html.dark[data-tenant-module="pending"] .beauty-alert-message {
-  color: #E7D2A7 !important;
+  color: #D8E3EA !important;
   opacity: 1 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .beauty-alert-icon,
 html.dark[data-tenant-module="pending"] .beauty-alert-icon {
-  background: rgba(11, 31, 58, 0.72) !important;
-  border: 1px solid rgba(255, 214, 109, 0.22);
-  color: #FFD66D !important;
+  background: rgba(9, 26, 45, 0.72) !important;
+  border: 1px solid rgba(229, 184, 97, 0.22);
+  color: #E5B861 !important;
 }
 /* Tenant brand controls. These are intentionally module-scoped so Beauty
    white-label styling can change without pulling Bella ERP into the same skin. */
@@ -4330,10 +4336,10 @@ html:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] [class*="
 
 /* Real Estate Dark Mode Overrides — scoped to luxury_navy preset (default) */
 html.dark:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] body {
-  background-color: #0b0f19 !important;
+  background-color: #091A2D !important;
   background-image:
-    radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.03) 0%, transparent 40%),
-    radial-gradient(circle at 100% 100%, rgba(217, 119, 6, 0.03) 0%, transparent 40%) !important;
+    radial-gradient(circle at 0% 0%, rgba(39, 197, 150, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(229, 184, 97, 0.07) 0%, transparent 40%) !important;
 }
 
 html.dark:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] .glass-pink,
@@ -4342,27 +4348,27 @@ html.dark:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] .lux
 html.dark:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] .bg-white,
 html.dark:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] [class*="bg-white"],
 html.dark:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] .bg-slate-50 {
-  background: rgba(15, 23, 42, 0.75) !important;
-  border-color: rgba(217, 119, 6, 0.2) !important;
+  background: rgba(17, 46, 67, 0.75) !important;
+  border-color: #243F52 !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
-  color: #f8fafc !important;
+  color: #F3F5F7 !important;
 }
 
 html.dark:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] .glass-pink:hover,
 html.dark:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] .luxury-card-white:hover,
 html.dark:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] .luxury-box-hover:hover {
-  border-color: rgba(217, 119, 6, 0.35) !important;
+  border-color: rgba(229, 184, 97, 0.35) !important;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
 }
 
 html.dark:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] .luxury-card-pink {
-  background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%) !important;
-  border-color: rgba(217, 119, 6, 0.25) !important;
-  color: #ffffff !important;
+  background: linear-gradient(135deg, #112E43 0%, #091A2D 100%) !important;
+  border-color: rgba(229, 184, 97, 0.25) !important;
+  color: #F3F5F7 !important;
 }
 
 html.dark:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] [class*="bg-[#5D1C34]"] {
-  background-color: rgba(30, 58, 138, 0.25) !important; /* Navy-900 / 25% override */
+  background-color: rgba(17, 46, 67, 0.78) !important;
 }
 
 html:not([data-tenant-brand-preset])[data-tenant-module="real_estate"] .beauty-erp-mobile-header,
@@ -5883,8 +5889,43 @@ html.dark body,
 html.dark[data-tenant-brand-preset] body {
   background-color: var(--dashboard-viewport-bg) !important;
   background-image:
-    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 36%),
-    radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 40%) !important;
+    radial-gradient(circle at 0% 0%, rgba(39, 197, 150, 0.08) 0%, transparent 36%),
+    radial-gradient(circle at 100% 100%, rgba(229, 184, 97, 0.07) 0%, transparent 40%) !important;
+}
+
+html.dark .beauty-erp-sidebar,
+html.dark aside.beauty-erp-sidebar,
+html.dark aside[class*="beauty-erp-sidebar"] {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(39, 197, 150, 0.10), transparent 38%),
+    linear-gradient(180deg, #0B252D 0%, #071B28 100%) !important;
+  border-color: #243F52 !important;
+  color: #F3F5F7 !important;
+}
+
+html.dark .beauty-erp-sidebar-inner,
+html.dark .beauty-erp-sidebar > div {
+  background: rgba(11, 37, 45, 0.82) !important;
+  border-color: #243F52 !important;
+}
+
+html.dark .beauty-erp-nav-header,
+html.dark .beauty-erp-brand-subtitle,
+html.dark .beauty-erp-profile-role {
+  color: #E5B861 !important;
+}
+
+html.dark .beauty-erp-profile-card,
+html.dark .beauty-erp-avatar,
+html.dark .beauty-erp-icon-button {
+  background: rgba(17, 46, 67, 0.88) !important;
+  border-color: #243F52 !important;
+  color: #F3F5F7 !important;
+}
+
+html.dark .beauty-erp-profile-name,
+html.dark .beauty-erp-brand-script {
+  color: #F3F5F7 !important;
 }
 
 /* ==========================================================================
