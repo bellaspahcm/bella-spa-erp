@@ -5051,7 +5051,7 @@ None.
 # Architecture Gate - Bella Premium Dark Theme Color Standardization (2026-10-08)
 
 > **Status:** PASS - presentation-only dark theme color standardization using the requested Premium Navy / Deep Teal / Champagne Gold palette.
-> **Scope:** shared dashboard dark tokens, dark-mode dashboard surfaces, sidebar dark-mode hardcoded color cleanup, module-scoped dark presentation overrides, and Beauty Spa V2 AI Copilot dark colors. No Light Theme preset changes, no schema, DB, RPC, RLS, API, service, analytics, Healthcare H1-H12, Education Kernel, Logistics Kernel, or Product contract changes.
+> **Scope:** shared dashboard dark tokens, dark-mode dashboard surfaces, sidebar dark-mode hardcoded color cleanup, module-scoped dark presentation overrides, payroll/salary dark contrast surfaces, and Beauty Spa V2 AI Copilot dark colors. No Light Theme preset changes, no schema, DB, RPC, RLS, API, service, analytics, payroll formula/workflow, Healthcare H1-H12, Education Kernel, Logistics Kernel, or Product contract changes.
 
 ## 1. Bella OS/Product Development Process Gate
 
@@ -5067,6 +5067,7 @@ None.
 | Shared dashboard shell | Premium dark palette | Use shared dark tokens for viewport, cards, borders, text, and primary action |
 | Sidebar | Premium dark palette | Normalize dark-mode sidebar color independent from light preset identity |
 | Module-scoped dark presentation overrides | Premium dark palette | Replace legacy burgundy/espresso dark surfaces with shared dark palette while preserving product/light preset rules |
+| Salary/payroll UI surfaces | Premium dark palette | Keep existing data/actions; normalize alert cards, status pills, modals, and salary tables for dark contrast |
 | Beauty Spa V2 AI Copilot | Dark-mode card readability | Keep component structure; replace dark-mode light lavender surface with dark premium surface |
 
 ## 3. Ownership Map
@@ -5076,8 +5077,9 @@ None.
 | Dark theme color tokens | Shared UI theme CSS | Authorized |
 | Beauty dashboard AI card presentation | Product UI presentation | Authorized |
 | Sidebar and legacy dark presentation overrides | Shared/Product UI presentation | Authorized |
+| Payroll health/modal/table presentation | Product UI presentation | Authorized |
 | Light Theme preset colors | Existing tenant brand/theme resolver | Not authorized |
-| Dashboard data/actions/workflows | Existing analytics/services/actions | Not authorized |
+| Dashboard/payroll data, formulas, and actions | Existing analytics/services/actions | Not authorized |
 | Healthcare/Education/Logistics kernels | Frozen Kernel owners | Not authorized |
 
 ## 4. Contract Dependency Map
@@ -5095,7 +5097,7 @@ No Product -> Contract -> Kernel dependency changes are required.
 
 Authorized layers: shared CSS tokens/dark presentation overrides, sidebar presentation classes, and Beauty Spa V2 dashboard dark-mode classes.
 
-Not authorized: data contracts, APIs, server actions, database schema, migrations, production data, auth/RLS, accounting, booking/inventory workflows, Healthcare/Education/Logistics Kernel files, and Light Theme preset values.
+Not authorized: data contracts, APIs, server actions, database schema, migrations, production data, auth/RLS, payroll formulas/workflows, accounting, booking/inventory workflows, Healthcare/Education/Logistics Kernel files, and Light Theme preset values.
 
 ## 6. UI -> Contract Reconciliation
 
@@ -5104,6 +5106,7 @@ Not authorized: data contracts, APIs, server actions, database schema, migration
 | Dashboard background/surface | CSS semantic dark tokens only | MATCH |
 | Sidebar dark mode | CSS semantic dark tokens only | MATCH |
 | AI Copilot dark surface | Existing component, presentation classes only | MATCH |
+| Payroll health/status panels | Existing payroll props and anomaly data, presentation classes only | MATCH |
 | AI alert counts/inventory values | Existing props | UNCHANGED |
 | Buttons/actions/links | Existing links/callbacks | UNCHANGED |
 
