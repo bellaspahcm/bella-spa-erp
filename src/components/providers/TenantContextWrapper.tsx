@@ -22,6 +22,7 @@ const PUBLIC_ROUTES = [
   '/beauty-spa', // Public marketing page
   '/bellaspa', // Public Bella Spa page
   '/portal', // Public customer portal links
+  '/warehouse', // Canonical Warehouse browser entries authenticate in Server Actions
 ];
 
 /**
