@@ -27,6 +27,8 @@ type PgRows<Row extends Record<string, unknown>> = {
 type ProofIds = {
   readonly tenantA: string;
   readonly tenantB: string;
+  readonly userA: string;
+  readonly userB: string;
   readonly partyA: string;
   readonly marker: string;
 };
@@ -198,6 +200,7 @@ describeWithRealDb('Hospitality Phase 6 Housekeeping Real DB proof', () => {
     expect(completed.roomState.status).toBe('clean');
 
     const sameTenantRows = await queryAsTenant<HousekeepingReadbackRow>(
+      ids.userA,
       ids.tenantA,
       `
         SELECT
@@ -216,6 +219,7 @@ describeWithRealDb('Hospitality Phase 6 Housekeeping Real DB proof', () => {
     );
 
     const crossTenantRows = await queryAsTenant<HousekeepingReadbackRow>(
+      ids.userB,
       ids.tenantB,
       `
         SELECT
@@ -233,6 +237,7 @@ describeWithRealDb('Hospitality Phase 6 Housekeeping Real DB proof', () => {
       [foundation.room.id]
     );
     const crossTenantMutationRows = await queryAsTenant<{ id: string }>(
+      ids.userB,
       ids.tenantB,
       `
         UPDATE public.hospitality_room_housekeeping_statuses
@@ -266,6 +271,25 @@ describeWithRealDb('Hospitality Phase 6 Housekeeping Real DB proof', () => {
         `${ids.marker} Tenant A`,
         ids.tenantB,
         `${ids.marker} Tenant B`,
+      ]
+    );
+
+    await client.query(
+      `
+        INSERT INTO public.users (id, tenant_id, email, full_name, role, status)
+        VALUES
+          ($1::uuid, $2::uuid, $3, $4, 'admin', 'active'),
+          ($5::uuid, $6::uuid, $7, $8, 'admin', 'active')
+      `,
+      [
+        ids.userA,
+        ids.tenantA,
+        `${ids.marker}-a@example.test`,
+        `${ids.marker} User A`,
+        ids.userB,
+        ids.tenantB,
+        `${ids.marker}-b@example.test`,
+        `${ids.marker} User B`,
       ]
     );
 
@@ -360,12 +384,12 @@ describeWithRealDb('Hospitality Phase 6 Housekeeping Real DB proof', () => {
 });
 
 async function queryAsTenant<Row extends QueryResultRow>(
+  userId: string,
   tenantId: string,
   sql: string,
   values?: readonly unknown[]
 ): Promise<Row[]> {
   const client = new Client({ connectionString: dbUrl, ssl: sslConfig() });
-  const userId = `hospitality-housekeeping-proof-${tenantId}`;
   const claims = JSON.stringify({
     sub: userId,
     role: 'authenticated',
@@ -407,6 +431,8 @@ function createProofIds(): ProofIds {
   return {
     tenantA: randomUUID(),
     tenantB: randomUUID(),
+    userA: randomUUID(),
+    userB: randomUUID(),
     partyA: randomUUID(),
     marker,
   };
