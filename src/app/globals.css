@@ -1051,6 +1051,399 @@ button[class*="bg-primary"]:not([class*="bg-primary/"]) svg {
 }
 
 /* =========================================================================
+   DARK MODE LEGACY LIGHT UTILITY CONTRAST SAFETY NET
+   Normalizes light-only Tailwind utilities that still appear on older product
+   pages so dark mode keeps one premium Bella palette and readable text.
+   ========================================================================= */
+.dark .bg-slate-50,
+.dark .bg-slate-100,
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
+  background-color: #193A50 !important;
+  color: #F3F5F7 !important;
+  border-color: #243F52 !important;
+}
+
+.dark [class~="bg-slate-50/20"],
+.dark [class~="bg-slate-50/30"],
+.dark [class~="bg-slate-50/40"],
+.dark [class~="bg-slate-50/50"],
+.dark [class~="bg-slate-50/60"],
+.dark [class~="bg-slate-50/70"],
+.dark [class~="bg-slate-50/80"],
+.dark [class~="bg-slate-50/90"],
+.dark [class~="bg-slate-100/20"],
+.dark [class~="bg-slate-100/30"],
+.dark [class~="bg-slate-100/40"],
+.dark [class~="bg-slate-100/50"],
+.dark [class~="bg-gray-50/20"],
+.dark [class~="bg-gray-50/30"],
+.dark [class~="bg-gray-50/40"],
+.dark [class~="bg-gray-50/50"],
+.dark [class~="bg-gray-100/20"],
+.dark [class~="bg-gray-100/30"],
+.dark [class~="bg-gray-100/40"],
+.dark [class~="bg-gray-100/50"] {
+  background-color: rgba(25, 58, 80, 0.78) !important;
+  color: #F3F5F7 !important;
+  border-color: #243F52 !important;
+}
+
+.dark .bg-red-50,
+.dark .bg-red-100,
+.dark .bg-rose-50,
+.dark .bg-rose-100,
+.dark .bg-pink-50,
+.dark .bg-pink-100 {
+  background-color: rgba(239, 115, 122, 0.14) !important;
+  border-color: rgba(239, 115, 122, 0.38) !important;
+}
+
+.dark [class~="bg-red-50/30"],
+.dark [class~="bg-red-50/40"],
+.dark [class~="bg-red-50/50"],
+.dark [class~="bg-red-100/30"],
+.dark [class~="bg-red-100/40"],
+.dark [class~="bg-red-100/50"],
+.dark [class~="bg-rose-50/30"],
+.dark [class~="bg-rose-50/40"],
+.dark [class~="bg-rose-50/50"],
+.dark [class~="bg-rose-100/30"],
+.dark [class~="bg-rose-100/40"],
+.dark [class~="bg-rose-100/50"],
+.dark [class~="bg-pink-50/30"],
+.dark [class~="bg-pink-50/40"],
+.dark [class~="bg-pink-50/50"],
+.dark [class~="bg-pink-100/30"],
+.dark [class~="bg-pink-100/40"],
+.dark [class~="bg-pink-100/50"] {
+  background-color: rgba(239, 115, 122, 0.12) !important;
+  border-color: rgba(239, 115, 122, 0.34) !important;
+}
+
+.dark .bg-amber-50,
+.dark .bg-amber-100,
+.dark .bg-yellow-50,
+.dark .bg-yellow-100,
+.dark .bg-orange-50,
+.dark .bg-orange-100 {
+  background-color: rgba(241, 174, 83, 0.14) !important;
+  border-color: rgba(241, 174, 83, 0.38) !important;
+}
+
+.dark [class~="bg-amber-50/30"],
+.dark [class~="bg-amber-50/40"],
+.dark [class~="bg-amber-50/50"],
+.dark [class~="bg-amber-100/30"],
+.dark [class~="bg-amber-100/40"],
+.dark [class~="bg-amber-100/50"],
+.dark [class~="bg-yellow-50/30"],
+.dark [class~="bg-yellow-50/40"],
+.dark [class~="bg-yellow-50/50"],
+.dark [class~="bg-yellow-100/30"],
+.dark [class~="bg-yellow-100/40"],
+.dark [class~="bg-yellow-100/50"],
+.dark [class~="bg-orange-50/30"],
+.dark [class~="bg-orange-50/40"],
+.dark [class~="bg-orange-50/50"],
+.dark [class~="bg-orange-100/30"],
+.dark [class~="bg-orange-100/40"],
+.dark [class~="bg-orange-100/50"] {
+  background-color: rgba(241, 174, 83, 0.12) !important;
+  border-color: rgba(241, 174, 83, 0.34) !important;
+}
+
+.dark .bg-blue-50,
+.dark .bg-blue-100,
+.dark .bg-sky-50,
+.dark .bg-sky-100,
+.dark .bg-cyan-50,
+.dark .bg-cyan-100 {
+  background-color: rgba(115, 181, 237, 0.14) !important;
+  border-color: rgba(115, 181, 237, 0.38) !important;
+}
+
+.dark [class~="bg-blue-50/30"],
+.dark [class~="bg-blue-50/40"],
+.dark [class~="bg-blue-50/50"],
+.dark [class~="bg-blue-100/30"],
+.dark [class~="bg-blue-100/40"],
+.dark [class~="bg-blue-100/50"],
+.dark [class~="bg-sky-50/30"],
+.dark [class~="bg-sky-50/40"],
+.dark [class~="bg-sky-50/50"],
+.dark [class~="bg-sky-100/30"],
+.dark [class~="bg-sky-100/40"],
+.dark [class~="bg-sky-100/50"],
+.dark [class~="bg-cyan-50/30"],
+.dark [class~="bg-cyan-50/40"],
+.dark [class~="bg-cyan-50/50"],
+.dark [class~="bg-cyan-100/30"],
+.dark [class~="bg-cyan-100/40"],
+.dark [class~="bg-cyan-100/50"] {
+  background-color: rgba(115, 181, 237, 0.12) !important;
+  border-color: rgba(115, 181, 237, 0.34) !important;
+}
+
+.dark .bg-green-50,
+.dark .bg-green-100,
+.dark .bg-emerald-50,
+.dark .bg-emerald-100,
+.dark .bg-teal-50,
+.dark .bg-teal-100 {
+  background-color: rgba(39, 197, 150, 0.14) !important;
+  border-color: rgba(39, 197, 150, 0.38) !important;
+}
+
+.dark [class~="bg-green-50/30"],
+.dark [class~="bg-green-50/40"],
+.dark [class~="bg-green-50/50"],
+.dark [class~="bg-green-100/30"],
+.dark [class~="bg-green-100/40"],
+.dark [class~="bg-green-100/50"],
+.dark [class~="bg-emerald-50/30"],
+.dark [class~="bg-emerald-50/40"],
+.dark [class~="bg-emerald-50/50"],
+.dark [class~="bg-emerald-100/30"],
+.dark [class~="bg-emerald-100/40"],
+.dark [class~="bg-emerald-100/50"],
+.dark [class~="bg-teal-50/30"],
+.dark [class~="bg-teal-50/40"],
+.dark [class~="bg-teal-50/50"],
+.dark [class~="bg-teal-100/30"],
+.dark [class~="bg-teal-100/40"],
+.dark [class~="bg-teal-100/50"] {
+  background-color: rgba(39, 197, 150, 0.12) !important;
+  border-color: rgba(39, 197, 150, 0.34) !important;
+}
+
+.dark .bg-purple-50,
+.dark .bg-purple-100,
+.dark .bg-indigo-50,
+.dark .bg-indigo-100,
+.dark .bg-violet-50,
+.dark .bg-violet-100 {
+  background-color: rgba(169, 155, 235, 0.14) !important;
+  border-color: rgba(169, 155, 235, 0.38) !important;
+}
+
+.dark [class~="bg-purple-50/30"],
+.dark [class~="bg-purple-50/40"],
+.dark [class~="bg-purple-50/50"],
+.dark [class~="bg-purple-100/30"],
+.dark [class~="bg-purple-100/40"],
+.dark [class~="bg-purple-100/50"],
+.dark [class~="bg-indigo-50/30"],
+.dark [class~="bg-indigo-50/40"],
+.dark [class~="bg-indigo-50/50"],
+.dark [class~="bg-indigo-100/30"],
+.dark [class~="bg-indigo-100/40"],
+.dark [class~="bg-indigo-100/50"],
+.dark [class~="bg-violet-50/30"],
+.dark [class~="bg-violet-50/40"],
+.dark [class~="bg-violet-50/50"],
+.dark [class~="bg-violet-100/30"],
+.dark [class~="bg-violet-100/40"],
+.dark [class~="bg-violet-100/50"] {
+  background-color: rgba(169, 155, 235, 0.12) !important;
+  border-color: rgba(169, 155, 235, 0.34) !important;
+}
+
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700 {
+  color: #F3F5F7 !important;
+}
+
+.dark .text-slate-300,
+.dark .text-gray-300 {
+  color: #A9BBC8 !important;
+}
+
+.dark .text-red-900,
+.dark .text-red-800,
+.dark [class~="text-red-900/80"],
+.dark [class~="text-red-800/80"],
+.dark .text-rose-900,
+.dark .text-rose-800,
+.dark [class~="text-rose-900/80"],
+.dark [class~="text-rose-800/80"],
+.dark .text-pink-900,
+.dark .text-pink-800,
+.dark [class~="text-pink-900/80"],
+.dark [class~="text-pink-800/80"],
+.dark .text-amber-900,
+.dark .text-amber-800,
+.dark [class~="text-amber-900/80"],
+.dark [class~="text-amber-800/80"],
+.dark .text-yellow-900,
+.dark .text-yellow-800,
+.dark .text-orange-900,
+.dark .text-orange-800,
+.dark .text-blue-900,
+.dark .text-blue-800,
+.dark [class~="text-blue-900/80"],
+.dark [class~="text-blue-800/80"],
+.dark .text-sky-900,
+.dark .text-sky-800,
+.dark .text-cyan-900,
+.dark .text-cyan-800,
+.dark .text-green-900,
+.dark .text-green-800,
+.dark [class~="text-green-900/80"],
+.dark [class~="text-green-800/80"],
+.dark .text-emerald-900,
+.dark .text-emerald-800,
+.dark .text-teal-900,
+.dark .text-teal-800,
+.dark .text-purple-900,
+.dark .text-purple-800,
+.dark [class~="text-purple-900/80"],
+.dark [class~="text-purple-800/80"],
+.dark .text-indigo-900,
+.dark .text-indigo-800,
+.dark .text-violet-900,
+.dark .text-violet-800 {
+  color: #F3F5F7 !important;
+}
+
+.dark .text-red-700,
+.dark .text-red-600,
+.dark .text-rose-700,
+.dark .text-rose-600,
+.dark .text-pink-700,
+.dark .text-pink-600 {
+  color: #EF737A !important;
+}
+
+.dark .text-amber-700,
+.dark .text-amber-600,
+.dark .text-yellow-700,
+.dark .text-yellow-600,
+.dark .text-orange-700,
+.dark .text-orange-600 {
+  color: #F1AE53 !important;
+}
+
+.dark .text-blue-700,
+.dark .text-blue-600,
+.dark .text-sky-700,
+.dark .text-sky-600,
+.dark .text-cyan-700,
+.dark .text-cyan-600 {
+  color: #73B5ED !important;
+}
+
+.dark .text-green-700,
+.dark .text-green-600,
+.dark .text-emerald-700,
+.dark .text-emerald-600,
+.dark .text-teal-700,
+.dark .text-teal-600 {
+  color: #27C596 !important;
+}
+
+.dark .text-purple-700,
+.dark .text-purple-600,
+.dark .text-indigo-700,
+.dark .text-indigo-600,
+.dark .text-violet-700,
+.dark .text-violet-600 {
+  color: #A99BEB !important;
+}
+
+.dark .border-white,
+.dark .border-slate-50,
+.dark .border-slate-200,
+.dark .border-gray-100,
+.dark .border-gray-200 {
+  border-color: #243F52 !important;
+}
+
+.dark [class~="border-slate-50/40"],
+.dark [class~="border-slate-50/50"],
+.dark [class~="border-slate-50/60"],
+.dark [class~="border-slate-50/70"],
+.dark [class~="border-slate-100/40"],
+.dark [class~="border-slate-100/50"],
+.dark [class~="border-slate-100/60"],
+.dark [class~="border-slate-100/70"],
+.dark [class~="border-slate-200/40"],
+.dark [class~="border-slate-200/50"],
+.dark [class~="border-slate-200/60"],
+.dark [class~="border-slate-200/70"],
+.dark [class~="border-gray-100/40"],
+.dark [class~="border-gray-100/50"],
+.dark [class~="border-gray-100/60"],
+.dark [class~="border-gray-100/70"],
+.dark [class~="border-gray-200/40"],
+.dark [class~="border-gray-200/50"],
+.dark [class~="border-gray-200/60"],
+.dark [class~="border-gray-200/70"] {
+  border-color: #243F52 !important;
+}
+
+.dark .border-red-200,
+.dark .border-red-300,
+.dark .border-rose-200,
+.dark .border-rose-300,
+.dark .border-pink-200,
+.dark .border-pink-300 {
+  border-color: rgba(239, 115, 122, 0.42) !important;
+}
+
+.dark .border-amber-200,
+.dark .border-amber-300,
+.dark .border-yellow-200,
+.dark .border-yellow-300,
+.dark .border-orange-200,
+.dark .border-orange-300 {
+  border-color: rgba(241, 174, 83, 0.42) !important;
+}
+
+.dark .border-blue-200,
+.dark .border-blue-300,
+.dark .border-sky-200,
+.dark .border-sky-300,
+.dark .border-cyan-200,
+.dark .border-cyan-300 {
+  border-color: rgba(115, 181, 237, 0.42) !important;
+}
+
+.dark .border-green-200,
+.dark .border-green-300,
+.dark .border-emerald-200,
+.dark .border-emerald-300,
+.dark .border-teal-200,
+.dark .border-teal-300 {
+  border-color: rgba(39, 197, 150, 0.42) !important;
+}
+
+.dark .border-purple-200,
+.dark .border-purple-300,
+.dark .border-indigo-200,
+.dark .border-indigo-300,
+.dark .border-violet-200,
+.dark .border-violet-300 {
+  border-color: rgba(169, 155, 235, 0.42) !important;
+}
+
+.dark .divide-slate-50 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #243F52 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #A9BBC8 !important;
+}
+
+/* =========================================================================
    MOBILE INPUT AUTO-ZOOM PREVENT
    Sets font-size to 16px for input, select, and textarea on mobile to stop iOS
    Safari and mobile browsers from auto-zooming. Desktop layout remains unchanged.

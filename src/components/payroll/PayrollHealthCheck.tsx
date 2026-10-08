@@ -138,11 +138,12 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
     if (hasCritical) {
       return {
         icon: <XCircle className="w-6 h-6" />,
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-200',
-        textColor: 'text-red-900',
-        iconColor: 'text-red-600',
-        iconBg: 'bg-red-100',
+        bgColor: 'bg-red-50 dark:bg-[rgba(239,115,122,0.12)]',
+        borderColor: 'border-red-200 dark:border-[rgba(239,115,122,0.42)]',
+        textColor: 'text-red-900 dark:text-[#F3F5F7]',
+        descriptionColor: 'text-red-800 dark:text-[#D8E3EA]',
+        iconColor: 'text-red-600 dark:text-[#EF737A]',
+        iconBg: 'bg-red-100 dark:bg-[rgba(239,115,122,0.18)]',
         label: 'CẦN XỬ LÝ NGAY',
         description: `Phát hiện ${criticalAnomalies.length} vấn đề nghiêm trọng cần khắc phục trước khi xuất bản`
       };
@@ -151,11 +152,12 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
     if (warningAnomalies.length > 0) {
       return {
         icon: <AlertTriangle className="w-6 h-6" />,
-        bgColor: 'bg-amber-50',
-        borderColor: 'border-amber-200',
-        textColor: 'text-amber-900',
-        iconColor: 'text-amber-600',
-        iconBg: 'bg-amber-100',
+        bgColor: 'bg-amber-50 dark:bg-[rgba(241,174,83,0.12)]',
+        borderColor: 'border-amber-200 dark:border-[rgba(241,174,83,0.42)]',
+        textColor: 'text-amber-900 dark:text-[#F3F5F7]',
+        descriptionColor: 'text-amber-800 dark:text-[#D8E3EA]',
+        iconColor: 'text-amber-600 dark:text-[#F1AE53]',
+        iconBg: 'bg-amber-100 dark:bg-[rgba(241,174,83,0.18)]',
         label: 'CÓ CẢNH BÁO',
         description: `Phát hiện ${warningAnomalies.length} điểm bất thường nên xem xét trước khi xuất bản`
       };
@@ -164,11 +166,12 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
     if (infoAnomalies.length > 0) {
       return {
         icon: <AlertCircle className="w-6 h-6" />,
-        bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-200',
-        textColor: 'text-blue-900',
-        iconColor: 'text-blue-600',
-        iconBg: 'bg-blue-100',
+        bgColor: 'bg-blue-50 dark:bg-[rgba(115,181,237,0.12)]',
+        borderColor: 'border-blue-200 dark:border-[rgba(115,181,237,0.42)]',
+        textColor: 'text-blue-900 dark:text-[#F3F5F7]',
+        descriptionColor: 'text-blue-800 dark:text-[#D8E3EA]',
+        iconColor: 'text-blue-600 dark:text-[#73B5ED]',
+        iconBg: 'bg-blue-100 dark:bg-[rgba(115,181,237,0.18)]',
         label: 'LƯU Ý',
         description: `${infoAnomalies.length} điểm cần lưu ý (không chặn xuất bản)`
       };
@@ -176,11 +179,12 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
     
     return {
       icon: <CheckCircle2 className="w-6 h-6" />,
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
-      textColor: 'text-green-900',
-      iconColor: 'text-green-600',
-      iconBg: 'bg-green-100',
+      bgColor: 'bg-green-50 dark:bg-[rgba(39,197,150,0.12)]',
+      borderColor: 'border-green-200 dark:border-[rgba(39,197,150,0.42)]',
+      textColor: 'text-green-900 dark:text-[#F3F5F7]',
+      descriptionColor: 'text-green-800 dark:text-[#D8E3EA]',
+      iconColor: 'text-green-600 dark:text-[#27C596]',
+      iconBg: 'bg-green-100 dark:bg-[rgba(39,197,150,0.18)]',
       label: 'BẢNG LƯƠNG KHỎE MẠNH',
       description: 'Không phát hiện vấn đề. Sẵn sàng xuất bản.'
     };
@@ -209,16 +213,16 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
   const getSeverityColor = (severity: SeverityLevel) => {
     switch (severity) {
       case 'critical':
-        return 'bg-red-100 text-red-700 border-red-200';
+        return 'bg-red-100 text-red-700 border-red-200 dark:bg-[rgba(239,115,122,0.14)] dark:text-[#EF737A] dark:border-[rgba(239,115,122,0.38)]';
       case 'warning':
-        return 'bg-amber-100 text-amber-700 border-amber-200';
+        return 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-[rgba(241,174,83,0.14)] dark:text-[#F1AE53] dark:border-[rgba(241,174,83,0.38)]';
       case 'info':
-        return 'bg-blue-100 text-blue-700 border-blue-200';
+        return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-[rgba(115,181,237,0.14)] dark:text-[#73B5ED] dark:border-[rgba(115,181,237,0.38)]';
     }
   };
 
   return (
-    <Card className={`p-5 ${statusConfig.bgColor} border-2 ${statusConfig.borderColor} mb-6`}>
+    <Card className={`p-5 ${statusConfig.bgColor} border-2 ${statusConfig.borderColor} mb-6 dark:shadow-[0_18px_44px_rgba(2,12,24,0.35)]`}>
       {/* Header - Always Visible */}
       <div 
         className="flex items-start justify-between cursor-pointer gap-4"
@@ -239,26 +243,26 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
                 </span>
               )}
             </div>
-            <p className={`text-sm font-medium ${statusConfig.textColor}/80 leading-relaxed`}>
+            <p className={`text-sm font-medium ${statusConfig.descriptionColor} leading-relaxed`}>
               {statusConfig.description}
             </p>
             {!isHealthy && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {criticalAnomalies.length > 0 && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold">
-                    <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold dark:bg-[rgba(239,115,122,0.16)] dark:text-[#EF737A]">
+                    <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse dark:bg-[#EF737A]"></span>
                     {criticalAnomalies.length} Critical
                   </div>
                 )}
                 {warningAnomalies.length > 0 && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold">
-                    <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold dark:bg-[rgba(241,174,83,0.16)] dark:text-[#F1AE53]">
+                    <span className="w-2 h-2 bg-amber-600 rounded-full dark:bg-[#F1AE53]"></span>
                     {warningAnomalies.length} Warning
                   </div>
                 )}
                 {infoAnomalies.length > 0 && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">
-                    <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold dark:bg-[rgba(115,181,237,0.16)] dark:text-[#73B5ED]">
+                    <span className="w-2 h-2 bg-blue-600 rounded-full dark:bg-[#73B5ED]"></span>
                     {infoAnomalies.length} Info
                   </div>
                 )}
@@ -274,41 +278,41 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
 
       {/* Expanded Content - Anomaly List */}
       {isExpanded && !isHealthy && (
-        <div className="mt-5 pt-5 border-t-2 border-white">
+        <div className="mt-5 pt-5 border-t-2 border-white dark:border-[#243F52]">
           <div className="space-y-3">
             {/* Critical Anomalies */}
             {criticalAnomalies.length > 0 && (
               <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-red-900 mb-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-red-900 mb-2 dark:text-[#F3F5F7]">
                   🔴 Vấn đề nghiêm trọng (chặn xuất bản)
                 </h4>
                 <div className="space-y-2">
                   {criticalAnomalies.map(anomaly => (
                     <div 
                       key={anomaly.id}
-                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border-2 ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow`}
+                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border-2 ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow dark:bg-[#112E43] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`}
                     >
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className={`mt-0.5 shrink-0 p-2 rounded-lg ${getSeverityColor(anomaly.severity)}`}>
                           {getAnomalyIcon(anomaly.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-sm text-gray-900 mb-1">
+                          <div className="font-bold text-sm text-gray-900 mb-1 dark:text-[#F3F5F7]">
                             {anomaly.ktvName}
                           </div>
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-semibold text-red-700">
+                            <span className="text-xs font-semibold text-red-700 dark:text-[#EF737A]">
                               → {anomaly.message}
                             </span>
                           </div>
-                          <p className="text-xs text-gray-600 leading-relaxed">
+                          <p className="text-xs text-gray-600 leading-relaxed dark:text-[#D8E3EA]">
                             {anomaly.details}
                           </p>
                         </div>
                       </div>
                       {anomaly.value !== undefined && (
                         <div className="sm:text-right shrink-0">
-                          <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1.5 rounded-lg inline-block">
+                          <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1.5 rounded-lg inline-block dark:bg-[#091A2D] dark:text-[#F3F5F7] dark:border dark:border-[#243F52]">
                             {anomaly.value.toLocaleString()}đ
                           </span>
                         </div>
@@ -322,36 +326,36 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
             {/* Warning Anomalies */}
             {warningAnomalies.length > 0 && (
               <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-amber-900 mb-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-amber-900 mb-2 dark:text-[#F3F5F7]">
                   ⚠️ Cảnh báo (nên xem xét)
                 </h4>
                 <div className="space-y-2">
                   {warningAnomalies.map(anomaly => (
                     <div 
                       key={anomaly.id}
-                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow`}
+                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow dark:bg-[#112E43] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`}
                     >
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className={`mt-0.5 shrink-0 p-2 rounded-lg ${getSeverityColor(anomaly.severity)}`}>
                           {getAnomalyIcon(anomaly.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-sm text-gray-900 mb-1">
+                          <div className="font-bold text-sm text-gray-900 mb-1 dark:text-[#F3F5F7]">
                             {anomaly.ktvName}
                           </div>
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-semibold text-amber-700">
+                            <span className="text-xs font-semibold text-amber-700 dark:text-[#F1AE53]">
                               → {anomaly.message}
                             </span>
                           </div>
-                          <p className="text-xs text-gray-600 leading-relaxed">
+                          <p className="text-xs text-gray-600 leading-relaxed dark:text-[#D8E3EA]">
                             {anomaly.details}
                           </p>
                         </div>
                       </div>
                       {anomaly.value !== undefined && (
                         <div className="sm:text-right shrink-0">
-                          <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1.5 rounded-lg inline-block">
+                          <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1.5 rounded-lg inline-block dark:bg-[#091A2D] dark:text-[#F3F5F7] dark:border dark:border-[#243F52]">
                             {anomaly.value.toLocaleString()}đ
                           </span>
                         </div>
@@ -365,29 +369,29 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
             {/* Info Anomalies */}
             {infoAnomalies.length > 0 && (
               <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-blue-900 mb-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-blue-900 mb-2 dark:text-[#F3F5F7]">
                   ℹ️ Lưu ý (không chặn)
                 </h4>
                 <div className="space-y-2">
                   {infoAnomalies.map(anomaly => (
                     <div 
                       key={anomaly.id}
-                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow`}
+                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow dark:bg-[#112E43] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`}
                     >
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className={`mt-0.5 shrink-0 p-2 rounded-lg ${getSeverityColor(anomaly.severity)}`}>
                           {getAnomalyIcon(anomaly.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-sm text-gray-900 mb-1">
+                          <div className="font-bold text-sm text-gray-900 mb-1 dark:text-[#F3F5F7]">
                             {anomaly.ktvName}
                           </div>
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-semibold text-blue-700">
+                            <span className="text-xs font-semibold text-blue-700 dark:text-[#73B5ED]">
                               → {anomaly.message}
                             </span>
                           </div>
-                          <p className="text-xs text-gray-600 leading-relaxed">
+                          <p className="text-xs text-gray-600 leading-relaxed dark:text-[#D8E3EA]">
                             {anomaly.details}
                           </p>
                         </div>
@@ -403,29 +407,29 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
 
       {/* Healthy State - Show Quick Stats */}
       {isExpanded && isHealthy && (
-        <div className="mt-5 pt-5 border-t-2 border-white">
+        <div className="mt-5 pt-5 border-t-2 border-white dark:border-[#243F52]">
           <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/60 shadow-md hover:shadow-lg transition-all min-w-0">
-              <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider mb-1 truncate" title={`Tổng ${vocab.worker.short}`}>
+            <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/60 shadow-md hover:shadow-lg transition-all min-w-0 dark:bg-[#112E43] dark:border-[#243F52]">
+              <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider mb-1 truncate dark:text-[#A9BBC8]" title={`Tổng ${vocab.worker.short}`}>
                 Tổng {vocab.worker.short}
               </p>
-              <p className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 truncate">
+              <p className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 truncate dark:text-[#F3F5F7]">
                 {salaries.length}
               </p>
             </div>
-            <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/60 shadow-md hover:shadow-lg transition-all min-w-0">
-              <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider mb-1 truncate" title="Lương trung bình">
+            <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/60 shadow-md hover:shadow-lg transition-all min-w-0 dark:bg-[#112E43] dark:border-[#243F52]">
+              <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider mb-1 truncate dark:text-[#A9BBC8]" title="Lương trung bình">
                 Lương trung bình
               </p>
-              <p className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 truncate" title={`${Math.round(salaries.reduce((sum, s) => sum + s.totalSalary, 0) / salaries.length).toLocaleString()}đ`}>
+              <p className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 truncate dark:text-[#F3F5F7]" title={`${Math.round(salaries.reduce((sum, s) => sum + s.totalSalary, 0) / salaries.length).toLocaleString()}đ`}>
                 {Math.round(salaries.reduce((sum, s) => sum + s.totalSalary, 0) / salaries.length).toLocaleString()}đ
               </p>
             </div>
-            <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/60 shadow-md hover:shadow-lg transition-all min-w-0">
-              <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider mb-1 truncate" title="Tổng quỹ lương">
+            <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/60 shadow-md hover:shadow-lg transition-all min-w-0 dark:bg-[#112E43] dark:border-[#243F52]">
+              <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider mb-1 truncate dark:text-[#A9BBC8]" title="Tổng quỹ lương">
                 Tổng quỹ lương
               </p>
-              <p className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 truncate" title={`${salaries.reduce((sum, s) => sum + s.totalSalary, 0).toLocaleString()}đ`}>
+              <p className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 truncate dark:text-[#F3F5F7]" title={`${salaries.reduce((sum, s) => sum + s.totalSalary, 0).toLocaleString()}đ`}>
                 {salaries.reduce((sum, s) => sum + s.totalSalary, 0).toLocaleString()}đ
               </p>
             </div>
