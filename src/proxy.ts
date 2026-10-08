@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
-import { requireSupabasePublicEnv } from '@/lib/supabase-public-env';
+import { getSupabasePublicKey, getSupabasePublicUrl, requireSupabasePublicEnv } from '@/lib/supabase-public-env';
 
 /**
  * Bella ERP Proxy (Next.js 16 Middleware)
@@ -14,8 +14,12 @@ import { requireSupabasePublicEnv } from '@/lib/supabase-public-env';
  * - Mock user bypass in development
  */
 export async function proxy(request: NextRequest) {
-  const { url, publicKey } = requireSupabasePublicEnv();
   const { pathname } = request.nextUrl;
+  const isDashboardRoute = pathname.startsWith('/dashboard');
+  const isKtvRoute = pathname.startsWith('/ktv');
+  const isStudentRoute = pathname.startsWith('/student');
+  const isLoginRoute = pathname === '/login';
+  const isApiRoute = pathname.startsWith('/api/');
 
   let response = NextResponse.next({
     request: {
@@ -88,6 +92,20 @@ export async function proxy(request: NextRequest) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   }
 
+  const publicSupabaseUrl = getSupabasePublicUrl();
+  const publicSupabaseKey = getSupabasePublicKey();
+
+  if (!publicSupabaseUrl || !publicSupabaseKey) {
+    if (isDashboardRoute || isKtvRoute || isStudentRoute || isApiRoute) {
+      requireSupabasePublicEnv();
+    }
+
+    return response;
+  }
+
+  const url = publicSupabaseUrl;
+  const publicKey = publicSupabaseKey;
+
   // ============================================================================
   // PART 2: SUPABASE AUTH SESSION REFRESH
   // ============================================================================
@@ -127,11 +145,6 @@ export async function proxy(request: NextRequest) {
 
   const mockUserEmail = request.cookies.get('mock_user_email')?.value;
   const isMockDev = process.env.NODE_ENV === 'development' && !!mockUserEmail;
-
-  const isDashboardRoute = pathname.startsWith('/dashboard');
-  const isKtvRoute = pathname.startsWith('/ktv');
-  const isStudentRoute = pathname.startsWith('/student');
-  const isLoginRoute = pathname === '/login';
 
   // 2. Security Redirects: Chưa đăng nhập truy cập trang cần bảo vệ
   if (!user && !isMockDev) {

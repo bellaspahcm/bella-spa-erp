@@ -12,6 +12,13 @@ import { validateDevelopmentLoginBypassEmail } from '@/services/dev-login-action
 
 type LoginStage = 'credentials' | 'mfa';
 
+const MISSING_SUPABASE_PUBLIC_ENV_MESSAGE =
+  'Supabase chưa được cấu hình cho môi trường này. Vui lòng cấu hình NEXT_PUBLIC_SUPABASE_URL và NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY hoặc NEXT_PUBLIC_SUPABASE_ANON_KEY.';
+
+function isMissingSupabasePublicEnvError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('Missing Supabase credentials');
+}
+
 export default function LoginPage() {
   const [stage, setStage] = useState<LoginStage>('credentials');
   const [email, setEmail] = useState('');
@@ -62,6 +69,12 @@ export default function LoginPage() {
       if (requiresMfa) { setStage('mfa'); setLoading(false); return; }
       window.location.href = '/dashboard';
     } catch (err: unknown) {
+      if (isMissingSupabasePublicEnvError(err)) {
+        setError(MISSING_SUPABASE_PUBLIC_ENV_MESSAGE);
+        setLoading(false);
+        return;
+      }
+
       console.error('[Login Error]', err);
       setError(err instanceof Error ? err.message : 'Đăng nhập thất bại. Vui lòng thử lại.');
       setLoading(false);
