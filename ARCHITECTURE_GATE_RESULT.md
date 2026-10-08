@@ -4793,3 +4793,28 @@ BabyCare / Beauty V2 Dashboard
 9. Regression Test: focused Jest for dashboard read query.
 10. Type/Lint: targeted changed-file checks where feasible.
 11. Diff Hygiene: `git diff --check`.
+
+# Architecture Gate Addendum - PR252 Real DB Haircut/Nail Harness Repair
+
+> **Status:** PASS - test harness alignment only
+> **Scope:** Repair the required Real Database Business E2E proof for Haircut/Nail branch access after PR252 CI exposed that the fixture did not seed `public.users` or request JWT claims required by the current `user_org_unit_access` RLS contract.
+
+## Ownership / Contract
+
+- Owner: Platform authorization projection `public.user_org_unit_access`.
+- Product consumers: Haircut and Nail Real DB proof suite.
+- Authorized change: test fixture only in `src/__tests__/haircut-nail-chain-seal-real-db.test.ts`.
+- Runtime change: none.
+- Migration change: none.
+- Frozen Healthcare/Education/Logistics change: none.
+
+## Verification Plan
+
+1. Run focused Real DB suite for `haircut-nail-chain-seal-real-db.test.ts`.
+2. Run targeted lint on changed files.
+3. Run `npm run typecheck:changed`.
+4. Run `git diff --check`.
+5. Push PR252 and re-check required GitHub gates.
+
+### Conclusion
+`PASS`
