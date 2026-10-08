@@ -1,3 +1,81 @@
+# ARCHITECTURE GATE RESULT - MULTI-AGENT CODING PROTOCOL GOVERNANCE RULE
+
+> **Status:** PASS - governance rule addition authorized
+> **Date:** 2026-10-08
+> **Scope:** Add Bella AI Platform multi-agent coding protocol to the single canonical AI coding constitution and entrypoint instructions.
+
+## Bella OS/Product Development Process Gate
+
+- Truth: Multi-agent execution is an execution-control concern, not a product/runtime capability.
+- Source of Truth: user-provided "Bella AI Platform - Multi-Agent Coding Protocol", `AGENTS.md`, `CLAUDE.md`, and `docs/governance/BELLA_AI_CODING_CONSTITUTION.md`.
+- Canonical Contract: Bella AI coding rules live in `docs/governance/BELLA_AI_CODING_CONSTITUTION.md`; local agent entrypoints must point to that single source rather than duplicating complete rules.
+- Gate result: `PASS` for documentation/governance-only rule update.
+
+## Product Manifest
+
+- Product: none.
+- Capability in scope: AI coding governance for controlled multi-agent development.
+- Runtime behavior in scope: none.
+- Non-goals: no Platform/Core/Product runtime change, no new OS kernel, no migration, no test harness change, no CI automation.
+
+## Ownership Map
+
+| Data / Behavior | Owner | Decision |
+|---|---|---|
+| Cross-agent coding protocol | Governance Constitution | may update |
+| Agent entrypoint reminders | `AGENTS.md`, `CLAUDE.md` | may point to canonical rule |
+| ProductRegistry / Product identity | Platform registry | not modified |
+| Healthcare H1-H12 Kernel | Healthcare OS Kernel | not modified |
+| Logistics E7.1-E7.3 Kernel | Logistics OS Kernel | not modified |
+| Education Kernel | Education OS Kernel | not modified |
+
+## Contract Dependency Map
+
+```text
+User request / Lead decision
+  -> Bella AI Coding Constitution
+  -> Multi-Agent Coding Protocol
+  -> Lead decomposition / ownership / worktree / branch / PR strategy
+  -> Builder or QA agent scoped execution
+  -> Evidence / integration / seal
+```
+
+## Change Authority
+
+Authorized:
+- Modify `docs/governance/BELLA_AI_CODING_CONSTITUTION.md`.
+- Modify `AGENTS.md` and `CLAUDE.md` only as entrypoint reminders.
+- Update this architecture gate record.
+
+Not authorized:
+- Modify runtime code, product code, Platform/Core, frozen Healthcare/Education/Logistics kernels, migrations, generated types, package scripts, or CI workflows.
+
+## UI -> Contract Reconciliation
+
+- No UI change.
+- No data-bound or action-bound UI element changed.
+
+## Additive Migration Plan
+
+- No migration.
+- No schema, table, index, RLS, generated type, or production data change.
+
+## 11 Automated Verification Gates Plan
+
+1. Architecture Compliance: verify only governance docs and this gate record changed.
+2. Contract Boundary: protocol requires Product -> Public Contract -> Kernel and public contracts across domains.
+3. Tenant Isolation: no runtime path changed; protocol preserves tenant/RLS/auth invariants.
+4. RLS & Authorization: no runtime path changed; protocol forbids RLS/auth weakening.
+5. Database Migration Safety: no migration.
+6. Event-After-Persistence: no write/event path changed.
+7. Domain Safety Routing: no Healthcare/Education/Logistics domain route touched.
+8. Temporal Provenance: no historical mutation.
+9. Rule Governance: protocol text only; no governed business rule changed.
+10. Audit & Evidence Integrity: verify evidence states distinguish PASS from skipped, timeout, assumed, or not-run.
+11. Regression: run `git diff --check` and inspect changed-file diff.
+
+---
+
 # ARCHITECTURE GATE RESULT - BEAUTY V2 CHAIN STAFF AUTH IDENTITY GUARD
 
 > **Status:** PASS - product service guard authorized
