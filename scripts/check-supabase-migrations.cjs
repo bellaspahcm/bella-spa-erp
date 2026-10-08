@@ -150,6 +150,7 @@ function printState(state) {
 function main() {
   const hasDbUrl = Boolean(process.env.SUPABASE_DB_URL || process.env.SUPABASE_DATABASE_URL);
   const optional = process.env.DB_MIGRATION_CHECK_OPTIONAL === '1';
+  const allowRemoteAheadOnly = process.env.DB_MIGRATION_CHECK_ALLOW_REMOTE_AHEAD_ONLY === '1';
 
   if (!hasDbUrl && optional) {
     console.log('Supabase migration check skipped: SUPABASE_DB_URL is not configured.');
@@ -187,6 +188,13 @@ function main() {
 
   const remoteVersions = rows.map((row) => row.remote).filter(Boolean).sort();
   const state = analyzeMigrationState(localVersions, remoteVersions, baselineLocalVersions);
+  const remoteAheadOnly = allowRemoteAheadOnly
+    ? state.remoteOnly.filter((version) => state.latestLocal && version > state.latestLocal)
+    : [];
+  const blockingRemoteOnly = allowRemoteAheadOnly
+    ? state.remoteOnly.filter((version) => !state.latestLocal || version <= state.latestLocal)
+    : state.remoteOnly;
+  const isSynced = state.newPendingLocal.length === 0 && blockingRemoteOnly.length === 0;
   printState(state);
 
   // Allow empty remote database (fresh installation scenario)
@@ -210,14 +218,22 @@ function main() {
     }
   }
 
-  if (state.remoteOnly.length > 0) {
+  if (remoteAheadOnly.length > 0) {
+    console.warn('Remote Supabase database has future migrations not present in this repository:');
+    for (const version of remoteAheadOnly) {
+      console.warn(`- ${version}`);
+    }
+    console.warn('Ignoring future remote-only migrations for this isolated E2E database check.');
+  }
+
+  if (blockingRemoteOnly.length > 0) {
     console.error('Remote Supabase database has migrations missing from this repository:');
-    for (const version of state.remoteOnly) {
+    for (const version of blockingRemoteOnly) {
       console.error(`- ${version}`);
     }
   }
 
-  if (!state.isSynced) {
+  if (!isSynced) {
     console.error('Apply new migrations to the E2E database before deploy. Historical pending-local drift must stay tracked as a baseline boundary.');
     process.exit(1);
   }

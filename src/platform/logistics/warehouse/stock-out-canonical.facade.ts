@@ -1,0 +1,482 @@
+import { randomUUID } from 'crypto';
+
+import {
+  LedgerEntryType,
+  TransactionStatus,
+  type InventoryBalance,
+  type InventoryLedgerEntry,
+  type ItemId,
+  type LocationId,
+  type Quantity,
+} from '../contracts/inventory.contract';
+import {
+  ValuationMethod,
+  type FinancialContext,
+  type IEventBus,
+  type InventoryIssuedEvent,
+} from '../contracts/events.contract';
+import {
+  ActorType,
+  TraceabilityEventType,
+  type ITraceabilityService,
+  type TraceabilityEvent,
+} from '../contracts/traceability.contract';
+
+export type WarehouseStockOutSourceType =
+  | 'warehouse_issue'
+  | 'disposal'
+  | 'damage'
+  | 'loss';
+
+export type WarehouseStockOutReason = 'disposal' | 'damage' | 'loss';
+
+const traceabilityEventTypeByStockOutReason: Record<
+  WarehouseStockOutReason,
+  TraceabilityEventType
+> = {
+  disposal: TraceabilityEventType.SHIPPED,
+  damage: TraceabilityEventType.DAMAGED,
+  loss: TraceabilityEventType.SHIPPED,
+};
+
+export interface WarehouseStockOutCommand {
+  tenantId: string;
+  actorId: string;
+  correlationId?: string;
+  issueDocument: {
+    id: string;
+    number?: string;
+    type: WarehouseStockOutSourceType;
+  };
+  lines: WarehouseStockOutLineCommand[];
+}
+
+export interface WarehouseStockOutLineCommand {
+  warehouseSkuId: string;
+  warehouseBinId: string;
+  itemId: ItemId;
+  locationId: LocationId;
+  quantity: Quantity;
+  unitOfMeasure: string;
+  reason: WarehouseStockOutReason;
+  lotNumber?: string;
+  serialNumbers?: string[];
+  sourceLineId?: string;
+  notes?: string;
+  unitCost?: number;
+  currency?: string;
+  valuationMethod?: ValuationMethod;
+  metadata?: Record<string, unknown>;
+}
+
+export interface CanonicalStockOutMutation {
+  tenant_id: string;
+  item_id: ItemId;
+  location_id: LocationId;
+  quantity: Quantity;
+  reason: WarehouseStockOutReason;
+  actor_id: string;
+  reference_id: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface CanonicalStockOutMovementRecord {
+  id: string;
+  tenant_id: string;
+  item_id: ItemId;
+  location_id: LocationId;
+  quantity: Quantity;
+  reason: WarehouseStockOutReason;
+  status: TransactionStatus.COMPLETED;
+  actor_id: string;
+  created_at: Date;
+}
+
+export interface WarehouseStockOutReadBackEvidence {
+  balance: InventoryBalance;
+  ledgerEntry: InventoryLedgerEntry;
+  movement: CanonicalStockOutMovementRecord;
+  traceability: TraceabilityEvent;
+}
+
+export interface WarehouseStockOutPorts {
+  balance: {
+    getSourceBalance(params: {
+      tenant_id: string;
+      item_id: ItemId;
+      location_id: LocationId;
+    }): Promise<InventoryBalance>;
+    applyStockOut(mutation: CanonicalStockOutMutation): Promise<InventoryBalance>;
+  };
+  movementLedger: {
+    recordStockOut(params: {
+      mutation: CanonicalStockOutMutation;
+      balanceBefore: InventoryBalance;
+      balanceAfter: InventoryBalance;
+      occurredAt: Date;
+    }): Promise<{
+      movement: CanonicalStockOutMovementRecord;
+      ledgerEntry: InventoryLedgerEntry;
+    }>;
+  };
+  traceability: Pick<ITraceabilityService, 'recordEvent'>;
+  events: Pick<IEventBus, 'publish'>;
+  readBack: {
+    getStockOutEvidence(params: {
+      tenant_id: string;
+      item_id: ItemId;
+      location_id: LocationId;
+      movement_id: string;
+      traceability_event_id: string;
+    }): Promise<WarehouseStockOutReadBackEvidence>;
+  };
+}
+
+export type WarehouseStockOutErrorCode =
+  | 'WAREHOUSE_STOCK_OUT_INVALID_COMMAND'
+  | 'WAREHOUSE_STOCK_OUT_CANONICAL_SKU_MISSING'
+  | 'WAREHOUSE_STOCK_OUT_LOCATION_MISSING'
+  | 'WAREHOUSE_STOCK_OUT_INVALID_QUANTITY'
+  | 'WAREHOUSE_STOCK_OUT_INVALID_REASON'
+  | 'WAREHOUSE_STOCK_OUT_SERIAL_REQUIRES_LOT'
+  | 'WAREHOUSE_STOCK_OUT_INSUFFICIENT_SOURCE_BALANCE'
+  | 'WAREHOUSE_STOCK_OUT_RUNTIME_FAILED';
+
+export type WarehouseStockOutResult =
+  | {
+      ok: true;
+      value: {
+        tenantId: string;
+        issueDocumentId: string;
+        lines: WarehouseStockOutLineEvidence[];
+      };
+    }
+  | {
+      ok: false;
+      error: {
+        code: WarehouseStockOutErrorCode;
+        message: string;
+        lineIndex?: number;
+      };
+    };
+
+export interface WarehouseStockOutLineEvidence {
+  itemId: ItemId;
+  locationId: LocationId;
+  quantity: Quantity;
+  balanceBefore: InventoryBalance;
+  balanceAfter: InventoryBalance;
+  movement: CanonicalStockOutMovementRecord;
+  ledgerEntry: InventoryLedgerEntry;
+  traceabilityEvent: TraceabilityEvent;
+  readBack: WarehouseStockOutReadBackEvidence;
+}
+
+export interface WarehouseStockOutCanonicalFacadeOptions {
+  idFactory?: () => string;
+  now?: () => Date;
+}
+
+export class WarehouseStockOutCanonicalFacade {
+  private readonly idFactory: () => string;
+  private readonly now: () => Date;
+
+  constructor(
+    private readonly ports: WarehouseStockOutPorts,
+    options: WarehouseStockOutCanonicalFacadeOptions = {}
+  ) {
+    this.idFactory = options.idFactory ?? randomUUID;
+    this.now = options.now ?? (() => new Date());
+  }
+
+  async execute(command: WarehouseStockOutCommand): Promise<WarehouseStockOutResult> {
+    const commandError = this.validateCommand(command);
+    if (commandError) return commandError;
+
+    const lines: WarehouseStockOutLineEvidence[] = [];
+
+    try {
+      for (let lineIndex = 0; lineIndex < command.lines.length; lineIndex += 1) {
+        const line = command.lines[lineIndex];
+        const lineError = this.validateLine(line, lineIndex);
+        if (lineError) return lineError;
+
+        const balanceBefore = await this.ports.balance.getSourceBalance({
+          tenant_id: command.tenantId,
+          item_id: line.itemId,
+          location_id: line.locationId,
+        });
+
+        if (balanceBefore.on_hand < line.quantity) {
+          return failure(
+            'WAREHOUSE_STOCK_OUT_INSUFFICIENT_SOURCE_BALANCE',
+            'source balance is insufficient for stock out',
+            lineIndex
+          );
+        }
+
+        const occurredAt = this.now();
+        const mutation = this.toStockOutMutation(command, line);
+        const balanceAfter = await this.ports.balance.applyStockOut(mutation);
+        const { movement, ledgerEntry } = await this.ports.movementLedger.recordStockOut({
+          mutation,
+          balanceBefore,
+          balanceAfter,
+          occurredAt,
+        });
+        const traceabilityEvent = await this.ports.traceability.recordEvent({
+          tenant_id: command.tenantId,
+          event_type: traceabilityEventTypeByStockOutReason[line.reason],
+          item_id: line.itemId,
+          quantity: line.quantity,
+          lot_number: line.lotNumber,
+          serial_numbers: line.serialNumbers,
+          from_location_id: line.locationId,
+          actor_id: command.actorId,
+          actor_type: ActorType.USER,
+          transaction_id: movement.id,
+          transaction_type: 'warehouse_stock_out',
+          reference_id: command.issueDocument.id,
+          reference_type: command.issueDocument.type,
+          occurred_at: occurredAt,
+          reason: line.reason,
+          notes: line.notes,
+          metadata: {
+            warehouse_sku_id: line.warehouseSkuId,
+            warehouse_bin_id: line.warehouseBinId,
+            source_line_id: line.sourceLineId,
+            issue_document_number: command.issueDocument.number,
+            ...line.metadata,
+          },
+        });
+
+        await this.ports.events.publish(this.toInventoryIssuedEvent({
+          command,
+          line,
+          balanceBefore,
+          balanceAfter,
+          occurredAt,
+          movementId: movement.id,
+        }));
+
+        const readBack = await this.ports.readBack.getStockOutEvidence({
+          tenant_id: command.tenantId,
+          item_id: line.itemId,
+          location_id: line.locationId,
+          movement_id: movement.id,
+          traceability_event_id: traceabilityEvent.id,
+        });
+
+        lines.push({
+          itemId: line.itemId,
+          locationId: line.locationId,
+          quantity: line.quantity,
+          balanceBefore,
+          balanceAfter,
+          movement,
+          ledgerEntry,
+          traceabilityEvent,
+          readBack,
+        });
+      }
+
+      return {
+        ok: true,
+        value: {
+          tenantId: command.tenantId,
+          issueDocumentId: command.issueDocument.id,
+          lines,
+        },
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: {
+          code: 'WAREHOUSE_STOCK_OUT_RUNTIME_FAILED',
+          message: error instanceof Error ? error.message : 'Warehouse stock out runtime failed',
+        },
+      };
+    }
+  }
+
+  private validateCommand(command: WarehouseStockOutCommand): WarehouseStockOutResult | null {
+    if (!hasText(command.tenantId)) {
+      return failure('WAREHOUSE_STOCK_OUT_INVALID_COMMAND', 'tenantId is required');
+    }
+
+    if (!hasText(command.actorId)) {
+      return failure('WAREHOUSE_STOCK_OUT_INVALID_COMMAND', 'actorId is required');
+    }
+
+    if (!hasText(command.issueDocument.id)) {
+      return failure('WAREHOUSE_STOCK_OUT_INVALID_COMMAND', 'issueDocument.id is required');
+    }
+
+    if (command.lines.length === 0) {
+      return failure(
+        'WAREHOUSE_STOCK_OUT_INVALID_COMMAND',
+        'at least one stock out line is required'
+      );
+    }
+
+    return null;
+  }
+
+  private validateLine(
+    line: WarehouseStockOutLineCommand,
+    lineIndex: number
+  ): WarehouseStockOutResult | null {
+    if (!hasText(line.warehouseSkuId)) {
+      return failure('WAREHOUSE_STOCK_OUT_INVALID_COMMAND', 'warehouseSkuId is required', lineIndex);
+    }
+
+    if (!hasText(line.warehouseBinId)) {
+      return failure('WAREHOUSE_STOCK_OUT_INVALID_COMMAND', 'warehouseBinId is required', lineIndex);
+    }
+
+    if (!hasText(line.itemId)) {
+      return failure(
+        'WAREHOUSE_STOCK_OUT_CANONICAL_SKU_MISSING',
+        'canonical itemId is required before stock out',
+        lineIndex
+      );
+    }
+
+    if (!hasText(line.locationId)) {
+      return failure(
+        'WAREHOUSE_STOCK_OUT_LOCATION_MISSING',
+        'canonical locationId is required before stock out',
+        lineIndex
+      );
+    }
+
+    if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
+      return failure(
+        'WAREHOUSE_STOCK_OUT_INVALID_QUANTITY',
+        'quantity must be a positive finite number',
+        lineIndex
+      );
+    }
+
+    if (!isWarehouseStockOutReason(line.reason)) {
+      return failure(
+        'WAREHOUSE_STOCK_OUT_INVALID_REASON',
+        'stock out reason is not supported',
+        lineIndex
+      );
+    }
+
+    if (line.serialNumbers && line.serialNumbers.length > 0 && !hasText(line.lotNumber)) {
+      return failure(
+        'WAREHOUSE_STOCK_OUT_SERIAL_REQUIRES_LOT',
+        'serial numbers require lot number',
+        lineIndex
+      );
+    }
+
+    return null;
+  }
+
+  private toStockOutMutation(
+    command: WarehouseStockOutCommand,
+    line: WarehouseStockOutLineCommand
+  ): CanonicalStockOutMutation {
+    return {
+      tenant_id: command.tenantId,
+      item_id: line.itemId,
+      location_id: line.locationId,
+      quantity: line.quantity,
+      reason: line.reason,
+      actor_id: command.actorId,
+      reference_id: command.issueDocument.id,
+      metadata: {
+        warehouse_sku_id: line.warehouseSkuId,
+        warehouse_bin_id: line.warehouseBinId,
+        source_line_id: line.sourceLineId,
+        issue_document_type: command.issueDocument.type,
+        issue_document_number: command.issueDocument.number,
+        unit_of_measure: line.unitOfMeasure,
+        lot_number: line.lotNumber,
+        serial_numbers: line.serialNumbers,
+        notes: line.notes,
+        ...line.metadata,
+      },
+    };
+  }
+
+  private toInventoryIssuedEvent(params: {
+    command: WarehouseStockOutCommand;
+    line: WarehouseStockOutLineCommand;
+    balanceBefore: InventoryBalance;
+    balanceAfter: InventoryBalance;
+    occurredAt: Date;
+    movementId: string;
+  }): InventoryIssuedEvent {
+    const { command, line, balanceBefore, balanceAfter, occurredAt, movementId } = params;
+
+    return {
+      metadata: {
+        event_id: this.idFactory(),
+        event_type: 'InventoryIssuedEvent',
+        tenant_id: command.tenantId,
+        occurred_at: occurredAt,
+        actor_id: command.actorId,
+        correlation_id: command.correlationId,
+        causation_id: movementId,
+      },
+      item_id: line.itemId,
+      from_location_id: line.locationId,
+      quantity: line.quantity,
+      reason: line.reason,
+      lot_number: line.lotNumber,
+      serial_numbers: line.serialNumbers,
+      reference_id: command.issueDocument.id,
+      financial: this.toFinancialContext(line, balanceBefore, balanceAfter),
+    };
+  }
+
+  private toFinancialContext(
+    line: WarehouseStockOutLineCommand,
+    balanceBefore: InventoryBalance,
+    balanceAfter: InventoryBalance
+  ): FinancialContext {
+    const unitCost = line.unitCost;
+
+    return {
+      unit_cost: unitCost,
+      transaction_value: unitCost === undefined ? undefined : unitCost * line.quantity,
+      currency: line.currency ?? 'VND',
+      valuation_method: line.valuationMethod ?? ValuationMethod.WEIGHTED_AVERAGE,
+      financial_posting_status: 'not_posted',
+      metadata: {
+        balance_before: balanceBefore.on_hand,
+        balance_after: balanceAfter.on_hand,
+        finance_os_posting_required: true,
+        source: 'warehouse_stock_out',
+      },
+    };
+  }
+}
+
+function hasText(value: string | undefined): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isWarehouseStockOutReason(value: string): value is WarehouseStockOutReason {
+  return value === 'disposal' || value === 'damage' || value === 'loss';
+}
+
+function failure(
+  code: WarehouseStockOutErrorCode,
+  message: string,
+  lineIndex?: number
+): WarehouseStockOutResult {
+  return {
+    ok: false,
+    error: {
+      code,
+      message,
+      lineIndex,
+    },
+  };
+}
