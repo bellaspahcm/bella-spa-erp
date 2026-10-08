@@ -91,12 +91,26 @@ interface MockClinicalCalculation {
   tenant_id: string;
   encounter_id: string;
   algorithm_id: string;
-  algorithm_version: string;
-  calculation_timestamp: string;
-  calculation_status: string;
-  input_snapshot: Record<string, unknown>;
-  output: Record<string, unknown>;
-  engine_version: string;
+  input_data: {
+    encounterId: string;
+    patientId: string;
+    inputSnapshot: Record<string, unknown>;
+    sourceObservationReferences: Array<Record<string, string>>;
+    correlationId: string | null;
+    causationId: string | null;
+  };
+  output_data: {
+    output: Record<string, unknown>;
+    decision: string;
+    enforcement: string;
+    algorithmCategory: string;
+    algorithmVersion: string;
+    engineVersion: string;
+    knowledgeBaseVersion: string;
+    policyVersion: string;
+    calculationStatus: string;
+  };
+  created_at: string;
 }
 
 interface MockClinicalOrder {
@@ -729,10 +743,10 @@ describe('Phase C: Clinical Decision Support & CPOE Order Engine', () => {
       expect(dbCalculations.length).toBeGreaterThanOrEqual(1);
       const calcRecord = dbCalculations.find((c) => c.algorithm_id === 'CDS_SUMMARY');
       expect(calcRecord).toBeDefined();
-      expect(calcRecord?.algorithm_version).toBe('1.0');
-      expect(calcRecord?.calculation_status).toBe('COMPLETED');
-      expect(calcRecord?.engine_version).toBe('1.0.0');
-      expect(calcRecord?.input_snapshot).toHaveProperty('proposedDrug', 'ASPIRIN-81');
+      expect(calcRecord?.output_data.algorithmVersion).toBe('1.0');
+      expect(calcRecord?.output_data.calculationStatus).toBe('COMPLETED');
+      expect(calcRecord?.output_data.engineVersion).toBe('1.0.0');
+      expect(calcRecord?.input_data.inputSnapshot).toHaveProperty('proposedDrug', 'ASPIRIN-81');
     });
   });
 

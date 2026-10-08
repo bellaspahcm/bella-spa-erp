@@ -38,6 +38,7 @@ interface ClinicalOrderRow {
   id: string;
   tenant_id: string;
   encounter_id: string;
+  patient_party_id: string;
   order_type: string;
   order_status: string;
   priority: string;
@@ -69,9 +70,15 @@ interface CdsOverrideRow {
   overridden_at: string;
 }
 
+type OrderEngineIdempotencyOperation =
+  | 'order.create'
+  | 'order.create.rejected'
+  | 'order.approve'
+  | 'order.discontinue'
+  | 'order.override-cds-warning';
+
 interface IdempotencyKeyRow {
-  id: string;
-  response_data: Record<string, unknown>;
+  request_id: string;
 }
 
 // ============================================================================
@@ -106,7 +113,7 @@ export class OrderEngineService implements OrderEngineContract {
       const now = new Date().toISOString();
 
       // Idempotency check
-      const cached = await this.checkIdempotency<CreateOrderResult>(request.requestId);
+      const cached = await this.findCreateOrderByRequestId(request.tenantId, request.requestId);
       if (cached) return { success: true, data: cached };
 
       let cdsCheckId: string | undefined;
@@ -187,7 +194,11 @@ export class OrderEngineService implements OrderEngineContract {
             cdsAlerts,
             cdsCheckStatus: 'BLOCKED',
           };
-          await this.storeIdempotency(request.requestId, result);
+          await this.storeOperationIdempotency(
+            request.tenantId,
+            request.requestId,
+            'order.create.rejected'
+          );
           return {
             success: false,
             error: {
@@ -227,7 +238,11 @@ export class OrderEngineService implements OrderEngineContract {
             cdsAlerts,
             cdsCheckStatus: 'BLOCKED',
           };
-          await this.storeIdempotency(request.requestId, result);
+          await this.storeOperationIdempotency(
+            request.tenantId,
+            request.requestId,
+            'order.create.rejected'
+          );
           return {
             success: false,
             error: {
@@ -256,11 +271,25 @@ export class OrderEngineService implements OrderEngineContract {
       }
 
       // Persist the order
+      const patientId = request.patientId
+        ?? await this.resolveEncounterPatientId(request.tenantId, request.encounterId);
+      if (!patientId) {
+        return {
+          success: false,
+          error: {
+            code: 'MISSING_PATIENT_ID',
+            message: 'patientId is required to persist a clinical order',
+            timestamp: now,
+          },
+        };
+      }
+
       const orderId = crypto.randomUUID();
       const orderRow = {
         id: orderId,
         tenant_id: request.tenantId,
         encounter_id: request.encounterId,
+        patient_party_id: patientId,
         order_type: request.orderType,
         order_status: 'VALIDATED' as OrderStatus,
         priority: request.priority,
@@ -270,6 +299,7 @@ export class OrderEngineService implements OrderEngineContract {
         cds_check_status: cdsCheckStatus,
         order_details: request.orderDetails as Record<string, unknown>,
         notes: request.notes ?? null,
+        request_id: request.requestId,
         created_at: now,
         updated_at: now,
       };
@@ -302,6 +332,7 @@ export class OrderEngineService implements OrderEngineContract {
         payload: {
           orderId,
           encounterId: request.encounterId,
+          patientId,
           orderType: request.orderType,
           priority: request.priority,
           cdsCheckStatus,
@@ -311,7 +342,7 @@ export class OrderEngineService implements OrderEngineContract {
       });
 
       const result: CreateOrderResult = { order, cdsAlerts, cdsCheckStatus };
-      await this.storeIdempotency(request.requestId, result);
+      await this.storeOperationIdempotency(request.tenantId, request.requestId, 'order.create');
 
       return { success: true, data: result };
     } catch (err: unknown) {
@@ -380,8 +411,15 @@ export class OrderEngineService implements OrderEngineContract {
       const now = new Date().toISOString();
 
       // Idempotency check
-      const cached = await this.checkIdempotency<ClinicalOrder>(request.requestId);
-      if (cached) return { success: true, data: cached };
+      const alreadyApproved = await this.hasOperationIdempotency(
+        request.tenantId,
+        request.requestId,
+        'order.approve'
+      );
+      if (alreadyApproved) {
+        const existing = await this.findOrderById(request.tenantId, request.orderId);
+        if (existing) return { success: true, data: existing };
+      }
 
       // Fetch current order
       const { data: current, error: fetchError } = await this.supabase
@@ -449,12 +487,15 @@ export class OrderEngineService implements OrderEngineContract {
         payload: {
           orderId: request.orderId,
           encounterId: current.encounter_id,
+          patientId: current.patient_party_id,
           orderType: current.order_type,
           approvedBy: request.approvedBy,
+          previousStatus: current.order_status,
+          newStatus: 'APPROVED',
         },
       });
 
-      await this.storeIdempotency(request.requestId, order);
+      await this.storeOperationIdempotency(request.tenantId, request.requestId, 'order.approve');
       return { success: true, data: order };
     } catch (err: unknown) {
       return {
@@ -478,8 +519,15 @@ export class OrderEngineService implements OrderEngineContract {
     try {
       const now = new Date().toISOString();
 
-      const cached = await this.checkIdempotency<ClinicalOrder>(request.requestId);
-      if (cached) return { success: true, data: cached };
+      const alreadyDiscontinued = await this.hasOperationIdempotency(
+        request.tenantId,
+        request.requestId,
+        'order.discontinue'
+      );
+      if (alreadyDiscontinued) {
+        const existing = await this.findOrderById(request.tenantId, request.orderId);
+        if (existing) return { success: true, data: existing };
+      }
 
       const { data: current, error: fetchError } = await this.supabase
         .from('hc_clinical_orders')
@@ -552,7 +600,11 @@ export class OrderEngineService implements OrderEngineContract {
         },
       });
 
-      await this.storeIdempotency(request.requestId, order);
+      await this.storeOperationIdempotency(
+        request.tenantId,
+        request.requestId,
+        'order.discontinue'
+      );
       return { success: true, data: order };
     } catch (err: unknown) {
       return {
@@ -622,8 +674,21 @@ export class OrderEngineService implements OrderEngineContract {
     try {
       const now = new Date().toISOString();
 
-      const cached = await this.checkIdempotency<CdsOverrideRecord>(request.requestId);
-      if (cached) return { success: true, data: cached };
+      const alreadyOverridden = await this.hasOperationIdempotency(
+        request.tenantId,
+        request.requestId,
+        'order.override-cds-warning'
+      );
+      if (alreadyOverridden) {
+        return {
+          success: false,
+          error: {
+            code: 'CDS_OVERRIDE_ALREADY_RECORDED',
+            message: `CDS override request ${request.requestId} was already recorded`,
+            timestamp: now,
+          },
+        };
+      }
 
       // Invariant: ABSOLUTE_BLOCK cannot be overridden
       if (request.alertEnforcement === ('ABSOLUTE_BLOCK' as string)) {
@@ -669,7 +734,11 @@ export class OrderEngineService implements OrderEngineContract {
       }
 
       const overrideRecord = this.mapOverrideRow(data);
-      await this.storeIdempotency(request.requestId, overrideRecord);
+      await this.storeOperationIdempotency(
+        request.tenantId,
+        request.requestId,
+        'order.override-cds-warning'
+      );
       return { success: true, data: overrideRecord };
     } catch (err: unknown) {
       return {
@@ -714,24 +783,87 @@ export class OrderEngineService implements OrderEngineContract {
   // Private Helpers
   // --------------------------------------------------------------------------
 
-  private async checkIdempotency<T>(requestId: string): Promise<T | null> {
+  private async findCreateOrderByRequestId(
+    tenantId: string,
+    requestId: string
+  ): Promise<CreateOrderResult | null> {
     const { data } = await this.supabase
-      .from('hc_idempotency_keys')
-      .select('response_data')
-      .eq('id', requestId)
-      .single<IdempotencyKeyRow>();
+      .from('hc_clinical_orders')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('request_id', requestId)
+      .maybeSingle<ClinicalOrderRow>();
 
-    return data?.response_data as T ?? null;
+    if (!data) return null;
+
+    const order = this.mapOrderRow(data);
+    return {
+      order,
+      cdsAlerts: [],
+      cdsCheckStatus: order.cdsCheckStatus ?? 'PASSED',
+    };
   }
 
-  private async storeIdempotency<T>(
+  private async findOrderById(
+    tenantId: string,
+    orderId: string
+  ): Promise<ClinicalOrder | null> {
+    const { data } = await this.supabase
+      .from('hc_clinical_orders')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('id', orderId)
+      .maybeSingle<ClinicalOrderRow>();
+
+    return data ? this.mapOrderRow(data) : null;
+  }
+
+  private async hasOperationIdempotency(
+    tenantId: string,
     requestId: string,
-    result: T
+    operation: OrderEngineIdempotencyOperation
+  ): Promise<boolean> {
+    const { data } = await this.supabase
+      .from('hc_idempotency_keys')
+      .select('request_id')
+      .eq('tenant_id', tenantId)
+      .eq('request_id', requestId)
+      .eq('operation', operation)
+      .maybeSingle<IdempotencyKeyRow>();
+
+    return Boolean(data);
+  }
+
+  private async storeOperationIdempotency(
+    tenantId: string,
+    requestId: string,
+    operation: OrderEngineIdempotencyOperation
   ): Promise<void> {
     await this.supabase
       .from('hc_idempotency_keys')
-      .upsert({ id: requestId, response_data: result })
+      .upsert(
+        {
+          tenant_id: tenantId,
+          request_id: requestId,
+          operation,
+        },
+        { onConflict: 'tenant_id,request_id,operation' }
+      )
       .throwOnError();
+  }
+
+  private async resolveEncounterPatientId(
+    tenantId: string,
+    encounterId: string
+  ): Promise<string | null> {
+    const { data } = await this.supabase
+      .from('hc_encounters')
+      .select('patient_party_id')
+      .eq('tenant_id', tenantId)
+      .eq('id', encounterId)
+      .maybeSingle<{ patient_party_id: string }>();
+
+    return data?.patient_party_id ?? null;
   }
 
   private mapOrderRow(row: ClinicalOrderRow): ClinicalOrder {

@@ -46,6 +46,8 @@ import type { CdsEngineContract } from './contracts/cds-engine.contract';
 import type { NursingEngineContract } from './contracts/nursing-engine.contract';
 import type { OrderEngineContract } from './contracts/order-engine.contract';
 import type { PharmacyEngineContract } from './contracts/pharmacy-engine.contract';
+import type { ILaboratoryEngine } from './contracts/laboratory-engine.contract';
+import type { IImagingEngine } from './contracts/imaging-engine.contract';
 import type { OREngineContract } from './contracts/or-engine.contract';
 import type { SurgicalEngineContract } from './contracts/surgical-engine.contract';
 import type { AnesthesiaEngineContract } from './contracts/anesthesia-engine.contract';
@@ -56,8 +58,8 @@ import type { AnesthesiaEngineContract } from './contracts/anesthesia-engine.con
  * Maps service names to their contract types.
  * Only includes operational engines with implemented contracts.
  * 
- * Note: encounter-engine and laboratory-engine exist but use metadata-only contracts
- * (no exported TypeScript interfaces). Access via service locator returns unknown type.
+ * Note: encounter-engine exists but uses a metadata-only contract
+ * (no exported TypeScript interface). Access via service locator returns unknown type.
  */
 export type HealthcareServiceMap = {
   // Operational Healthcare Engines with TypeScript contracts
@@ -66,13 +68,14 @@ export type HealthcareServiceMap = {
   'nursing-engine': NursingEngineContract;
   'order-engine': OrderEngineContract;
   'pharmacy-engine': PharmacyEngineContract;
+  'laboratory-engine': ILaboratoryEngine;
+  'imaging-engine': IImagingEngine;
   'or-engine': OREngineContract;
   'surgical-engine': SurgicalEngineContract;
   'anesthesia-engine': AnesthesiaEngineContract;
   
   // Metadata-only contracts (runtime available, no TS type)
   'encounter-engine': unknown;
-  'laboratory-engine': unknown;
 };
 
 /**
@@ -87,6 +90,16 @@ export type ServiceKey = keyof HealthcareServiceMap;
  * Key: service name, Value: engine instance
  */
 const serviceCache = new Map<ServiceKey, unknown>();
+let orderApprovedToPharmacyUnsubscribe: (() => void) | null = null;
+
+function ensureOrderApprovedToPharmacyWiring(supabase: SupabaseClient<Database>): void {
+  if (orderApprovedToPharmacyUnsubscribe) {
+    return;
+  }
+
+  const { wireOrderApprovedToPharmacy } = require('./wiring/order-approved-to-pharmacy.wiring');
+  orderApprovedToPharmacyUnsubscribe = wireOrderApprovedToPharmacy(supabase);
+}
 
 /**
  * Get Healthcare Kernel service by contract name.
@@ -154,7 +167,17 @@ export function getHealthcareService<T extends HealthcareServiceMap[ServiceKey]>
     }
     case 'order-engine': {
       const { OrderEngineService } = require('./engines/order-engine');
-      serviceInstance = new OrderEngineService(supabase);
+      const { CdsEngineService } = require('./engines/cds-engine');
+      const decisionContract = serviceCache.has('cds-engine')
+        ? serviceCache.get('cds-engine')
+        : new CdsEngineService(supabase);
+
+      if (!serviceCache.has('cds-engine')) {
+        serviceCache.set('cds-engine', decisionContract);
+      }
+
+      serviceInstance = new OrderEngineService(supabase, decisionContract);
+      ensureOrderApprovedToPharmacyWiring(supabase);
       break;
     }
     case 'pharmacy-engine': {
@@ -164,7 +187,16 @@ export function getHealthcareService<T extends HealthcareServiceMap[ServiceKey]>
     }
     case 'laboratory-engine': {
       const { LaboratoryEngineService } = require('./engines/laboratory-engine');
-      serviceInstance = new LaboratoryEngineService(supabase);
+      const { SupabaseLaboratoryRepository } = require('./engines/laboratory-engine/repositories/supabase-laboratory.repository');
+      const repository = new SupabaseLaboratoryRepository(supabase);
+      serviceInstance = new LaboratoryEngineService(repository);
+      break;
+    }
+    case 'imaging-engine': {
+      const { ImagingEngineService } = require('./engines/imaging-engine');
+      const { SupabaseImagingRepository } = require('./engines/imaging-engine/repositories/supabase-imaging.repository');
+      const repository = new SupabaseImagingRepository(supabase);
+      serviceInstance = new ImagingEngineService(repository);
       break;
     }
     case 'or-engine': {
@@ -204,6 +236,8 @@ export function getHealthcareService<T extends HealthcareServiceMap[ServiceKey]>
  */
 export function clearServiceCache(): void {
   serviceCache.clear();
+  orderApprovedToPharmacyUnsubscribe?.();
+  orderApprovedToPharmacyUnsubscribe = null;
 }
 
 /**

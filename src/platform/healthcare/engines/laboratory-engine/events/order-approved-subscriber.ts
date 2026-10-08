@@ -5,6 +5,8 @@ import type { IClinicalOrderReader } from '../contracts/clinical-order-reader.in
 import { LabOrder } from '../domain/lab-order.entity';
 import { randomUUID } from 'crypto';
 
+const LAB_ORDER_TYPES = new Set(['LAB', 'laboratory']);
+
 export class LabOrderApprovedSubscriber {
   constructor(
     private readonly eventBus: EventBus,
@@ -35,7 +37,7 @@ export class LabOrderApprovedSubscriber {
       }
 
       // 2. Only process laboratory orders
-      if (snapshot.orderType !== 'laboratory') {
+      if (!LAB_ORDER_TYPES.has(snapshot.orderType)) {
         return;
       }
 

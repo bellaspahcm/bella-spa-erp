@@ -113,12 +113,6 @@ export class FinanceEventHandler {
       const transaction = await this.kernelClient.persist(postingInstruction);
       
       // Step 8: Store idempotency entry
-      console.log('[Handler] About to store idempotency:', {
-        idempotencyStoreType: this.idempotencyStore?.constructor?.name,
-        hasStore: typeof this.idempotencyStore?.store,
-        store: this.idempotencyStore,
-      });
-      
       await this.idempotencyStore.store({
         idempotency_key: envelope.idempotency_key,
         event_id: envelope.event_id,
@@ -193,6 +187,7 @@ export class FinanceEventHandler {
     return {
       tenant_id: envelope.tenant_id,
       transaction_date: envelope.occurred_at,
+      currency: envelope.currency,
       entries,
       source_event_id: envelope.event_id,
       source_system: envelope.source_system,
@@ -278,6 +273,7 @@ export interface JournalEntry {
 export interface PostingInstruction {
   tenant_id: string;
   transaction_date: string;
+  currency: string;
   entries: JournalEntry[];
   source_event_id: string;
   source_system: string;

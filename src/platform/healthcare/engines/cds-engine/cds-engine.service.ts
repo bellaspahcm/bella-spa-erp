@@ -1236,28 +1236,35 @@ export class CdsEngineService implements CdsEngineContract, IDecisionContract {
     const id = params.id ?? crypto.randomUUID();
     const now = new Date().toISOString();
 
-    await this.supabase.from('hc_clinical_calculations').insert({
+    const { error } = await this.supabase.from('hc_clinical_calculations').insert({
       id,
       tenant_id: params.tenantId,
-      encounter_id: params.encounterId,
-      patient_id: params.patientId,
       algorithm_id: params.algorithmId,
-      algorithm_category: 'CDS_CHECK',
-      algorithm_version: '1.0',
-      engine_version: ENGINE_VERSION,
-      calculation_timestamp: now,
-      calculation_status: 'COMPLETED',
-      input_snapshot: params.inputSnapshot,
-      source_observation_references: params.sourceObservationReferences ?? [],
-      output: params.output,
-      decision: params.decision,
-      enforcement: params.enforcement,
-      knowledge_base_version: KB_VERSION,
-      policy_version: POLICY_VERSION_DEFAULT,
-      correlation_id: params.correlationId ?? null,
-      causation_id: params.causationId ?? null,
+      input_data: {
+        encounterId: params.encounterId,
+        patientId: params.patientId,
+        inputSnapshot: params.inputSnapshot,
+        sourceObservationReferences: params.sourceObservationReferences ?? [],
+        correlationId: params.correlationId ?? null,
+        causationId: params.causationId ?? null,
+      },
+      output_data: {
+        output: params.output,
+        decision: params.decision,
+        enforcement: params.enforcement,
+        algorithmCategory: 'CDS_CHECK',
+        algorithmVersion: '1.0',
+        engineVersion: ENGINE_VERSION,
+        knowledgeBaseVersion: KB_VERSION,
+        policyVersion: POLICY_VERSION_DEFAULT,
+        calculationStatus: 'COMPLETED',
+      },
       created_at: now,
     });
+
+    if (error) {
+      throw new Error(`Failed to persist CDS calculation: ${error.message}`);
+    }
 
     return id;
   }

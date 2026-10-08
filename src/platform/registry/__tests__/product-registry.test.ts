@@ -574,6 +574,43 @@ describe('ProductRegistry', () => {
     });
   });
 
+  describe('Bella Hospital Product Registration', () => {
+    it('should have bella_hospital registered at module initialization', async () => {
+      jest.resetModules();
+      const freshRegistryModule = await import('../product-registry');
+
+      const retrieved = freshRegistryModule.productRegistry.getRequired('bella_hospital');
+
+      expect(retrieved.productKey).toBe('bella_hospital');
+      expect(retrieved.displayName).toBe('Bella Hospital');
+      expect(retrieved.subtitle).toBe('Hospital Management');
+      expect(retrieved.requiredModules).toEqual(['healthcare']);
+      expect(retrieved.serviceProfile).toBe('hospital');
+      expect(retrieved.defaultRoute).toBe('/dashboard/hospital');
+      expect(retrieved.navigationProfile).toBe('hospital');
+    });
+
+    it('should keep Hospital product identity distinct from the Healthcare module capability', () => {
+      const hospital: ProductDefinition = {
+        productKey: 'bella_hospital',
+        displayName: 'Bella Hospital',
+        subtitle: 'Hospital Management',
+        requiredModules: ['healthcare'],
+        serviceProfile: 'hospital',
+        defaultRoute: '/dashboard/hospital',
+        navigationProfile: 'hospital'
+      };
+
+      productRegistry.register(hospital);
+
+      const retrieved = productRegistry.getRequired('bella_hospital');
+      expect(retrieved.productKey).toBe('bella_hospital');
+      expect(retrieved.requiredModules).toEqual(['healthcare']);
+      expect(retrieved.productKey).not.toBe(retrieved.requiredModules[0]);
+      expect(retrieved.serviceProfile).toBe('hospital');
+    });
+  });
+
   describe('Error Message Quality', () => {
     it('should provide clear error message for duplicate product', () => {
       const product1 = createTestProduct('test_product', 'First');

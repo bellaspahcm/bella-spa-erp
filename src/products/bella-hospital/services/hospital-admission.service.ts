@@ -18,6 +18,7 @@ import type {
 } from '../../../platform/healthcare/contracts/admission-engine.contract';
 import type {
   BedEngineContract,
+  BedReleaseRequest,
   BedTransferRequest,
 } from '../../../platform/healthcare/contracts/bed-engine.contract';
 import type {
@@ -69,6 +70,9 @@ export interface HospitalDischargeResultDTO {
   admissionId: string;
   encounterId: string;
   status: 'DISCHARGED';
+  bedId: string;
+  bedReleaseStatus: 'RELEASED';
+  temporalEventId: string;
   evidencePackageId: string;
   sha256Fingerprint: string;
   dischargedAt: string;
@@ -77,7 +81,7 @@ export interface HospitalDischargeResultDTO {
 export class HospitalAdmissionProductService {
   constructor(
     private readonly admissionContract: Pick<AdmissionEngineContract, 'createAdmission' | 'dischargeAdmission'>,
-    private readonly bedContract: Pick<BedEngineContract, 'transferBed'>,
+    private readonly bedContract: Pick<BedEngineContract, 'transferBed' | 'releaseBed'>,
     private readonly temporalContract: Pick<ITemporalContract, 'recordTemporalEvent'>,
     private readonly auditContract: Pick<IClinicalAuditContract, 'recordAuditEntry' | 'issueEvidencePackage'>
   ) {}
@@ -167,7 +171,43 @@ export class HospitalAdmissionProductService {
       dischargeSummary: dto.dischargeSummary,
       userId: dto.dischargingPhysicianId,
     });
-    unwrapEngineResponse(dischargeResponse, 'ADMISSION_DISCHARGE_FAILED');
+    const dischargedAdmission = unwrapEngineResponse(dischargeResponse, 'ADMISSION_DISCHARGE_FAILED');
+
+    assertSame('tenantId', dto.tenantId, dischargedAdmission.tenantId);
+    assertSame('encounterId', dto.encounterId, dischargedAdmission.encounterId);
+    assertSame('patientId', dto.patientId, dischargedAdmission.patientPartyId);
+
+    const releaseResponse = await this.bedContract.releaseBed({
+      tenantId: dto.tenantId,
+      bedId: dischargedAdmission.bedId,
+      encounterId: dto.encounterId,
+      patientId: dto.patientId,
+      admissionId: dto.admissionId,
+      reason: dischargeDispositionToBedReleaseReason(dto.dischargeDisposition),
+      releasedBy: dto.dischargingPhysicianId,
+      notes: dto.dischargeSummary,
+    });
+    unwrapEngineResponse(releaseResponse, 'BED_RELEASE_FAILED');
+
+    const temporalEvent = unwrapEngineResponse(
+      await this.temporalContract.recordTemporalEvent({
+        tenantId: dto.tenantId,
+        encounterId: dto.encounterId,
+        patientId: dto.patientId,
+        aggregateType: 'Admission',
+        aggregateId: dto.admissionId,
+        eventType: 'INPATIENT_DISCHARGED',
+        validTime: timestamp,
+        deltaPayload: {
+          admissionId: dto.admissionId,
+          bedId: dischargedAdmission.bedId,
+          dischargeDisposition: dto.dischargeDisposition,
+          dischargeSummary: dto.dischargeSummary,
+          dischargingPhysicianId: dto.dischargingPhysicianId,
+        },
+      }),
+      'TEMPORAL_DISCHARGE_EVENT_FAILED'
+    );
 
     // 2. Issue H11 Legal Audit Evidence Package
     const auditInput: IRecordAuditInput = {
@@ -200,6 +240,9 @@ export class HospitalAdmissionProductService {
       admissionId: dto.admissionId,
       encounterId: dto.encounterId,
       status: 'DISCHARGED',
+      bedId: dischargedAdmission.bedId,
+      bedReleaseStatus: 'RELEASED',
+      temporalEventId: temporalEvent.id,
       evidencePackageId: evidencePackage.id,
       sha256Fingerprint: evidencePackage.fingerprint,
       dischargedAt: timestamp
@@ -215,4 +258,16 @@ function unwrapEngineResponse<T>(response: EngineResponse<T>, fallbackCode: stri
   const code = response.error?.code ?? fallbackCode;
   const message = response.error?.message ?? fallbackCode;
   throw new Error(`${code}: ${message}`);
+}
+
+function assertSame(field: string, expected: string, actual: string): void {
+  if (expected !== actual) {
+    throw new Error(`DISCHARGE_RUNTIME_LINKAGE_MISMATCH: ${field}`);
+  }
+}
+
+function dischargeDispositionToBedReleaseReason(
+  disposition: HospitalDischargeDTO['dischargeDisposition']
+): BedReleaseRequest['reason'] {
+  return disposition === 'DECEASED' ? 'death' : 'discharge';
 }
