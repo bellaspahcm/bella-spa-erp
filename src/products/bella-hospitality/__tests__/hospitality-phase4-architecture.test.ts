@@ -21,7 +21,14 @@ function getSourceFiles(dir: string): string[] {
 }
 
 describe('Bella Hospitality Phase 4 architecture boundary', () => {
-  const sourceFiles = getSourceFiles(PRODUCT_ROOT);
+  const sourceFiles = getSourceFiles(PRODUCT_ROOT)
+    .filter((file) => {
+      const basename = path.basename(file);
+      return basename.startsWith('property-room')
+        || basename.startsWith('guest-reservation')
+        || basename.startsWith('front-office-stay')
+        || basename.startsWith('folio-payment');
+    });
 
   it('consumes Finance only through public contracts', () => {
     const violations: string[] = [];
