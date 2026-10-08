@@ -33,16 +33,16 @@ export function ReconciliationKpiCards({
         <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
       </div>
  
-      <div className="reconciliation-kpi-card bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-amber-200 relative overflow-hidden w-full">
+      <div className="reconciliation-kpi-card bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-[#091A2D] shadow-lg shadow-amber-200 relative overflow-hidden w-full">
         <div className="relative z-10">
           <div className="flex justify-between items-center mb-4">
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-              <LinkIcon className="w-6 h-6 text-white" />
+              <LinkIcon className="w-6 h-6 text-[#091A2D]" />
             </div>
-            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md !text-white">{orphanedCount} khoản</span>
+            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black text-[#091A2D] backdrop-blur-md">{orphanedCount} khoản</span>
           </div>
-          <p className="!text-white/80 font-black text-xs uppercase tracking-widest mb-1">Tiền thu bị treo</p>
-          <h3 className="text-2xl sm:text-3xl font-black break-words !text-white">{formatCurrency(totalOrphaned)}</h3>
+          <p className="font-black text-xs uppercase tracking-widest text-[#091A2D]/80 mb-1">Tiền thu bị treo</p>
+          <h3 className="text-2xl sm:text-3xl font-black text-[#091A2D] break-words">{formatCurrency(totalOrphaned)}</h3>
         </div>
         <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
       </div>

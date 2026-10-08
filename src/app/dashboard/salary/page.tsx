@@ -603,7 +603,7 @@ export default function SalaryPage() {
   const totalSessions = ktvSalaries.reduce((acc, curr) => acc + curr.sessions, 0);
 
   return (
-    <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10">
+    <div className="beauty-dark-page flex-1 overflow-auto bg-background/30 p-3 text-foreground dark:bg-transparent dark:text-[#F3F5F7] sm:p-6 md:p-10">
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 md:mb-10 md:flex-row md:items-center md:justify-between">
         <div>
@@ -612,8 +612,8 @@ export default function SalaryPage() {
               Kỳ lương: {currentMonthYear}
             </span>
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter sm:text-4xl">Lương {vocab.worker.plural}</h1>
-          <p className="text-slate-500 font-medium mt-1">Quản lý thu nhập và hiệu suất làm việc của {vocab.worker.singular.toLowerCase()}</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter dark:text-[#F3F5F7] sm:text-4xl">Lương {vocab.worker.plural}</h1>
+          <p className="text-slate-500 font-medium mt-1 dark:text-[#A9BBC8]">Quản lý thu nhập và hiệu suất làm việc của {vocab.worker.singular.toLowerCase()}</p>
         </div>
         <div className="bella-toolbar flex flex-col gap-3 sm:flex-row sm:items-center">
           <PremiumExportButton />
@@ -651,14 +651,14 @@ export default function SalaryPage() {
       {/* Premium Tab Selector */}
       {currentUser?.role?.toLowerCase() !== 'ktv' && (
         <div className="mb-6 w-full max-w-full overflow-x-auto overscroll-x-contain custom-scrollbar md:mb-10">
-          <div className="flex bg-white/60 p-2 rounded-2xl border border-slate-100 gap-2 w-fit backdrop-blur-md whitespace-nowrap">
+          <div className="flex bg-white/60 p-2 rounded-2xl border border-slate-100 gap-2 w-fit backdrop-blur-md whitespace-nowrap dark:border-[#243F52] dark:bg-[#112E43]/86">
             <button
               onClick={() => handleTabChange('payroll')}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
                 activeTab === 'payroll'
-                  ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
-                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10 dark:bg-[#091A2D] dark:text-[#F3F5F7] dark:shadow-none"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-[#D8E3EA] dark:hover:bg-[#193A50] dark:hover:text-[#F3F5F7]"
               )}
             >
               <DollarSign className="w-4 h-4" />
@@ -669,8 +669,8 @@ export default function SalaryPage() {
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
                 activeTab === 'attendance'
-                  ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
-                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10 dark:bg-[#091A2D] dark:text-[#F3F5F7] dark:shadow-none"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-[#D8E3EA] dark:hover:bg-[#193A50] dark:hover:text-[#F3F5F7]"
               )}
             >
               <CalendarDays className="w-4 h-4" />
@@ -681,8 +681,8 @@ export default function SalaryPage() {
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
                 activeTab === 'hr_profile'
-                  ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
-                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10 dark:bg-[#091A2D] dark:text-[#F3F5F7] dark:shadow-none"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-[#D8E3EA] dark:hover:bg-[#193A50] dark:hover:text-[#F3F5F7]"
               )}
             >
               <UserCog className="w-4 h-4" />
@@ -724,13 +724,13 @@ export default function SalaryPage() {
           )}
 
           {/* Info Banner */}
-          <div className="mb-6 flex items-start gap-3 rounded-[24px] border border-amber-100 bg-amber-50 p-4 md:mb-10 md:gap-4 md:rounded-[32px] md:p-6">
-            <div className="shrink-0 rounded-2xl bg-amber-100 p-3">
-              <AlertCircle className="w-6 h-6 text-amber-600" />
+          <div className="mb-6 flex items-start gap-3 rounded-[24px] border border-amber-100 bg-amber-50 p-4 dark:border-[rgba(241,174,83,0.38)] dark:bg-[rgba(241,174,83,0.12)] md:mb-10 md:gap-4 md:rounded-[32px] md:p-6">
+            <div className="shrink-0 rounded-2xl bg-amber-100 p-3 dark:bg-[rgba(241,174,83,0.18)]">
+              <AlertCircle className="w-6 h-6 text-amber-600 dark:text-[#F1AE53]" />
             </div>
             <div className="min-w-0">
-              <h4 className="font-black text-amber-900 uppercase tracking-widest text-xs mb-1">Quy định tính lương</h4>
-              <p className="text-amber-800/80 text-sm font-medium">
+              <h4 className="font-black text-amber-900 uppercase tracking-widest text-xs mb-1 dark:text-[#F3F5F7]">Quy định tính lương</h4>
+              <p className="text-amber-800/80 text-sm font-medium dark:text-[#D8E3EA]">
                 Lương {vocab.worker.short} được tính dựa trên số {vocab.workUnit.plural.toLowerCase()} thực tế hoàn thành (Hoa hồng theo từng loại dịch vụ) + Lương cứng + Thưởng hiệu suất KPI. 
                 Giá tiền công được khóa tại thời điểm tạo hợp đồng để đảm bảo quyền lợi {vocab.worker.short}. Hạn chốt lương cuối cùng là ngày 05 hàng tháng.
               </p>
@@ -744,21 +744,21 @@ export default function SalaryPage() {
               <SkeletonTable />
             </div>
           ) : matrixLoadError ? (
-            <div className="rounded-[2rem] border border-rose-100 bg-white/90 p-6 shadow-sm md:rounded-[2.5rem] md:p-8">
+            <div className="rounded-[2rem] border border-rose-100 bg-white/90 p-6 shadow-sm dark:border-[rgba(239,115,122,0.38)] dark:bg-[#112E43]/90 dark:shadow-[0_18px_44px_rgba(2,12,24,0.32)] md:rounded-[2.5rem] md:p-8">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="mt-1 h-5 w-5 shrink-0 text-rose-500" />
                   <div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-[#F3F5F7]">
                       Không thể tải bảng đối soát số buổi
                     </h3>
-                    <p className="mt-1 text-sm font-medium text-slate-500">{matrixLoadError}</p>
+                    <p className="mt-1 text-sm font-medium text-slate-500 dark:text-[#D8E3EA]">{matrixLoadError}</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => void loadMatrixData()}
-                  className="min-h-11 rounded-2xl bg-slate-900 px-5 text-xs font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-primary"
+                  className="min-h-11 rounded-2xl bg-slate-900 px-5 text-xs font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-primary dark:bg-[#091A2D] dark:hover:bg-primary"
                 >
                   Tải lại
                 </button>
