@@ -5127,3 +5127,86 @@ None. This task must not add or modify database migrations.
 9. Contrast check: verify key Premium Dark foreground/background pairs reach WCAG AA where applicable.
 10. Static check: targeted ESLint and `git diff --check`.
 11. Regression scope: broad kernel/database gates are not required because frozen kernels and persistence are untouched.
+
+---
+
+# ARCHITECTURE GATE RESULT - BEAUTY SPA DARK THEME SIDEBAR PAGE AUDIT
+
+> **Status:** PASS - presentation-only dark theme contrast repair authorized
+> **Date:** 2026-10-08
+> **Scope:** Audit and repair dark theme color/contrast regressions across the Bella Beauty Spa sidebar menu pages, starting with the salary/payroll health-check panel shown in the regression screenshot.
+
+## Bella OS/Product Development Process Gate
+
+- Truth: The reported defect is visual only: dark mode surfaces render light-mode panels, weak text contrast, or split background colors on Beauty Spa dashboard routes.
+- Source of Truth: User screenshots, `src/components/layout/sidebar.tsx` Beauty Spa menu route list, existing tenant/product CSS tokens in `src/app/globals.css`, and current page/component Tailwind classes.
+- Canonical Contract: Shared UI and product presentation must use semantic dark-mode tokens and must not let product/tenant color overrides reintroduce light-mode backgrounds in `html.dark`.
+- Gate result: `PASS` for presentation-layer CSS and component class changes only.
+
+## Product Manifest
+
+- Product: Bella Beauty Spa V2 (`bella_spa`), current implementation route family under `/dashboard`.
+- Sidebar pages in scope: Dashboard, AI Copilot, Customers & CRM, Bookings & POS, Sessions, Waitlist, Inventory, Product Sales, Salary, Chain Management, Accounting, Finance Reconciliation, Executive, Analytics, Guides, Services, Settings.
+- Concrete regression in scope: `/dashboard/salary` payroll health-check, salary tabs, salary tables, attendance modal, HR profile modal, and legacy light utility classes used by sidebar-linked pages.
+- Non-goals: no domain behavior change, no API or RPC change, no schema/RLS/migration, no payroll formula change, no menu IA or label change.
+
+## Ownership Map
+
+| Data / Behavior | Owner | Decision |
+|---|---|---|
+| Beauty Spa product identity and tenant theme | Product Registry / Tenant theme | consume only |
+| Sidebar route list | Shared dashboard shell | read only for audit scope |
+| Dark theme tokens and legacy utility safety net | Shared UI/theme CSS | may extend |
+| Salary/payroll visual panels | Product UI presentation | may modify classes only |
+| Payroll data, formulas, publish/finalize actions | HR Salary domain/services | do not change |
+
+## Contract Dependency Map
+
+```text
+Beauty Spa sidebar page
+  -> dashboard shell tenant/theme attributes
+  -> shared dark theme CSS tokens
+  -> route and component presentation classes
+  -> rendered dark-mode surfaces and readable text
+```
+
+No Product -> Public Contract -> Kernel dependency changes are required.
+
+## Change Authority
+
+Authorized:
+- Extend `src/app/globals.css` dark-mode presentation overrides.
+- Adjust Beauty Spa salary/payroll page and component classes when needed for contrast/readability.
+- Add focused UI/static verification only.
+
+Not authorized:
+- Database schema, migrations, RLS, RPCs, API routes, payroll formulas, booking/inventory/accounting workflows, tenant identity logic, ProductRegistry/ProductResolver changes, sidebar IA changes, or frozen Healthcare/Education/Logistics kernel files.
+
+## UI -> Contract Reconciliation
+
+| UI element / route family | Existing contract | Decision |
+|---|---|---|
+| Sidebar-linked Beauty Spa pages | Existing routes and data/actions | Preserve behavior; audit presentation only |
+| Salary health-check panel | Existing payroll validation data | Preserve data; fix dark surface and text contrast |
+| Salary tabs/tables/modals | Existing payroll/attendance/HR UI contracts | Preserve fields/actions; fix dark classes/tokens |
+| Shared legacy light utility classes | Tailwind presentation utilities | Final dark-mode overrides may remap colors after tenant light overrides |
+| Light theme tenant/product colors | Tenant brand presets | Do not change |
+
+## Additive Migration Plan
+
+- No migration.
+- No schema, table, index, RLS, generated type, seed, or production data change.
+
+## 11 Automated Verification Gates Plan
+
+1. Architecture boundary: confirm only theme/presentation files are touched.
+2. Contract boundary: no service/API/read-model edits.
+3. Tenant isolation: unchanged.
+4. RLS/AuthZ: unchanged.
+5. Database migration safety: no migrations.
+6. Event-after-persistence: unchanged.
+7. UI data/action reconciliation: no new data fields, statuses, actions, or KPIs.
+8. Type safety: no `any`, casts, or suppressions.
+9. Contrast check: audit dark foreground/background pairs on sidebar-linked pages, starting with salary/payroll regression.
+10. Static check: targeted lint/build checks and `git diff --check`.
+11. Regression scope: broad kernel/database gates are not required because frozen kernels and persistence are untouched.

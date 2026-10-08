@@ -144,6 +144,7 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
         descriptionColor: 'text-red-800 dark:text-[#D8E3EA]',
         iconColor: 'text-red-600 dark:text-[#EF737A]',
         iconBg: 'bg-red-100 dark:bg-[rgba(239,115,122,0.18)]',
+        toneClass: 'payroll-health-check-panel--critical',
         label: 'CẦN XỬ LÝ NGAY',
         description: `Phát hiện ${criticalAnomalies.length} vấn đề nghiêm trọng cần khắc phục trước khi xuất bản`
       };
@@ -158,6 +159,7 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
         descriptionColor: 'text-amber-800 dark:text-[#D8E3EA]',
         iconColor: 'text-amber-600 dark:text-[#F1AE53]',
         iconBg: 'bg-amber-100 dark:bg-[rgba(241,174,83,0.18)]',
+        toneClass: 'payroll-health-check-panel--warning',
         label: 'CÓ CẢNH BÁO',
         description: `Phát hiện ${warningAnomalies.length} điểm bất thường nên xem xét trước khi xuất bản`
       };
@@ -172,6 +174,7 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
         descriptionColor: 'text-blue-800 dark:text-[#D8E3EA]',
         iconColor: 'text-blue-600 dark:text-[#73B5ED]',
         iconBg: 'bg-blue-100 dark:bg-[rgba(115,181,237,0.18)]',
+        toneClass: 'payroll-health-check-panel--info',
         label: 'LƯU Ý',
         description: `${infoAnomalies.length} điểm cần lưu ý (không chặn xuất bản)`
       };
@@ -185,6 +188,7 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
       descriptionColor: 'text-green-800 dark:text-[#D8E3EA]',
       iconColor: 'text-green-600 dark:text-[#27C596]',
       iconBg: 'bg-green-100 dark:bg-[rgba(39,197,150,0.18)]',
+      toneClass: 'payroll-health-check-panel--healthy',
       label: 'BẢNG LƯƠNG KHỎE MẠNH',
       description: 'Không phát hiện vấn đề. Sẵn sàng xuất bản.'
     };
@@ -222,7 +226,7 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
   };
 
   return (
-    <Card className={`p-5 ${statusConfig.bgColor} border-2 ${statusConfig.borderColor} mb-6 dark:shadow-[0_18px_44px_rgba(2,12,24,0.35)]`}>
+    <Card className={`payroll-health-check-panel ${statusConfig.toneClass} p-5 ${statusConfig.bgColor} border-2 ${statusConfig.borderColor} mb-6 dark:shadow-[0_18px_44px_rgba(2,12,24,0.35)]`}>
       {/* Header - Always Visible */}
       <div 
         className="flex items-start justify-between cursor-pointer gap-4"
@@ -290,7 +294,7 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
                   {criticalAnomalies.map(anomaly => (
                     <div 
                       key={anomaly.id}
-                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border-2 ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow dark:bg-[#112E43] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`}
+                      className={`payroll-health-check-row flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border-2 ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow dark:bg-[#112E43] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`}
                     >
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className={`mt-0.5 shrink-0 p-2 rounded-lg ${getSeverityColor(anomaly.severity)}`}>
@@ -333,7 +337,7 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
                   {warningAnomalies.map(anomaly => (
                     <div 
                       key={anomaly.id}
-                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow dark:bg-[#112E43] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`}
+                      className={`payroll-health-check-row flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow dark:bg-[#112E43] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`}
                     >
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className={`mt-0.5 shrink-0 p-2 rounded-lg ${getSeverityColor(anomaly.severity)}`}>
@@ -376,7 +380,7 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
                   {infoAnomalies.map(anomaly => (
                     <div 
                       key={anomaly.id}
-                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow dark:bg-[#112E43] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`}
+                      className={`payroll-health-check-row flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow dark:bg-[#112E43] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]`}
                     >
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className={`mt-0.5 shrink-0 p-2 rounded-lg ${getSeverityColor(anomaly.severity)}`}>
