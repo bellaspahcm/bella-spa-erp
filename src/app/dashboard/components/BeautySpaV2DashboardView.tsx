@@ -329,37 +329,58 @@ export function BeautySpaV2DashboardView({
 
             {/* List items */}
             <div className="space-y-3">
-              {visibleSessions.slice(0, 5).map((app) => (
-                <div
-                  key={app.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50/70 hover:bg-slate-100/80 border border-slate-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-xs font-bold text-slate-500 w-11 shrink-0">{app.assigned_time ? app.assigned_time.substring(0, 5) : '00:00'}</span>
-                    <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0 uppercase">
-                      {(app.bookings?.customers?.name_mother || 'K').charAt(0)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-900 truncate">{app.bookings?.customers?.name_mother || 'Khách hàng'}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{app.bookings?.package_name || 'Dịch vụ'}</p>
-                    </div>
-                  </div>
+              {visibleSessions.slice(0, 5).map((app) => {
+                const customerName = app.bookings?.customers?.name_mother || 'Khách hàng';
+                const packageName = app.bookings?.package_name || 'Dịch vụ';
+                const ktvName = app.bookings?.assigned_ktv?.full_name || 'Chưa xếp KTV';
+                const statusLabel = isCompletedSession(app.status)
+                  ? 'Hoàn thành'
+                  : isServingSession(app.status)
+                    ? 'Đang phục vụ'
+                    : 'Đang chờ';
+                const statusClass = isCompletedSession(app.status)
+                  ? 'bg-blue-50 text-blue-600 border-blue-200'
+                  : isServingSession(app.status)
+                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                    : 'bg-amber-50 text-amber-600 border-amber-200';
 
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-[11px] text-slate-500 hidden sm:inline-block font-medium">{app.bookings?.assigned_ktv?.full_name || 'Chưa xếp'}</span>
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-md border ${
-                      isCompletedSession(app.status) ? 'bg-blue-50 text-blue-600 border-blue-200'
-                      : isServingSession(app.status) ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                      : 'bg-amber-50 text-amber-600 border-amber-200'
-                    }`}>
-                      {isCompletedSession(app.status) ? 'Hoàn thành' : isServingSession(app.status) ? 'Đang phục vụ' : 'Đang chờ'}
+                return (
+                  <div
+                    key={app.id}
+                    className="grid grid-cols-[3.25rem_2.25rem_minmax(0,1fr)_auto_auto] items-center gap-2.5 p-3 rounded-xl bg-slate-50/70 hover:bg-slate-100/80 border border-slate-100 transition-colors"
+                  >
+                    <span className="text-xs font-extrabold text-slate-700 tabular-nums shrink-0">
+                      {app.assigned_time ? app.assigned_time.substring(0, 5) : '00:00'}
                     </span>
-                    <button className="text-slate-400 hover:text-slate-600">
+
+                    <div className="w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center font-black text-xs uppercase shadow-2xs">
+                      {customerName.charAt(0)}
+                    </div>
+
+                    <div className="min-w-0 pr-1">
+                      <p className="text-xs font-extrabold text-slate-900 truncate leading-tight">
+                        {customerName}
+                      </p>
+                      <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 leading-tight">
+                        <span className="truncate">{packageName}</span>
+                        <span className="h-1 w-1 rounded-full bg-slate-300 shrink-0" />
+                        <span className="truncate">KTV: {ktvName}</span>
+                      </p>
+                    </div>
+
+                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border whitespace-nowrap ${statusClass}`}>
+                      {statusLabel}
+                    </span>
+
+                    <button
+                      className="w-7 h-7 rounded-full text-slate-400 hover:text-slate-700 hover:bg-white border border-transparent hover:border-slate-200 flex items-center justify-center transition-colors"
+                      aria-label={`Mở tuỳ chọn lịch hẹn của ${customerName}`}
+                    >
                       <MoreHorizontal className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {visibleSessions.length === 0 && (
                  <div className="p-4 text-center text-slate-400 text-xs italic">Không có lịch hẹn hôm nay</div>
               )}
