@@ -28,7 +28,7 @@ export class SupabaseLaboratoryRepository implements ILaboratoryRepository {
       return null;
     }
 
-    return this.mapToDomain(data);
+    return this.mapToDomain(data, await this.resolvePatientId(data));
   }
 
   public async findByClinicalOrderId(tenantId: string, clinicalOrderId: string): Promise<LabOrder[]> {
@@ -42,7 +42,7 @@ export class SupabaseLaboratoryRepository implements ILaboratoryRepository {
       throw error;
     }
 
-    return (data || []).map((row) => this.mapToDomain(row));
+    return Promise.all((data || []).map(async (row) => this.mapToDomain(row, await this.resolvePatientId(row))));
   }
 
   public async save(labOrder: LabOrder): Promise<void> {
@@ -106,7 +106,26 @@ export class SupabaseLaboratoryRepository implements ILaboratoryRepository {
   // Mapper logic (Anti-Corruption Layer)
   // =========================================================================
 
-  private mapToDomain(row: LabOrderRow): LabOrder {
+  private async resolvePatientId(row: LabOrderRow): Promise<string> {
+    const { data, error } = await this.supabase
+      .from('hc_clinical_orders')
+      .select('patient_party_id')
+      .eq('tenant_id', row.tenant_id)
+      .eq('id', row.clinical_order_id)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data?.patient_party_id) {
+      throw new Error(`LAB_ORDER_PATIENT_LINKAGE_NOT_FOUND: ${row.clinical_order_id}`);
+    }
+
+    return data.patient_party_id;
+  }
+
+  private mapToDomain(row: LabOrderRow, patientId: string): LabOrder {
     // Determine status from fields, using STATUS: prefix mapping (ACL strategy)
     let status: LabOrderStatus = 'ORDERED';
     let realTubeColor = '';
@@ -163,7 +182,7 @@ export class SupabaseLaboratoryRepository implements ILaboratoryRepository {
       tenantId: row.tenant_id,
       encounterId: row.encounter_id,
       clinicalOrderId: row.clinical_order_id,
-      patientId: row.encounter_id,
+      patientId,
       testCode: row.test_code,
       testName: row.test_name,
       status,

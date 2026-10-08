@@ -513,6 +513,29 @@ const bellaEnglishCenterProduct: ProductDefinition = {
   navigationProfile: 'english-center'
 };
 
+/**
+ * Bella Hospital Product Definition.
+ *
+ * @remarks
+ * Hospital product identity for tenant classification and route/navigation
+ * selection. This only seals product identity; it does not authorize runtime
+ * Healthcare Kernel changes, direct `hc_*` access, Real DB chain claims, or
+ * Hospital Finance mapping.
+ *
+ * Hospital workflows must consume Healthcare OS through public contracts.
+ *
+ * @see docs/architecture/ARCHITECTURE_GATE_RESULT_HOSPITAL_PRODUCT_IDENTITY_FOUNDATION_2026_10_07.md
+ */
+const bellaHospitalProduct: ProductDefinition = {
+  productKey: 'bella_hospital',
+  displayName: 'Bella Hospital',
+  subtitle: 'Hospital Management',
+  requiredModules: ['healthcare'],
+  serviceProfile: 'hospital',
+  defaultRoute: '/dashboard/hospital',
+  navigationProfile: 'hospital'
+};
+
 // Register products
 productRegistry.register(bellaHaircutProduct);
 productRegistry.register(bellaBabycareProduct);
@@ -520,3 +543,4 @@ productRegistry.register(bellaNailProduct);
 productRegistry.register(bellaSpaProduct);
 productRegistry.register(bellaPreschoolProduct);
 productRegistry.register(bellaEnglishCenterProduct);
+productRegistry.register(bellaHospitalProduct);

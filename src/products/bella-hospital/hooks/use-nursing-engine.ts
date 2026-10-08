@@ -16,6 +16,17 @@ import type { NursingEngineContract } from '@/platform/healthcare/contracts/nurs
 import type { RecordVitalsRequest } from '@/platform/healthcare/contracts/nursing-engine.contract';
 import type { EngineResponse, VitalSigns } from '@/platform/healthcare/shared-kernel/types';
 
+function browserBoundaryResponse<T>(operation: string): EngineResponse<T> {
+  return {
+    success: false,
+    error: {
+      code: 'BROWSER_PUBLIC_CONTRACT_REQUIRED',
+      message: `${operation} must run through a server/product public contract boundary.`,
+      timestamp: new Date().toISOString(),
+    },
+  };
+}
+
 export function useNursingEngine() {
   const [loading, setLoading] = useState(false);
   
@@ -28,6 +39,10 @@ export function useNursingEngine() {
   const recordVitalSigns = async (request: RecordVitalsRequest): Promise<EngineResponse<VitalSigns>> => {
     setLoading(true);
     try {
+      if (typeof window !== 'undefined') {
+        return browserBoundaryResponse<VitalSigns>('recordVitalSigns');
+      }
+
       return await nursingEngine.recordVitalSigns(request);
     } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in recordVitalSigns');
@@ -43,6 +58,10 @@ export function useNursingEngine() {
   const getVitalSigns = async (tenantId: string, encounterId: string): Promise<EngineResponse<VitalSigns[]>> => {
     setLoading(true);
     try {
+      if (typeof window !== 'undefined') {
+        return browserBoundaryResponse<VitalSigns[]>('getVitalSigns');
+      }
+
       return await nursingEngine.getVitalSigns(tenantId, encounterId);
     } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error('Unknown error in getVitalSigns');

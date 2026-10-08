@@ -113,12 +113,6 @@ export class FinanceEventHandler {
       const transaction = await this.kernelClient.persist(postingInstruction);
       
       // Step 8: Store idempotency entry
-      console.log('[Handler] About to store idempotency:', {
-        idempotencyStoreType: this.idempotencyStore?.constructor?.name,
-        hasStore: typeof this.idempotencyStore?.store,
-        store: this.idempotencyStore,
-      });
-      
       await this.idempotencyStore.store({
         idempotency_key: envelope.idempotency_key,
         event_id: envelope.event_id,

@@ -699,9 +699,9 @@ function parsePostgresTimestamp(tsStr: string): Date {
 // Replaces missing RPC: get_important_alerts
 export async function getImportantAlerts(): Promise<DashboardAlert[]> {
   try {
-    const { createClient } = await import('@/lib/supabase-server');
+    const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
     const { getPendingLeaveRequests } = await import('@/services/attendance-actions');
-    const supabase = await createClient();
+    const supabase = await createDevelopmentBypassClient();
     const currentUser = await getCurrentUser();
     const tenantId = requireDashboardTenant(currentUser);
 

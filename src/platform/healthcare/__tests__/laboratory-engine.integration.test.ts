@@ -86,9 +86,10 @@ describe('Laboratory Engine Integration Tests (6 Gates)', () => {
       id: clinicalOrderId,
       tenant_id: fixtures.tenantId,
       encounter_id: fixtures.encounterId,
-      patient_id: fixtures.patientPartyId,
-      order_type: 'laboratory',
-      status: 'placed',
+      patient_party_id: fixtures.patientPartyId,
+      order_type: 'LAB',
+      order_status: 'PENDING',
+      ordered_by: validUserId,
     });
 
     // Create LabOrder row directly
@@ -139,9 +140,10 @@ describe('Laboratory Engine Integration Tests (6 Gates)', () => {
       id: clinicalOrderId,
       tenant_id: fixtures.tenantId,
       encounter_id: fixtures.encounterId,
-      patient_id: fixtures.patientPartyId,
-      order_type: 'laboratory',
-      status: 'placed',
+      patient_party_id: fixtures.patientPartyId,
+      order_type: 'LAB',
+      order_status: 'PENDING',
+      ordered_by: validUserId,
     });
 
     // 1. Normal Potassium (K = 4.0)
@@ -214,9 +216,10 @@ describe('Laboratory Engine Integration Tests (6 Gates)', () => {
       id: clinicalOrderId,
       tenant_id: fixtures.tenantId,
       encounter_id: fixtures.encounterId,
-      patient_id: fixtures.patientPartyId,
-      order_type: 'laboratory',
-      status: 'placed',
+      patient_party_id: fixtures.patientPartyId,
+      order_type: 'LAB',
+      order_status: 'PENDING',
+      ordered_by: validUserId,
     });
 
     const labOrder = LabOrder.create({
@@ -261,9 +264,10 @@ describe('Laboratory Engine Integration Tests (6 Gates)', () => {
       id: clinicalOrderId,
       tenant_id: fixtures.tenantId,
       encounter_id: fixtures.encounterId,
-      patient_id: fixtures.patientPartyId,
-      order_type: 'laboratory',
-      status: 'placed',
+      patient_party_id: fixtures.patientPartyId,
+      order_type: 'LAB',
+      order_status: 'PENDING',
+      ordered_by: validUserId,
     });
 
     // Seed relationship row in hc_lab_orders so reader can discover test items dynamically
@@ -286,7 +290,7 @@ describe('Laboratory Engine Integration Tests (6 Gates)', () => {
         approvedBy: validUserId,
         encounterId: fixtures.encounterId,
         patientId: fixtures.patientPartyId,
-        orderType: 'laboratory',
+        orderType: 'LAB',
       },
     });
 
@@ -310,9 +314,10 @@ describe('Laboratory Engine Integration Tests (6 Gates)', () => {
       id: clinicalOrderId,
       tenant_id: fixtures.tenantId,
       encounter_id: fixtures.encounterId,
-      patient_id: fixtures.patientPartyId,
-      order_type: 'laboratory',
-      status: 'placed',
+      patient_party_id: fixtures.patientPartyId,
+      order_type: 'LAB',
+      order_status: 'PENDING',
+      ordered_by: validUserId,
     });
 
     const labOrder = LabOrder.create({
@@ -381,9 +386,10 @@ describe('Laboratory Engine Integration Tests (6 Gates)', () => {
       id: clinicalOrderId,
       tenant_id: fixtures.tenantId,
       encounter_id: fixtures.encounterId,
-      patient_id: fixtures.patientPartyId,
-      order_type: 'laboratory',
-      status: 'placed',
+      patient_party_id: fixtures.patientPartyId,
+      order_type: 'LAB',
+      order_status: 'PENDING',
+      ordered_by: validUserId,
     });
 
     const labOrder = LabOrder.create({

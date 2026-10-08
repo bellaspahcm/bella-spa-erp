@@ -1,15 +1,13 @@
 /**
  * Nursing Engine Service
- * 
- * Healthcare Platform engine for nursing operations (vital signs, notes).
- * 
- * **STATUS:** PLACEHOLDER - Week 3-4 Implementation
- * **TODO:** Implement full service logic
- * 
+ *
+ * Healthcare Platform engine for nursing operations.
+ *
  * @module platform/healthcare/engines/nursing-engine
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 import type {
   NursingEngineContract,
   RecordVitalsRequest,
@@ -17,39 +15,53 @@ import type {
 import type { EngineResponse, VitalSigns, NursingNote, EngineHealthStatus } from '../../shared-kernel/types';
 import { eventBus } from '@/platform/host/event-bus';
 
+type NursingVitalSignsRow = Database['public']['Tables']['hc_nursing_vital_signs']['Row'];
+type NursingVitalSignsInsert = Database['public']['Tables']['hc_nursing_vital_signs']['Insert'];
+
 export class NursingEngineService implements NursingEngineContract {
   readonly engineName = 'nursing-engine';
   readonly engineVersion = '1.0.0';
   readonly contractVersion = '1.0.0';
 
-  constructor(private readonly supabase: SupabaseClient) {}
+  constructor(private readonly supabase: SupabaseClient<Database>) {}
 
   async recordVitalSigns(request: RecordVitalsRequest): Promise<EngineResponse<VitalSigns>> {
     try {
       const now = new Date().toISOString();
+      const temperature = request.temperature;
+      const bloodPressure = request.bloodPressure;
+      const heartRate = request.heartRate;
+      const oxygenSaturation = request.oxygenSaturation;
 
-      const vitalSignsRecord = {
+      if (!temperature || !bloodPressure || !heartRate || !oxygenSaturation) {
+        return {
+          success: false,
+          error: {
+            code: 'NURSING_VITALS_VALIDATION_FAILED',
+            message: 'Temperature, blood pressure, heart rate, and oxygen saturation are required',
+            timestamp: now,
+          },
+        };
+      }
+
+      const vitalSignsRecord: NursingVitalSignsInsert = {
         id: crypto.randomUUID(),
         tenant_id: request.tenantId,
         encounter_id: request.encounterId,
         patient_id: request.patientId,
-        recorded_by: request.recordedBy,
-        recorded_date_time: now,
-        temperature: request.temperature,
-        blood_pressure: request.bloodPressure,
-        heart_rate: request.heartRate,
-        respiratory_rate: request.respiratoryRate,
-        oxygen_saturation: request.oxygenSaturation,
-        weight: request.weight,
-        height: request.height,
-        pain_score: request.painScore,
-        consciousness_level: request.consciousnessLevel,
-        notes: request.notes,
-        created_at: now,
+        nurse_practitioner_id: request.recordedBy,
+        recorded_at: now,
+        temperature: temperature.value,
+        systolic_bp: bloodPressure.systolic,
+        diastolic_bp: bloodPressure.diastolic,
+        heart_rate: heartRate.value,
+        respiratory_rate: request.respiratoryRate?.value ?? null,
+        spo2: oxygenSaturation.value,
+        notes: request.notes ?? null,
       };
 
       const { data, error } = await this.supabase
-        .from('hc_vital_signs')
+        .from('hc_nursing_vital_signs')
         .insert(vitalSignsRecord)
         .select()
         .single();
@@ -66,34 +78,33 @@ export class NursingEngineService implements NursingEngineContract {
         };
       }
 
-      // Publish VitalsRecorded event
+      const vitalSigns = mapVitalSignsRow(data);
+
       await eventBus.publish({
         eventType: 'VitalsRecorded',
         tenantId: request.tenantId,
-        aggregateId: data.id,
+        aggregateId: vitalSigns.id,
         aggregateType: 'VitalSigns',
         payload: {
-          vitalsId: data.id,
+          vitalsId: vitalSigns.id,
           patientId: request.patientId,
           encounterId: request.encounterId,
           recordedBy: request.recordedBy,
-          recordedAt: now,
-          temperature: request.temperature,
-          bloodPressureSystolic: request.bloodPressure?.systolic,
-          bloodPressureDiastolic: request.bloodPressure?.diastolic,
-          heartRate: request.heartRate,
+          recordedAt: vitalSigns.recordedDateTime,
+          temperature,
+          bloodPressureSystolic: bloodPressure.systolic,
+          bloodPressureDiastolic: bloodPressure.diastolic,
+          heartRate,
           respiratoryRate: request.respiratoryRate,
-          oxygenSaturation: request.oxygenSaturation,
+          oxygenSaturation,
           painScore: request.painScore,
         },
         userId: request.recordedBy,
       });
 
-      console.log(`[NursingEngine] Recorded vital signs for patient ${request.patientId}`);
-
       return {
         success: true,
-        data: data as VitalSigns,
+        data: vitalSigns,
       };
     } catch (error) {
       return {
@@ -110,11 +121,11 @@ export class NursingEngineService implements NursingEngineContract {
   async getVitalSigns(tenantId: string, encounterId: string, limit?: number): Promise<EngineResponse<VitalSigns[]>> {
     try {
       let query = this.supabase
-        .from('hc_vital_signs')
+        .from('hc_nursing_vital_signs')
         .select('*')
         .eq('tenant_id', tenantId)
         .eq('encounter_id', encounterId)
-        .order('recorded_date_time', { ascending: false });
+        .order('recorded_at', { ascending: false });
 
       if (limit) {
         query = query.limit(limit);
@@ -136,7 +147,7 @@ export class NursingEngineService implements NursingEngineContract {
 
       return {
         success: true,
-        data: (data || []) as VitalSigns[],
+        data: (data ?? []).map((row) => mapVitalSignsRow(row)),
       };
     } catch (error) {
       return {
@@ -158,64 +169,27 @@ export class NursingEngineService implements NursingEngineContract {
     content: string;
     recordedBy: string;
   }): Promise<EngineResponse<NursingNote>> {
-    try {
-      const now = new Date().toISOString();
-
-      const noteRecord = {
-        id: crypto.randomUUID(),
-        tenant_id: request.tenantId,
-        encounter_id: request.encounterId,
-        patient_id: request.patientId,
-        note_type: request.noteType,
-        content: request.content,
-        recorded_by: request.recordedBy,
-        recorded_date_time: now,
-        created_at: now,
-        updated_at: now,
-      };
-
-      const { data, error } = await this.supabase
-        .from('hc_nursing_notes')
-        .insert(noteRecord)
-        .select()
-        .single();
-
-      if (error || !data) {
-        return {
-          success: false,
-          error: {
-            code: 'CREATE_FAILED',
-            message: 'Failed to create nursing note',
-            details: { error },
-            timestamp: now,
-          },
-        };
-      }
-
-      // TODO: Publish NursingNoteCreated event
-
-      console.log(`[NursingEngine] Created nursing note (${request.noteType}) for patient ${request.patientId}`);
-
-      return {
-        success: true,
-        data: data as NursingNote,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: {
-          code: 'CREATE_ERROR',
-          message: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString(),
+    return {
+      success: false,
+      error: {
+        code: 'NURSING_NOTE_PERSISTENCE_NOT_SUPPORTED',
+        message: 'Nursing note persistence is not backed by a generated canonical table',
+        details: {
+          tenantId: request.tenantId,
+          encounterId: request.encounterId,
+          patientId: request.patientId,
+          noteType: request.noteType,
+          recordedBy: request.recordedBy,
         },
-      };
-    }
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
 
   async healthCheck(): Promise<EngineHealthStatus> {
     try {
       const { error } = await this.supabase
-        .from('hc_vital_signs')
+        .from('hc_nursing_vital_signs')
         .select('id')
         .limit(1);
 
@@ -240,6 +214,28 @@ export class NursingEngineService implements NursingEngineContract {
   }
 }
 
-// TODO Week 3-4: Full implementation
-// TODO Week 3-4: Unit + integration tests
-// TODO Week 3-4: Contract registration
+function mapVitalSignsRow(row: NursingVitalSignsRow): VitalSigns {
+  const recordedAt = row.recorded_at ?? new Date().toISOString();
+
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    encounterId: row.encounter_id,
+    patientId: row.patient_id,
+    recordedBy: row.nurse_practitioner_id,
+    recordedDateTime: recordedAt,
+    temperature: { value: row.temperature, unit: 'C' },
+    bloodPressure: {
+      systolic: row.systolic_bp,
+      diastolic: row.diastolic_bp,
+      unit: 'mmHg',
+    },
+    heartRate: { value: row.heart_rate, unit: 'bpm' },
+    respiratoryRate: row.respiratory_rate === null
+      ? undefined
+      : { value: row.respiratory_rate, unit: 'breaths/min' },
+    oxygenSaturation: { value: row.spo2, unit: '%' },
+    notes: row.notes ?? undefined,
+    createdAt: recordedAt,
+  };
+}

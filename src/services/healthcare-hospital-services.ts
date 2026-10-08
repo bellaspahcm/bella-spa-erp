@@ -182,6 +182,10 @@ const MOCK_ADMISSIONS: InpatientAdmission[] = [
 const MOCK_BREAK_GLASS_LOGS: SecurityBreakGlassLog[] = [];
 
 function getHospitalSupabase() {
+  if (typeof window !== 'undefined') {
+    throw new Error('Hospital browser UI must not access Healthcare persistence tables directly.');
+  }
+
   return createBrowserClient();
 }
 
@@ -312,13 +316,18 @@ export class InpatientAdmissionService {
           admittedAt: new Date().toISOString(),
           version: 1,
         }),
-        dischargeAdmission: async (request) => successResponse({
-          id: request.admissionId,
-          tenantId: request.tenantId,
-          encounterId: 'enc-dev-fallback',
-          patientPartyId: 'pat-dev-fallback',
-          wardId: 'ward-dev-fallback',
-          bedId: 'bed-dev-fallback',
+        dischargeAdmission: async (request) => {
+          const existingAdmission = MOCK_ADMISSIONS.find((admission) => (
+            admission.id === request.admissionId && admission.tenant_id === request.tenantId
+          ));
+
+          return successResponse({
+            id: request.admissionId,
+            tenantId: request.tenantId,
+            encounterId: existingAdmission?.encounter_id ?? 'enc-dev-fallback',
+            patientPartyId: existingAdmission?.patient_id ?? 'pat-dev-fallback',
+            wardId: existingAdmission?.ward_id ?? 'ward-dev-fallback',
+            bedId: existingAdmission?.bed_id ?? 'bed-dev-fallback',
           admittingDoctorId: request.userId ?? 'doctor-dev-fallback',
           attendingDoctorId: request.userId ?? 'doctor-dev-fallback',
           status: 'discharged',
@@ -327,14 +336,18 @@ export class InpatientAdmissionService {
           admittedAt: new Date().toISOString(),
           dischargedAt: new Date().toISOString(),
           version: 2,
-        }),
+          });
+        },
       };
-      const mockBedContract: Pick<BedEngineContract, 'transferBed'> = {
+      const mockBedContract: Pick<BedEngineContract, 'transferBed' | 'releaseBed'> = {
         transferBed: async (request) => successResponse({
           fromBed: createMockBed(request.tenantId, request.fromBedId, 'available'),
           toBed: createMockBed(request.tenantId, request.toBedId, 'occupied'),
           transferId: `trf-${Date.now()}`,
         }),
+        releaseBed: async (request) => successResponse(
+          createMockBed(request.tenantId, request.bedId, 'cleaning')
+        ),
       };
       const mockTemporalContract: Pick<ITemporalContract, 'recordTemporalEvent'> = {
         recordTemporalEvent: async (input) => successResponse({

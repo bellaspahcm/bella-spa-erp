@@ -24,6 +24,17 @@ import type { PharmacyEngineContract } from '@/platform/healthcare/contracts/pha
 import type { MARAdministrationRequest } from '@/platform/healthcare/contracts/pharmacy-engine.contract';
 import type { EngineResponse, MedicationOrder } from '@/platform/healthcare/shared-kernel/types';
 
+function browserBoundaryResponse<T>(operation: string): EngineResponse<T> {
+  return {
+    success: false,
+    error: {
+      code: 'BROWSER_PUBLIC_CONTRACT_REQUIRED',
+      message: `${operation} must run through a server/product public contract boundary.`,
+      timestamp: new Date().toISOString(),
+    },
+  };
+}
+
 export function usePharmacyEngine() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -42,6 +53,10 @@ export function usePharmacyEngine() {
     setError(null);
 
     try {
+      if (typeof window !== 'undefined') {
+        return browserBoundaryResponse<MedicationOrder[]>('getMedicationOrders');
+      }
+
       const result = await pharmacyEngine.getMedicationOrders(tenantId, encounterId);
       return result;
     } catch (err: unknown) {
@@ -63,6 +78,10 @@ export function usePharmacyEngine() {
     setError(null);
 
     try {
+      if (typeof window !== 'undefined') {
+        return browserBoundaryResponse<{ id: string }>('recordMedicationAdministration');
+      }
+
       const result = await pharmacyEngine.recordMedicationAdministration(request);
       return result;
     } catch (err: unknown) {

@@ -506,4 +506,29 @@ describe('ProductResolver', () => {
       expect(resolved.product.navigationProfile).toBe('english-center');
     });
   });
+
+  describe('Bella Hospital Product Resolution', () => {
+    it('should resolve bella_hospital to the Hospital default route without module inference', () => {
+      const hospital: ProductDefinition = {
+        productKey: 'bella_hospital',
+        displayName: 'Bella Hospital',
+        subtitle: 'Hospital Management',
+        requiredModules: ['healthcare'],
+        serviceProfile: 'hospital',
+        defaultRoute: '/dashboard/hospital',
+        navigationProfile: 'hospital'
+      };
+      productRegistry.register(hospital);
+
+      const tenant = createMockTenant('tenant-hospital', 'bella_hospital');
+      const resolved = productResolver.resolve(tenant);
+
+      expect(resolved.product.productKey).toBe('bella_hospital');
+      expect(resolved.product.requiredModules).toEqual(['healthcare']);
+      expect(resolved.product.productKey).not.toBe(resolved.product.requiredModules[0]);
+      expect(resolved.product.serviceProfile).toBe('hospital');
+      expect(resolved.product.defaultRoute).toBe('/dashboard/hospital');
+      expect(resolved.product.navigationProfile).toBe('hospital');
+    });
+  });
 });

@@ -76,6 +76,13 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
         transferId: 'trf-hosp-001',
       },
     }),
+    releaseBed: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        id: 'bed-101',
+        status: 'cleaning',
+      },
+    }),
   };
 
   const mockTemporalContract = {
@@ -211,6 +218,17 @@ describe('BELLA HOSPITAL — 11 AUTOMATED VERIFICATION GATES', () => {
       timestamp: '2026-08-13T12:00:00Z'
     });
     expect(res.status).toBe('DISCHARGED');
+    expect(mockBedContract.releaseBed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tenantId: 'tenant-hosp-a',
+        bedId: 'bed-101',
+        encounterId: 'enc-hosp-101',
+        patientId: 'pat-101',
+        admissionId: 'adm-hosp-001',
+        reason: 'discharge',
+        releasedBy: 'dr-attending-99'
+      })
+    );
   });
 
   // Gate 5: Database Migration Safety Test

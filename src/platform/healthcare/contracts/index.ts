@@ -20,6 +20,9 @@ export * from '../engines/icu-engine/contracts/icu-engine.contract';
 export * from './emergency-engine.contract';
 export * from './blood-bank-engine.contract';
 export * from './admission-engine.contract';
+export * from './patient-mpi.contract';
+export * from './laboratory-engine.contract';
+export * from './imaging-engine.contract';
 export * from './audit-compliance.contract';
 export * from './cds-engine.contract';
 export * from './order-engine.contract';
@@ -40,6 +43,9 @@ import { PACU_ENGINE_CONTRACT } from './pacu-engine.contract';
 import { OR_READINESS_ENGINE_CONTRACT } from './or-readiness-engine.contract';
 import { CDS_ENGINE_CONTRACT } from './cds-engine.contract';
 import { ORDER_ENGINE_CONTRACT } from './order-engine.contract';
+import { PATIENT_MPI_CONTRACT } from './patient-mpi.contract';
+import { LABORATORY_ENGINE_CONTRACT } from './laboratory-engine.contract';
+import { IMAGING_ENGINE_CONTRACT } from './imaging-engine.contract';
 
 /**
  * All Healthcare Platform engine contracts
@@ -57,5 +63,8 @@ export const HEALTHCARE_ENGINE_CONTRACTS = [
   OR_READINESS_ENGINE_CONTRACT,
   CDS_ENGINE_CONTRACT,
   ORDER_ENGINE_CONTRACT,
+  PATIENT_MPI_CONTRACT,
+  LABORATORY_ENGINE_CONTRACT,
+  IMAGING_ENGINE_CONTRACT,
 ];
 

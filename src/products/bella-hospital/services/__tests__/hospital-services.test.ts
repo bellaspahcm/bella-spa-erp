@@ -60,6 +60,13 @@ describe('Bella Hospital Product Services Unit Tests', () => {
         transferId: 'trf-101',
       },
     }),
+    releaseBed: jest.fn().mockResolvedValue({
+      success: true,
+      data: {
+        id: 'bed-1',
+        status: 'cleaning',
+      },
+    }),
   };
 
   const mockTemporalContract = {
@@ -198,7 +205,28 @@ describe('Bella Hospital Product Services Unit Tests', () => {
     });
 
     expect(res.status).toBe('DISCHARGED');
+    expect(res.bedReleaseStatus).toBe('RELEASED');
     expect(res.sha256Fingerprint).toBe('SHA256:MOCK_DISCHARGE_FINGERPRINT_12345');
+    expect(mockBedContract.releaseBed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tenantId: 'tenant-1',
+        bedId: 'bed-1',
+        encounterId: 'enc-1',
+        patientId: 'pat-1',
+        admissionId: 'adm-101',
+        reason: 'discharge',
+        releasedBy: 'dr-1'
+      })
+    );
+    expect(mockTemporalContract.recordTemporalEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tenantId: 'tenant-1',
+        encounterId: 'enc-1',
+        patientId: 'pat-1',
+        aggregateId: 'adm-101',
+        eventType: 'INPATIENT_DISCHARGED'
+      })
+    );
     expect(mockAuditContract.recordAuditEntry).toHaveBeenCalledWith(
       expect.objectContaining({
         tenantId: 'tenant-1',

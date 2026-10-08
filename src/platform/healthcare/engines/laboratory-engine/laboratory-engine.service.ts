@@ -1,9 +1,14 @@
-import type { ILaboratoryEngine } from '../../contracts/laboratory-engine.contract';
+import type {
+  BootstrapLabOrderRequest,
+  BootstrapLabOrderResult,
+  ILaboratoryEngine,
+} from '../../contracts/laboratory-engine.contract';
 import type { ILaboratoryRepository } from './repositories/laboratory-repository.interface';
 import { eventBus } from '@/platform/host/event-bus';
 import { LabOrder } from './domain/lab-order.entity';
 import { TEST_DEFINITIONS, type TestDefinition } from './domain/test-definition';
 import type { LabDomainEvent } from './events/laboratory.events';
+import { randomUUID } from 'crypto';
 
 import { ConcurrencyViolationError } from './repositories/laboratory-repository.interface';
 
@@ -11,6 +16,37 @@ export class LaboratoryEngineService implements ILaboratoryEngine {
   constructor(
     private readonly repository: ILaboratoryRepository
   ) {}
+
+  public async bootstrapLabOrder(
+    request: BootstrapLabOrderRequest
+  ): Promise<BootstrapLabOrderResult> {
+    const existingList = await this.repository.findByClinicalOrderId(
+      request.tenantId,
+      request.orderId
+    );
+    const duplicate = existingList.find((labOrder) => labOrder.testCode === request.testCode);
+
+    if (duplicate) {
+      return mapBootstrapResult(duplicate, request.orderId, true);
+    }
+
+    const labOrder = LabOrder.create({
+      id: randomUUID(),
+      tenantId: request.tenantId,
+      encounterId: request.encounterId,
+      clinicalOrderId: request.orderId,
+      patientId: request.patientId,
+      testCode: request.testCode,
+      testName: request.testName,
+      status: 'ORDERED',
+      safetyState: 'NORMAL',
+      version: 1,
+    });
+
+    await this.repository.save(labOrder);
+
+    return mapBootstrapResult(labOrder, request.orderId, false);
+  }
 
   public async collectSpecimen(
     tenantId: string,
@@ -190,4 +226,22 @@ export class LaboratoryEngineService implements ILaboratoryEngine {
     }
     return labOrder;
   }
+}
+
+function mapBootstrapResult(
+  labOrder: LabOrder,
+  orderId: string,
+  reusedExisting: boolean
+): BootstrapLabOrderResult {
+  return {
+    tenantId: labOrder.tenantId,
+    patientId: labOrder.patientId,
+    encounterId: labOrder.encounterId,
+    orderId,
+    labOrderId: labOrder.id,
+    testCode: labOrder.testCode,
+    testName: labOrder.testName,
+    status: labOrder.status,
+    reusedExisting,
+  };
 }
