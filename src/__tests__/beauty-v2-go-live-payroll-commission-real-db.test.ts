@@ -70,6 +70,8 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
   const attendanceId = randomUUID();
   const branchId = randomUUID();
   const ktvPersonId = randomUUID();
+  const tenantId = randomUUID();
+  const otherTenantId = randomUUID();
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Ho_Chi_Minh',
     year: 'numeric',
@@ -83,24 +85,15 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
     .padStart(2, '0');
 
   let supabase: SeedClient;
-  let tenantId: string;
-  let otherTenantId: string;
   let adminUserId = '';
   let ktvUserId = '';
   let otherUserId = '';
 
-  async function ensureTenant(name: string) {
-    const existing = await supabase
-      .from('tenants')
-      .select('id')
-      .eq('name', name)
-      .maybeSingle();
-    if (existing.error) throw new Error(`tenant lookup failed: ${existing.error.message}`);
-    if (existing.data?.id) return existing.data.id;
-
+  async function createProofTenant(id: string, name: string) {
     const created = await supabase
       .from('tenants')
       .insert({
+        id,
         name,
         status: 'active',
         enabled_modules: { beauty_spa: true, payroll: true },
@@ -119,7 +112,6 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
     if (created.error || !created.data) {
       throw new Error(`tenant create failed: ${created.error?.message || 'missing tenant id'}`);
     }
-    return created.data.id;
   }
 
   async function cleanupStep(label: string, result: PromiseLike<{ error: { message: string } | null }>) {
@@ -204,8 +196,8 @@ describeWithRealSupabase('Beauty V2 go-live payroll and commission Real DB proof
       auth: { persistSession: false, autoRefreshToken: false },
     });
     supabaseForRuntime = supabase;
-    tenantId = await ensureTenant('Beauty V2 Go Live Payroll Proof Tenant');
-    otherTenantId = await ensureTenant('Beauty V2 Go Live Payroll Proof Other Tenant');
+    await createProofTenant(tenantId, `${marker} tenant`);
+    await createProofTenant(otherTenantId, `${marker} other tenant`);
     await cleanup();
   });
 
