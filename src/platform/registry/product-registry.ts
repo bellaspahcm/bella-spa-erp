@@ -536,6 +536,32 @@ const bellaHospitalProduct: ProductDefinition = {
   navigationProfile: 'hospital'
 };
 
+/**
+ * Bella Hospitality Product Definition.
+ *
+ * @remarks
+ * Hospitality product identity for tenant classification and future route /
+ * navigation selection. This Phase 0 registration seals identity only. It does
+ * not create a Hospitality OS, Resource / Availability / Allocation kernel,
+ * Hotel runtime, Travel runtime, database tables, or UI routes.
+ *
+ * Platform Foundation, Party, Finance, and Logistics integrations remain future
+ * public-contract dependencies. They are intentionally not encoded here as new
+ * ProductRegistry module keys until the concrete Hotel/Travel contract phases
+ * prove the exact runtime dependencies.
+ *
+ * @see docs/architecture/ARCHITECTURE_GATE_RESULT_HOSPITALITY_PHASE0_PRODUCT_IDENTITY_2026_10_08.md
+ */
+const bellaHospitalityProduct: ProductDefinition = {
+  productKey: 'bella_hospitality',
+  displayName: 'Bella Hospitality',
+  subtitle: 'Hospitality & Travel Operations',
+  requiredModules: [],
+  serviceProfile: 'hospitality',
+  defaultRoute: '/dashboard/hospitality',
+  navigationProfile: 'hospitality'
+};
+
 // Register products
 productRegistry.register(bellaHaircutProduct);
 productRegistry.register(bellaBabycareProduct);
@@ -544,3 +570,4 @@ productRegistry.register(bellaSpaProduct);
 productRegistry.register(bellaPreschoolProduct);
 productRegistry.register(bellaEnglishCenterProduct);
 productRegistry.register(bellaHospitalProduct);
+productRegistry.register(bellaHospitalityProduct);
