@@ -7,6 +7,7 @@ import {
 
 const mockGetCurrentUser = jest.fn();
 const mockCreateClient = jest.fn();
+const mockCreateSupabaseAdminClient = jest.fn();
 const mockSafeRevalidatePath = jest.fn();
 
 jest.mock('server-only', () => ({}), { virtual: true });
@@ -17,6 +18,10 @@ jest.mock('../services/user-actions', () => ({
 
 jest.mock('../lib/supabase-server', () => ({
   createClient: () => mockCreateClient(),
+}));
+
+jest.mock('../lib/supabase-admin', () => ({
+  createSupabaseAdminClient: () => mockCreateSupabaseAdminClient(),
 }));
 
 jest.mock('../lib/revalidate', () => ({
@@ -129,10 +134,24 @@ function installAdminUser() {
   });
 }
 
+function installAuthBackedStaff() {
+  mockCreateSupabaseAdminClient.mockReturnValue({
+    auth: {
+      admin: {
+        getUserById: jest.fn().mockResolvedValue({
+          data: { user: { id: 'staff-a', email: 'staff@bella.test' } },
+          error: null,
+        }),
+      },
+    },
+  });
+}
+
 describe('beauty chain actions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     installAdminUser();
+    installAuthBackedStaff();
   });
 
   it('creates one company inside the current tenant', async () => {
@@ -252,6 +271,45 @@ describe('beauty chain actions', () => {
       to_type: 'unit',
       rel_type: 'belongs_to',
     });
+  });
+
+  it('returns a domain error before people_directory insert when staff has no auth identity', async () => {
+    mockCreateSupabaseAdminClient.mockReturnValue({
+      auth: {
+        admin: {
+          getUserById: jest.fn().mockResolvedValue({
+            data: { user: null },
+            error: { message: 'User not found', status: 404 },
+          }),
+        },
+      },
+    });
+
+    const calls = installSupabase([
+      {
+        table: 'users',
+        op: 'select',
+        data: { id: 'staff-a', tenant_id: 'tenant-a', email: 'staff@bella.test', full_name: 'Nguyen A', role: 'ktv', status: 'active' },
+      },
+      {
+        table: 'org_units',
+        op: 'select',
+        data: { id: 'branch-a', tenant_id: 'tenant-a', unit_type: 'branch', name: 'Quận 1', code: 'Q1', parent_id: 'company-a', is_active: true, metadata: {} },
+      },
+      { table: 'people_directory', op: 'select', data: null },
+    ]);
+
+    const result = await assignBeautyStaffToBranch({ userId: 'staff-a', branchId: 'branch-a' });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Nhân sự này chưa có tài khoản đăng nhập hợp lệ. Vui lòng tạo hoặc khôi phục tài khoản đăng nhập trước khi gán vào chi nhánh.',
+    });
+    expect(calls.map((call) => `${call.table}.${call.op}`)).toEqual([
+      'users.select',
+      'org_units.select',
+      'people_directory.select',
+    ]);
   });
 
   it('denies cross-tenant staff assignment before writing relationships', async () => {

@@ -1,3 +1,85 @@
+# ARCHITECTURE GATE RESULT - BEAUTY V2 CHAIN STAFF AUTH IDENTITY GUARD
+
+> **Status:** PASS - product service guard authorized
+> **Date:** 2026-10-08
+> **Scope:** Prevent Beauty V2 Chain Management staff assignment from leaking `people_directory_user_id_fkey` when a selectable `public.users` row is not backed by `auth.users`.
+
+## Bella OS/Product Development Process Gate
+
+- Truth: `people_directory.user_id` is an Auth identity link and references `auth.users(id)`.
+- Source of Truth: `supabase/migrations/20260801030000_foundation_org_people_schema.sql`, `src/services/beauty-chain-actions.ts`, live read-only Supabase evidence captured in `implementation-artifacts/investigations/beauty-v2-chain-staff-assignment-fk-investigation.md`.
+- Canonical Contract: Beauty Chain staff assignment consumes Platform People Directory and Org Unit contracts; linkable employee users must have a valid Auth identity before `people_directory.user_id` is populated.
+- Gate result: `PASS` for a Product service guard and focused tests only.
+
+## Product Manifest
+
+- Product: Bella Beauty Spa V2 (`bella_spa`), Chain Management page.
+- Capability in scope: assign an existing tenant staff user to a selected branch.
+- Existing capabilities reused: `public.users` tenant profile, `people_directory`, `org_relationships`, `org_units`, and `user_org_unit_access`.
+- Non-goals: no schema change, no Platform Org Unit change, no migration, no Healthcare/Education/Logistics kernel work, no demo-data mutation.
+
+## Ownership Map
+
+| Data / Behavior | Owner | Decision |
+|---|---|---|
+| `auth.users` identity existence | Supabase Auth / Platform identity | read only through server-side admin client |
+| `public.users` tenant profile | Platform/user profile | consume only |
+| `people_directory` | Platform People Directory | consume contract; do not change schema |
+| `org_relationships` branch assignment | Platform Org Unit relationship | consume existing contract |
+| Beauty Chain action orchestration | Beauty V2 Product service | may guard before mutation |
+
+## Contract Dependency Map
+
+```text
+Beauty Chain UI
+  -> linkBeautyStaffPerson / assignBeautyStaffToBranch
+  -> public.users same-tenant staff profile
+  -> auth.users identity existence guard
+  -> people_directory employee link
+  -> org_relationships person -> branch membership
+  -> user_org_unit_access projection
+```
+
+## Change Authority
+
+Authorized:
+- Modify `src/services/beauty-chain-actions.ts`.
+- Modify `src/__tests__/beauty-chain-actions.test.ts`.
+- Update this architecture gate record.
+
+Not authorized:
+- Change `people_directory`, `auth.users`, `org_units`, `org_relationships`, `user_org_unit_access`, RLS, migrations, generated types, or seed production data.
+- Create compatibility aliases or bypass the FK.
+
+## UI -> Contract Reconciliation
+
+| UI element / action | Contract status | Decision |
+|---|---|---|
+| Staff dropdown from tenant `public.users` | MAPPING BUG | Product action must reject users without Auth identity before People Directory insert. |
+| `Gán vào chi nhánh` action | MATCH after guard | Same-tenant staff and active branch are still required; Auth identity is now validated before link. |
+| Existing `Needs link` badge | PARTIAL | It only means no `people_directory` row; it does not prove Auth identity. No UI redesign in this change. |
+
+## Additive Migration Plan
+
+- No migration.
+- No schema, table, index, RLS, generated type, or data change.
+
+## 11 Automated Verification Gates Plan
+
+1. Architecture Compliance: confirm no frozen Healthcare/Education/Logistics/Platform kernel files are touched.
+2. Contract Boundary: verify service guard follows `people_directory.user_id -> auth.users`.
+3. Tenant Isolation: preserve same-tenant `public.users` and `org_units` filters.
+4. RLS & Authorization: preserve admin-only Chain Management action gate.
+5. Database Migration Safety: no migration.
+6. Event-After-Persistence: no event path changed.
+7. Domain Safety Routing: Product service guard only; no OS/kernel route touched.
+8. Temporal Provenance: no historical/data mutation.
+9. Rule Governance: no accounting or governed domain rule change.
+10. Audit & Evidence Integrity: focused test for Auth-missing negative path.
+11. Regression: run focused `beauty-chain-actions.test.ts` and `git diff --check`.
+
+---
+
 # ARCHITECTURE GATE RESULT - AI CODING BUSINESS SEMANTIC GATE
 
 > **Status:** PASS - governance rule addition authorized
