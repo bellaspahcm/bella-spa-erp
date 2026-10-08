@@ -4892,3 +4892,76 @@ None. This repair must not create or alter database tables, indexes, RPCs, RLS, 
 9. Static check: `npm run lint -- --file ...` if supported, otherwise targeted TypeScript/static review.
 10. Visual check: inspect dark mode viewport continuity via browser screenshot when local app can run.
 11. Regression scope: run relevant focused checks; broader Healthcare/Education/Logistics guards are not required because frozen kernels are untouched.
+
+# Architecture Gate - Beauty Spa Today Appointment Row Redesign (2026-10-08)
+
+> **Status:** PASS - presentation-only redesign for the Today Appointments row layout in the Beauty Spa/BabyCare dashboard card.
+> **Scope:** `src/app/dashboard/components/BeautySpaV2DashboardView.tsx` appointment-list markup only. No schema, data fetching, server action, analytics read model, workflow, Healthcare H1-H12, Education Kernel, Logistics Kernel, or Product contract changes.
+
+## 1. Bella OS/Product Development Process Gate
+
+- Problem: the customer/assignee text in the Today Appointments list is visually compressed in light Spa/BabyCare dashboard, making the customer row look broken.
+- Truth / Source of Truth: the list already consumes `DashboardSessionViewModel` props from existing dashboard analytics. The defect is presentation layout, not data semantics.
+- Canonical Contract: appointment rows may render existing fields (`assigned_time`, customer name, package name, assigned KTV, status) but must not create new fields, statuses, actions, or server behavior.
+- Non-goals: no changes to session lifecycle, booking completion, filters, counts, KTV assignment, persistence, or authorization.
+
+## 2. Product Manifest
+
+| Product / Surface | Capability | Scope |
+| --- | --- | --- |
+| Beauty Spa/BabyCare dashboard | Today appointment card | Redesign row layout for readable customer text |
+| Existing dashboard data | Read-only display | Reuse existing `DashboardSessionViewModel` props |
+
+## 3. Ownership Map
+
+| Data / UI Element | Owner | Change Authority |
+| --- | --- | --- |
+| Appointment row layout | Product UI presentation | Authorized |
+| Customer name/package/KTV/status values | Existing dashboard read model | Consume only |
+| Row actions and links | Existing UI behavior | Unchanged |
+| Session/booking lifecycle | Beauty service/domain layer | Not authorized |
+
+## 4. Contract Dependency Map
+
+```text
+BeautySpaV2DashboardView
+  -> existing DashboardSessionViewModel props
+  -> presentation-only row layout
+```
+
+No Product -> Contract -> Kernel dependency changes are required.
+
+## 5. Change Authority
+
+Authorized layers: appointment-list JSX/classes in the product dashboard view.
+
+Not authorized: server actions, analytics services, database schema, ProductRegistry/ProductResolver, tenant/auth/RLS, Healthcare/Education/Logistics Kernel files.
+
+## 6. UI -> Contract Reconciliation
+
+| UI Element | Contract Trace | Result |
+| --- | --- | --- |
+| Time | `session.assigned_time` | MATCH |
+| Customer display name | `session.bookings?.customers?.name_mother` fallback | MATCH |
+| Service/package line | `session.bookings?.package_name` fallback | MATCH |
+| Assigned KTV line | `session.bookings?.assigned_ktv?.full_name` fallback | MATCH |
+| Status badge | existing status helper functions | MATCH |
+| More button | existing visual affordance | UNCHANGED |
+
+## 7. Additive Migration Plan
+
+None.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Architecture boundary: only product UI presentation file changes.
+2. Contract boundary: no read model/service changes.
+3. Tenant isolation: unchanged.
+4. RLS/AuthZ: unchanged.
+5. Migration safety: no migrations.
+6. Event-after-persistence: unchanged.
+7. UI data/action reconciliation: existing fields/actions only.
+8. Type safety: no `any`, casts, or suppressions.
+9. Static check: targeted ESLint.
+10. Visual check: row layout prevents customer text compression in the highlighted card.
+11. Regression scope: no kernel verification required because frozen kernels are untouched.
