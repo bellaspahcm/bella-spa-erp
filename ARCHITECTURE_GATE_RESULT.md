@@ -4728,3 +4728,68 @@ No migration.
 
 ### Conclusion
 `PASS`
+# Architecture Gate - BabyCare/Beauty V2 Today Appointment Tabs
+
+> **Status:** PASS - dashboard day query and tab classification only
+> **Scope:** Fix the red-marked "Lịch hẹn hôm nay" widget used by BabyCare and Beauty V2 so completed sessions from today's `session_logs` are available to the "Hoàn thành" tab, and scheduled/confirmed sessions are counted consistently as waiting.
+
+## 1. Bella OS/Product Development Process Gate
+
+- Truth: The widget is a read model over tenant-scoped `session_logs` for the selected local day.
+- Source of Truth: `session_logs.assigned_date`, `session_logs.status`, nested `bookings`, and the existing `getDashboardPrimaryData -> getUpcomingSessions -> BeautySpaV2DashboardView` consumer chain.
+- Canonical Contract: Product dashboard consumes `DashboardSessionViewModel[]` from `getUpcomingSessions(todayDate)`; UI tabs may filter this read model but must not rewrite session lifecycle semantics.
+- Gate decision: `PASS` for a narrow read-query/UI classification correction. No Kernel, Platform, Healthcare, Education, Logistics, migration, RLS, or Finance change is authorized.
+
+## 2. Product Manifest
+
+- Products: `bella_babycare` legacy BabyCare dashboard and `bella_spa` Beauty V2 dashboard.
+- Capability: Today appointment visibility by status tabs: all, serving, waiting, completed.
+- Out of scope: booking completion engine changes, package progress changes, production data mutation, tenant onboarding, branch/chain logic, and any new product table.
+
+## 3. Ownership Map
+
+| Data / Behavior | Owner | Action |
+| --- | --- | --- |
+| `session_logs.assigned_date` | Booking/session workflow | consume |
+| `session_logs.status` | Booking/session workflow | consume |
+| Dashboard tab counts and list filtering | Product dashboard UI | correct stale consumer |
+| Session completion mutation | Shared order/session completion service | no change |
+
+## 4. Contract Dependency Map
+
+```text
+BabyCare / Beauty V2 Dashboard
+  -> getDashboardPrimaryData(...)
+  -> getUpcomingSessions(todayDate)
+  -> tenant-scoped session_logs + nested bookings
+  -> UI tab classification
+```
+
+## 5. Change Authority
+
+- Authorized: `src/core/services/analytics/dashboard-actions.ts`, `src/app/dashboard/components/BeautySpaV2DashboardView.tsx`, focused regression tests.
+- Not authorized: Core session completion behavior, Healthcare/Education kernels, Logistics frozen artifacts, database migrations, or product identity rules.
+
+## 6. UI -> Contract Reconciliation
+
+- UI currently shows a "Hoàn thành" tab, but the data query removed `status = completed` before the UI could filter it.
+- UI also labels fallback statuses as waiting but did not count/filter `scheduled` and `confirmed` as waiting.
+- Correct reconciliation: keep today's completed rows in the dashboard read model and use a single UI classifier for tab counts, list filtering, and badges.
+
+## 7. Additive Migration Plan
+
+- No migration. No schema change.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Architecture Compliance: no frozen Healthcare/Education/Logistics files touched.
+2. Contract Boundary: dashboard continues to consume existing server action/read model.
+3. Tenant Isolation: keep `tenant_id` filter in `getUpcomingSessions`.
+4. RLS/Auth: no policy change.
+5. Migration Safety: no migration.
+6. Event-After-Persistence: no mutation/event path change.
+7. Product UI Contract: completed rows can reach completed tab.
+8. Status Semantics: scheduled/confirmed/null/pending/waiting count as waiting.
+9. Regression Test: focused Jest for dashboard read query.
+10. Type/Lint: targeted changed-file checks where feasible.
+11. Diff Hygiene: `git diff --check`.

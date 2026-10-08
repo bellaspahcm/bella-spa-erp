@@ -461,7 +461,6 @@ export async function getUpcomingSessions(date?: string): Promise<DashboardSessi
     `)
     .eq('tenant_id', tenantId)
     .eq('assigned_date', todayStr)
-    .not('status', 'eq', 'completed')
     .order('assigned_time', { ascending: true, nullsFirst: false })
     .order('session_number', { ascending: true })
     .limit(DASHBOARD_UPCOMING_SESSIONS_LIMIT);
