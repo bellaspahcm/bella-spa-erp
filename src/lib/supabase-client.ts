@@ -15,7 +15,11 @@ export const getSupabase = (): TypedSupabaseClient => {
   return supabaseInstance;
 };
 
-export const supabase = typeof window !== 'undefined' ? getSupabase() : null;
+export const supabase = new Proxy({} as TypedSupabaseClient, {
+  get(_target, property, receiver) {
+    return Reflect.get(getSupabase(), property, receiver);
+  },
+});
 
 export function createClient() {
   return getSupabase();
