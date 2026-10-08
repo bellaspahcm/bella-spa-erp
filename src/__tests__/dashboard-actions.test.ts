@@ -148,7 +148,7 @@ describe('dashboard read actions', () => {
     );
   });
 
-  it('loads upcoming sessions through a direct tenant-scoped day query', async () => {
+  it('loads today sessions through a direct tenant-scoped day query without excluding completed tabs', async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === 'session_logs') {
         return new MockQueryBuilder([
@@ -162,6 +162,16 @@ describe('dashboard read actions', () => {
               packages: null,
             },
           },
+          {
+            id: 'today-completed',
+            assigned_date: '2026-06-10',
+            status: 'completed',
+            assigned_time: '10:00',
+            bookings: {
+              package_name: 'Massage mẹ',
+              packages: null,
+            },
+          },
         ]);
       }
       return new MockQueryBuilder([]);
@@ -172,12 +182,19 @@ describe('dashboard read actions', () => {
         id: 'today-open',
         bookings: expect.objectContaining({ package_name: 'Tắm bé' }),
       }),
+      expect.objectContaining({
+        id: 'today-completed',
+        status: 'completed',
+        bookings: expect.objectContaining({ package_name: 'Massage mẹ' }),
+      }),
     ]);
 
     expect(mockFrom).toHaveBeenCalledWith('session_logs');
     expect(queryFilters).toEqual(expect.arrayContaining([
       { column: 'tenant_id', value: 'tenant-1' },
       { column: 'assigned_date', value: '2026-06-10' },
+    ]));
+    expect(queryFilters).not.toEqual(expect.arrayContaining([
       { column: 'status', value: 'completed' },
     ]));
   });

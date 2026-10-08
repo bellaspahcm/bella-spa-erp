@@ -50,6 +50,32 @@ interface BeautySpaV2DashboardViewProps {
   updatingId: string | null;
 }
 
+type AppointmentTab = 'all' | 'serving' | 'waiting' | 'done';
+
+function isServingSession(status: string | null) {
+  return status === 'in_progress' || status === 'serving';
+}
+
+function isCompletedSession(status: string | null) {
+  return status === 'completed';
+}
+
+function isWaitingSession(status: string | null) {
+  return status === null
+    || status === 'pending'
+    || status === 'waiting'
+    || status === 'scheduled'
+    || status === 'confirmed';
+}
+
+function matchesAppointmentTab(session: DashboardSessionViewModel, tab: AppointmentTab) {
+  if (tab === 'all') return true;
+  if (tab === 'serving') return isServingSession(session.status);
+  if (tab === 'waiting') return isWaitingSession(session.status);
+  if (tab === 'done') return isCompletedSession(session.status);
+  return true;
+}
+
 // ─── PerfChart: interactive area-line chart with hover tooltip ────────────────
 function PerfChart({
   W, H, areaPath, linePath, values, toX, toY, performanceData, activePerfTab,
@@ -185,8 +211,9 @@ export function BeautySpaV2DashboardView({
   handleCompleteSession,
   updatingId,
 }: BeautySpaV2DashboardViewProps) {
-  const [activeAppointmentTab, setActiveAppointmentTab] = useState<'all' | 'serving' | 'waiting' | 'done'>('all');
+  const [activeAppointmentTab, setActiveAppointmentTab] = useState<AppointmentTab>('all');
   const [activePerfTab, setActivePerfTab] = useState<'revenue' | 'booking' | 'new_customer' | 'returning'>('revenue');
+  const visibleSessions = sessions.filter((session) => matchesAppointmentTab(session, activeAppointmentTab));
 
   const now = new Date();
   const dateString = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -284,13 +311,13 @@ export function BeautySpaV2DashboardView({
             <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1 scrollbar-none">
               {[
                 { key: 'all', label: 'Tất cả', count: sessions.length, activeClass: 'bg-primary text-primary-foreground', inactiveClass: 'bg-slate-100 text-slate-600' },
-                { key: 'serving', label: 'Đang phục vụ', count: sessions.filter(s => s.status === 'in_progress' || s.status === 'serving').length, activeClass: 'bg-emerald-600 text-white', inactiveClass: 'bg-emerald-50 text-emerald-700' },
-                { key: 'waiting', label: 'Đang chờ', count: sessions.filter(s => s.status === 'pending' || s.status === 'waiting' || s.status === null).length, activeClass: 'bg-amber-500 text-white', inactiveClass: 'bg-amber-50 text-amber-700' },
-                { key: 'done', label: 'Hoàn thành', count: sessions.filter(s => s.status === 'completed').length, activeClass: 'bg-blue-600 text-white', inactiveClass: 'bg-blue-50 text-blue-700' },
+                { key: 'serving', label: 'Đang phục vụ', count: sessions.filter(s => isServingSession(s.status)).length, activeClass: 'bg-emerald-600 text-white', inactiveClass: 'bg-emerald-50 text-emerald-700' },
+                { key: 'waiting', label: 'Đang chờ', count: sessions.filter(s => isWaitingSession(s.status)).length, activeClass: 'bg-amber-500 text-white', inactiveClass: 'bg-amber-50 text-amber-700' },
+                { key: 'done', label: 'Hoàn thành', count: sessions.filter(s => isCompletedSession(s.status)).length, activeClass: 'bg-blue-600 text-white', inactiveClass: 'bg-blue-50 text-blue-700' },
               ].map(tab => (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveAppointmentTab(tab.key as 'all' | 'serving' | 'waiting' | 'done')}
+                  onClick={() => setActiveAppointmentTab(tab.key as AppointmentTab)}
                   className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     activeAppointmentTab === tab.key ? tab.activeClass : tab.inactiveClass
                   }`}
@@ -302,13 +329,7 @@ export function BeautySpaV2DashboardView({
 
             {/* List items */}
             <div className="space-y-3">
-              {sessions.filter(app => {
-                if (activeAppointmentTab === 'all') return true;
-                if (activeAppointmentTab === 'serving') return app.status === 'in_progress' || app.status === 'serving';
-                if (activeAppointmentTab === 'waiting') return app.status === 'pending' || app.status === 'waiting' || app.status === null;
-                if (activeAppointmentTab === 'done') return app.status === 'completed';
-                return true;
-              }).slice(0, 5).map((app) => (
+              {visibleSessions.slice(0, 5).map((app) => (
                 <div
                   key={app.id}
                   className="flex items-center justify-between p-3 rounded-xl bg-slate-50/70 hover:bg-slate-100/80 border border-slate-100 transition-colors"
@@ -327,11 +348,11 @@ export function BeautySpaV2DashboardView({
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-[11px] text-slate-500 hidden sm:inline-block font-medium">{app.bookings?.assigned_ktv?.full_name || 'Chưa xếp'}</span>
                     <span className={`text-[10px] font-bold px-2 py-1 rounded-md border ${
-                      app.status === 'completed' ? 'bg-blue-50 text-blue-600 border-blue-200'
-                      : (app.status === 'in_progress' || app.status === 'serving') ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                      isCompletedSession(app.status) ? 'bg-blue-50 text-blue-600 border-blue-200'
+                      : isServingSession(app.status) ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
                       : 'bg-amber-50 text-amber-600 border-amber-200'
                     }`}>
-                      {app.status === 'completed' ? 'Hoàn thành' : (app.status === 'in_progress' || app.status === 'serving') ? 'Đang phục vụ' : 'Đang chờ'}
+                      {isCompletedSession(app.status) ? 'Hoàn thành' : isServingSession(app.status) ? 'Đang phục vụ' : 'Đang chờ'}
                     </span>
                     <button className="text-slate-400 hover:text-slate-600">
                       <MoreHorizontal className="w-4 h-4" />
@@ -339,7 +360,7 @@ export function BeautySpaV2DashboardView({
                   </div>
                 </div>
               ))}
-              {sessions.length === 0 && (
+              {visibleSessions.length === 0 && (
                  <div className="p-4 text-center text-slate-400 text-xs italic">Không có lịch hẹn hôm nay</div>
               )}
             </div>

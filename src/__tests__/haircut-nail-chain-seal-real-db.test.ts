@@ -169,6 +169,28 @@ describeIfRealDb('Haircut + Nail Platform Chain seal real DB proof', () => {
     );
   }
 
+  async function seedPublicUser(input: {
+    tenantId: string;
+    userId: string;
+    email: string;
+    fullName: string;
+    role: string;
+  }) {
+    await client.query(
+      `
+        INSERT INTO public.users (id, tenant_id, email, full_name, role, status)
+        VALUES ($1::uuid, $2::uuid, $3, $4, $5, 'active')
+        ON CONFLICT (id) DO UPDATE
+        SET tenant_id = EXCLUDED.tenant_id,
+            email = EXCLUDED.email,
+            full_name = EXCLUDED.full_name,
+            role = EXCLUDED.role,
+            status = EXCLUDED.status
+      `,
+      [input.userId, input.tenantId, input.email, input.fullName, input.role],
+    );
+  }
+
   async function seedBranchAccess(input: {
     tenantId: string;
     branchA: string;
@@ -238,6 +260,13 @@ describeIfRealDb('Haircut + Nail Platform Chain seal real DB proof', () => {
       name: `${marker} Haircut Tenant`,
       productKey: 'bella_haircut',
     });
+    await seedPublicUser({
+      tenantId: ids.haircutTenant,
+      userId: haircutUserId,
+      email: `${marker}-haircut-public@example.com`,
+      fullName: `${marker} Haircut User`,
+      role: 'ktv',
+    });
     await seedBranchAccess({
       tenantId: ids.haircutTenant,
       branchA: ids.haircutBranchA,
@@ -262,6 +291,13 @@ describeIfRealDb('Haircut + Nail Platform Chain seal real DB proof', () => {
       name: `${marker} Nail Tenant`,
       productKey: 'bella_nail',
     });
+    await seedPublicUser({
+      tenantId: ids.nailTenant,
+      userId: nailUserId,
+      email: `${marker}-nail-public@example.com`,
+      fullName: `${marker} Nail User`,
+      role: 'ktv',
+    });
     await seedBranchAccess({
       tenantId: ids.nailTenant,
       branchA: ids.nailBranchA,
@@ -285,7 +321,9 @@ describeIfRealDb('Haircut + Nail Platform Chain seal real DB proof', () => {
       `
         SELECT
           set_config('app.current_user_id', $1, FALSE),
-          set_config('app.current_tenant_id', $2, FALSE)
+          set_config('app.current_tenant_id', $2, FALSE),
+          set_config('request.jwt.claim.sub', $1, FALSE),
+          set_config('request.jwt.claim.role', 'authenticated', FALSE)
       `,
       [userId, tenantId],
     );
@@ -296,7 +334,9 @@ describeIfRealDb('Haircut + Nail Platform Chain seal real DB proof', () => {
       `
         SELECT
           set_config('app.current_user_id', '', FALSE),
-          set_config('app.current_tenant_id', '', FALSE)
+          set_config('app.current_tenant_id', '', FALSE),
+          set_config('request.jwt.claim.sub', '', FALSE),
+          set_config('request.jwt.claim.role', '', FALSE)
       `,
     );
   }
@@ -397,6 +437,13 @@ describeIfRealDb('Haircut + Nail Platform Chain seal real DB proof', () => {
         WHERE tenant_id = ANY($1::uuid[])
       `,
       [[ids.haircutTenant, ids.nailTenant]],
+    );
+    await client.query(
+      `
+        DELETE FROM public.users
+        WHERE id = ANY($1::uuid[])
+      `,
+      [authUserIds],
     );
     await client.query(
       `
