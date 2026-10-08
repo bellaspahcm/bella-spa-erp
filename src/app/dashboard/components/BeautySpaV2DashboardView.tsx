@@ -389,9 +389,9 @@ export function BeautySpaV2DashboardView({
         </div>
 
         {/* COL 2: BELLA AI COPILOT (BETA) (4 Cols) */}
-        <div className="lg:col-span-4 bg-gradient-to-br from-[#F8F5FF] via-[#F3EEFE] to-[#EDE4FF] rounded-2xl p-5 border border-purple-100 shadow-xs flex flex-col justify-between relative overflow-hidden">
+        <div className="lg:col-span-4 bg-gradient-to-br from-[#F8F5FF] via-[#F3EEFE] to-[#EDE4FF] dark:from-[#112E43] dark:via-[#193A50] dark:to-[#112E43] rounded-2xl p-5 border border-purple-100 dark:border-[#243F52] shadow-xs flex flex-col justify-between relative overflow-hidden">
           {/* Subtle AI background decoration */}
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-purple-200/30 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-purple-200/30 dark:bg-[#A99BEB]/10 rounded-full blur-2xl pointer-events-none" />
 
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -399,9 +399,9 @@ export function BeautySpaV2DashboardView({
                 <div className="w-8 h-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
                   <Sparkles className="w-4 h-4" />
                 </div>
-                <h2 className="text-base font-bold text-purple-950 tracking-tight flex items-center gap-1.5">
+                <h2 className="text-base font-bold text-purple-950 dark:text-[#F3F5F7] tracking-tight flex items-center gap-1.5">
                   Bella AI Copilot
-                  <span className="bg-purple-200 text-purple-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md uppercase">
+                  <span className="bg-purple-200 text-purple-800 dark:bg-[#A99BEB]/20 dark:text-[#F3F5F7] text-[10px] font-extrabold px-1.5 py-0.5 rounded-md uppercase">
                     BETA
                   </span>
                 </h2>
@@ -411,26 +411,26 @@ export function BeautySpaV2DashboardView({
               </Link>
             </div>
 
-            <h3 className="text-lg font-bold text-slate-900 leading-snug mb-5">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-[#F3F5F7] leading-snug mb-5">
               Phân tích hoạt động kinh doanh hôm nay.
             </h3>
 
             {/* AI Insights List */}
             <div className="space-y-3 mb-6">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/80 border border-purple-100/80 shadow-2xs">
-                <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/80 dark:bg-[#193A50] border border-purple-100/80 dark:border-[#243F52] shadow-2xs">
+                <div className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-[#EF737A]/20 text-rose-600 dark:text-[#EF737A] flex items-center justify-center shrink-0">
                   <AlertTriangle className="w-4 h-4" />
                 </div>
-                <p className="text-xs font-bold text-slate-800">
+                <p className="text-xs font-bold text-slate-800 dark:text-[#F3F5F7]">
                   {alerts.filter(a => a.type === 'warning').length} thông báo cảnh báo cần xử lý
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/80 border border-purple-100/80 shadow-2xs">
-                <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/80 dark:bg-[#193A50] border border-purple-100/80 dark:border-[#243F52] shadow-2xs">
+                <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-[#F1AE53]/20 text-amber-600 dark:text-[#F1AE53] flex items-center justify-center shrink-0">
                   <Package className="w-4 h-4" />
                 </div>
-                <p className="text-xs font-bold text-slate-800">
+                <p className="text-xs font-bold text-slate-800 dark:text-[#F3F5F7]">
                   {inventorySummary.lowStockCount} vật tư có nguy cơ hết hàng
                 </p>
               </div>
