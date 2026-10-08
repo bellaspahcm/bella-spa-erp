@@ -30,6 +30,13 @@
   --primary: #0F172A;
   --primary-hover: #1E293B;
   --primary-foreground: oklch(0.985 0 0);
+  --dashboard-viewport-bg: #F4F6F8;
+  --dashboard-viewport-bg-soft: #FFFFFF;
+  --dashboard-surface: #FFFFFF;
+  --dashboard-surface-muted: #F8FAFC;
+  --dashboard-surface-border: rgba(226, 232, 240, 0.72);
+  --dashboard-foreground: #0F172A;
+  --dashboard-muted: #475569;
 
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -90,6 +97,13 @@
   --primary: #F48FB1; /* Deep Velvet Burgundy */
   --primary-hover: #4D1328;
   --primary-foreground: oklch(0.205 0 0); /* Off-white/Cream */
+  --dashboard-viewport-bg: #0B1F3A;
+  --dashboard-viewport-bg-soft: #0E2A46;
+  --dashboard-surface: #143A51;
+  --dashboard-surface-muted: #102B44;
+  --dashboard-surface-border: rgba(196, 154, 104, 0.28);
+  --dashboard-foreground: #F8F1E3;
+  --dashboard-muted: #E7D2A7;
 
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -212,6 +226,21 @@ body {
     radial-gradient(circle at 100% 100%, rgba(190, 24, 93, 0.04) 0%, transparent 40%);
   background-attachment: fixed;
   min-height: 100vh;
+}
+
+.dashboard-shell,
+.dashboard-main,
+.bella-dashboard-view {
+  background-color: var(--dashboard-viewport-bg);
+}
+
+.dark .dashboard-shell,
+.dark .dashboard-main,
+.dark .bella-dashboard-view {
+  background:
+    radial-gradient(circle at 14% 0%, color-mix(in srgb, var(--primary) 18%, transparent) 0%, transparent 34%),
+    linear-gradient(180deg, var(--dashboard-viewport-bg-soft) 0%, var(--dashboard-viewport-bg) 42%, var(--dashboard-viewport-bg) 100%) !important;
+  color: var(--dashboard-foreground) !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -905,38 +934,38 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 /* Rounded white avatars/icons to be elegant dark gold/bronze instead */
 .dark .rounded-full.bg-white,
 .dark [class*="rounded-full"].bg-white {
-  background-color: #292623 !important;
-  border-color: #3E3A35 !important;
-  color: #A67D44 !important;
+  background-color: var(--dashboard-surface-muted) !important;
+  border-color: var(--dashboard-surface-border) !important;
+  color: var(--accent) !important;
 }
 
 /* Solid white elements like buttons (e.g. "Xem chi tiết", Inputs) */
 .dark .bg-white,
 .dark [class*="bg-white"] {
-  background-color: #1C1B19 !important;
-  color: #EFE9E1 !important;
-  border-color: #3E3A35 !important;
+  background-color: var(--dashboard-surface) !important;
+  color: var(--dashboard-foreground) !important;
+  border-color: var(--dashboard-surface-border) !important;
 }
 
 /* Hover effects for detail buttons */
 .dark .hover\:border-primary\/20:hover {
-  border-color: rgba(166, 125, 68, 0.4) !important;
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent) !important;
 }
 
 .dark .hover\:text-primary:hover {
-  color: #A67D44 !important;
+  color: var(--primary) !important;
 }
 
 /* Action buttons (e.g. "Hoàn thành buổi 1", save button) */
 .dark .bg-primary,
-.dark [class*="bg-primary"] {
-  background-color: #5D1C34 !important;
-  color: #EFE9E1 !important;
+.dark [class*="bg-primary"]:not([class*="bg-primary/"]) {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
 }
 
 .dark .bg-primary:hover,
-.dark [class*="bg-primary"]:hover {
-  background-color: #4D1328 !important;
+.dark [class*="bg-primary"]:not([class*="bg-primary/"]):hover {
+  background-color: var(--primary-hover) !important;
 }
 
 /* ===========================================================================
@@ -5848,6 +5877,14 @@ html[data-tenant-brand-preset="slate_minimal"] body {
   background-image:
     radial-gradient(circle at 0% 0%, rgba(51, 65, 85, 0.03) 0%, transparent 40%),
     radial-gradient(circle at 100% 100%, rgba(71, 85, 105, 0.03) 0%, transparent 40%) !important;
+}
+
+html.dark body,
+html.dark[data-tenant-brand-preset] body {
+  background-color: var(--dashboard-viewport-bg) !important;
+  background-image:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 36%),
+    radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 40%) !important;
 }
 
 /* ==========================================================================

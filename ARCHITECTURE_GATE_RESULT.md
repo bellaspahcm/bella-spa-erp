@@ -4818,3 +4818,77 @@ BabyCare / Beauty V2 Dashboard
 
 ### Conclusion
 `PASS`
+# Architecture Gate - Unified Dashboard Dark Theme Viewport Repair (2026-10-08)
+
+> **Status:** PASS - presentation-only dark theme repair for dashboard shell and Beauty Spa V2 dashboard viewport/background consistency.
+> **Scope:** Shared dashboard UI theme surface plus Beauty Spa V2 dashboard root class. No schema, DB, RPC, RLS, service, analytics, Healthcare H1-H12, Education Kernel, Logistics Kernel, or Product contract changes.
+
+## 1. Bella OS/Product Development Process Gate
+
+- Problem: dark mode viewport is visually split into two background colors; product cards/sidebar are dark while the page viewport can remain light or mismatched.
+- Truth / Source of Truth: UI presentation is owned by `src/components/layout/DashboardLoadingShell.tsx`, `src/app/globals.css`, and product view root classes such as `src/app/dashboard/components/BeautySpaV2DashboardView.tsx`. Product identity and accent colors remain resolved by tenant brand/theme code, not by this repair.
+- Canonical Contract: shared UI must use semantic theme tokens; product/tenant may vary accent/sidebar/preset colors, but dark viewport background should be common and continuous.
+- Non-goals: no new KPIs, statuses, actions, filters, business workflows, APIs, persistence changes, or tenant authorization changes.
+
+## 2. Product Manifest
+
+| Product / Surface | Capability | Scope |
+| --- | --- | --- |
+| Shared dashboard shell | Dark viewport background | Use one semantic dark viewport background across dashboard surfaces |
+| Beauty Spa V2 dashboard | Dashboard presentation | Consume the shared viewport token while retaining existing data/action bindings |
+| Tenant/Product theme | Accent/brand variance | Continue using current tenant brand tokens for primary/accent/sidebar |
+
+## 3. Ownership Map
+
+| Data / UI Element | Owner | Change Authority |
+| --- | --- | --- |
+| Dashboard viewport background | Shared UI | Authorized |
+| Product/tenant accent colors | Tenant brand resolver / Product identity | Consume only, no contract change |
+| Dashboard cards and panels | Product UI presentation | Authorized only for visual dark styling |
+| KPI/session/inventory/alert data | Existing analytics/services | Not authorized |
+| Healthcare/Education kernels | Frozen Kernel owners | Not authorized |
+
+## 4. Contract Dependency Map
+
+```text
+Dashboard UI
+  -> Shared CSS semantic dark viewport tokens
+  -> Tenant brand runtime tokens for accent/sidebar
+  -> Existing dashboard data props and actions unchanged
+```
+
+No Product -> Contract -> Kernel dependency changes are required.
+
+## 5. Change Authority
+
+Authorized layers: shared dashboard presentation CSS, dashboard shell class names, and Beauty Spa V2 dashboard root presentation class.
+
+Not authorized: database migrations, generated types, ProductRegistry/ProductResolver behavior, analytics service contracts, server actions, Healthcare/Education/Logistics Kernel files.
+
+## 6. UI -> Contract Reconciliation
+
+| UI Element | Contract Trace | Result |
+| --- | --- | --- |
+| Viewport background | CSS semantic theme token only | MATCH |
+| Cards/panels dark surfaces | CSS presentation only | MATCH |
+| Tenant/product accent | Existing tenant brand runtime CSS variables | MATCH |
+| KPI/session/inventory/alert data | Existing view props | UNCHANGED |
+| Buttons/actions | Existing links/callbacks | UNCHANGED |
+
+## 7. Additive Migration Plan
+
+None. This repair must not create or alter database tables, indexes, RPCs, RLS, or generated types.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Architecture boundary: confirm only UI/theme files changed.
+2. Contract boundary: no Product/Kernel/service contract edits.
+3. Tenant isolation: unchanged, no data queries touched.
+4. RLS/AuthZ: unchanged.
+5. Migration safety: no migrations.
+6. Event-after-persistence: unchanged.
+7. UI data/action reconciliation: no new data/action-bound UI elements.
+8. Type safety: no `any`, casts, or suppressions.
+9. Static check: `npm run lint -- --file ...` if supported, otherwise targeted TypeScript/static review.
+10. Visual check: inspect dark mode viewport continuity via browser screenshot when local app can run.
+11. Regression scope: run relevant focused checks; broader Healthcare/Education/Logistics guards are not required because frozen kernels are untouched.
