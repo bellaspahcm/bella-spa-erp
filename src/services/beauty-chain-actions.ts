@@ -1,6 +1,7 @@
 'use server';
 
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { createSupabaseAdminClient } from '@/lib/supabase-admin';
 import { createClient } from '@/lib/supabase-server';
 import type { Database, Json } from '@/types/database.types';
 import { getCurrentUser } from './user-actions';
@@ -85,6 +86,8 @@ export type AssignBeautyStaffToBranchInput = {
 
 const STAFF_REL_TYPES = ['belongs_to', 'manages', 'participates_in'] as const;
 const BEAUTY_CHAIN_PATH = '/dashboard/beauty-spa-v2/chain';
+const AUTH_BACKED_STAFF_REQUIRED_ERROR =
+  'Nhân sự này chưa có tài khoản đăng nhập hợp lệ. Vui lòng tạo hoặc khôi phục tài khoản đăng nhập trước khi gán vào chi nhánh.';
 
 function normalizeText(value: string | undefined) {
   const normalized = value?.trim();
@@ -383,6 +386,9 @@ async function ensureStaffPerson(params: {
     return { success: true, person };
   }
 
+  const authGuard = await requireAuthBackedStaff(params.user);
+  if (!authGuard.success) return { success: false, error: authGuard.error };
+
   const payload: PeopleDirectoryInsert = {
     tenant_id: params.tenantId,
     user_id: params.user.id,
@@ -400,6 +406,23 @@ async function ensureStaffPerson(params: {
 
   if (inserted.error) return { success: false, error: inserted.error.message };
   return { success: true, person: inserted.data as PeopleDirectoryRow };
+}
+
+async function requireAuthBackedStaff(user: UserRow): Promise<{ success: true } | { success: false; error: string }> {
+  const admin = createSupabaseAdminClient();
+  if (!admin) {
+    return {
+      success: false,
+      error: 'Hệ thống chưa cấu hình Supabase Admin để xác minh tài khoản đăng nhập của nhân sự.',
+    };
+  }
+
+  const { data, error } = await admin.auth.admin.getUserById(user.id);
+  if (error || !data?.user) {
+    return { success: false, error: AUTH_BACKED_STAFF_REQUIRED_ERROR };
+  }
+
+  return { success: true };
 }
 
 export async function linkBeautyStaffPerson(input: LinkBeautyStaffInput): Promise<ChainActionResult<BeautyChainStaff>> {
