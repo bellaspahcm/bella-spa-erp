@@ -22,9 +22,9 @@ jest.setTimeout(120_000);
 
 const HEALTHCARE_TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const REQUIRED_ACCOUNT_CODES = [
-  { account_code: '1111', account_name: 'Cash', account_type: 'ASSET' },
-  { account_code: '1311', account_name: 'Accounts receivable', account_type: 'ASSET' },
-  { account_code: '4111', account_name: 'Patient service revenue', account_type: 'REVENUE' },
+  { code: '1111', name: 'Cash', type: 'ASSET', normal_balance: 'DEBIT' },
+  { code: '1311', name: 'Accounts receivable', type: 'ASSET', normal_balance: 'DEBIT' },
+  { code: '4111', name: 'Patient service revenue', type: 'REVENUE', normal_balance: 'CREDIT' },
 ];
 
 const hasRealSupabaseEnv = () => {
@@ -152,32 +152,46 @@ function toOutboxEvent(row: Database['public']['Tables']['finance_outbox_events'
 
 async function ensureFinanceAccounts(supabase: SupabaseClient<Database>): Promise<void> {
   for (const account of REQUIRED_ACCOUNT_CODES) {
-    const { data, error } = await supabase
-      .from('accounting_accounts')
-      .select('id')
-      .eq('tenant_id', HEALTHCARE_TEST_TENANT_ID)
-      .eq('account_code', account.account_code)
-      .maybeSingle();
+    const { error } = await supabase
+      .from('finance_accounts')
+      .upsert({
+        tenant_id: HEALTHCARE_TEST_TENANT_ID,
+        code: account.code,
+        name: account.name,
+        type: account.type,
+        normal_balance: account.normal_balance,
+        currency: 'VND',
+        is_active: true,
+      }, {
+        onConflict: 'tenant_id,code',
+      });
 
     if (error) {
-      throw new Error(`accounting account lookup failed: ${error.message}`);
+      throw new Error(`finance account seed failed: ${error.message}`);
     }
+  }
+}
 
-    if (data) {
-      continue;
-    }
+async function ensureCurrentOpenAccountingPeriod(supabase: SupabaseClient<Database>): Promise<void> {
+  const now = new Date();
+  const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0));
+  const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59));
+  const name = `hospital-finance-worker-${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 
-    const { error: insertError } = await supabase.from('accounting_accounts').insert({
+  const { error } = await supabase
+    .from('finance_accounting_periods')
+    .upsert({
       tenant_id: HEALTHCARE_TEST_TENANT_ID,
-      account_code: account.account_code,
-      account_name: account.account_name,
-      account_type: account.account_type,
-      is_active: true,
+      name,
+      period_start: periodStart.toISOString(),
+      period_end: periodEnd.toISOString(),
+      status: 'OPEN',
+    }, {
+      onConflict: 'tenant_id,name',
     });
 
-    if (insertError) {
-      throw new Error(`accounting account seed failed: ${insertError.message}`);
-    }
+  if (error) {
+    throw new Error(`finance accounting period seed failed: ${error.message}`);
   }
 }
 
@@ -228,6 +242,7 @@ describeWithRealSupabase('Hospital Finance worker execution proof', () => {
     });
 
     await ensureFinanceAccounts(supabase);
+    await ensureCurrentOpenAccountingPeriod(supabase);
   });
 
   afterEach(async () => {
@@ -328,53 +343,44 @@ describeWithRealSupabase('Hospital Finance worker execution proof', () => {
     expect(processedEvents.data?.every((event) => Boolean(event.transaction_id && event.processed_at))).toBe(true);
 
     const transactionIds = processedEvents.data?.map((event) => getStringValue(event.transaction_id, 'transaction_id')) ?? [];
-    const journalEntries = await supabase
-      .from('journal_entries')
-      .select('id, tenant_id, status, reference_type, description')
+    const financeTransactions = await supabase
+      .from('finance_transactions')
+      .select('id, tenant_id, status, source_type, reference_type, description')
       .in('id', transactionIds);
 
-    expect(journalEntries.error).toBeNull();
-    expect(journalEntries.data).toHaveLength(2);
-    expect(journalEntries.data?.every((entry) => entry.tenant_id === HEALTHCARE_TEST_TENANT_ID)).toBe(true);
-    expect(journalEntries.data?.every((entry) => entry.status === 'POSTED')).toBe(true);
-    expect(journalEntries.data?.every((entry) => entry.reference_type === 'FINANCE_EVENT')).toBe(true);
+    expect(financeTransactions.error).toBeNull();
+    expect(financeTransactions.data).toHaveLength(2);
+    expect(financeTransactions.data?.every((entry) => entry.tenant_id === HEALTHCARE_TEST_TENANT_ID)).toBe(true);
+    expect(financeTransactions.data?.every((entry) => entry.status === 'POSTED')).toBe(true);
+    expect(financeTransactions.data?.every((entry) => entry.source_type === 'FINANCE_EVENT')).toBe(true);
+    expect(financeTransactions.data?.every((entry) => entry.reference_type === 'FINANCE_EVENT')).toBe(true);
 
-    const journalLines = await supabase
-      .from('journal_lines')
-      .select('entry_id, debit_amount, credit_amount')
-      .in('entry_id', transactionIds);
+    const transactionLines = await supabase
+      .from('finance_transaction_lines')
+      .select('transaction_id, debit_functional_amount, credit_functional_amount')
+      .in('transaction_id', transactionIds);
 
-    expect(journalLines.error).toBeNull();
-    expect(journalLines.data).toHaveLength(4);
+    expect(transactionLines.error).toBeNull();
+    expect(transactionLines.data).toHaveLength(4);
 
     for (const transactionId of transactionIds) {
-      const lines = journalLines.data?.filter((line) => line.entry_id === transactionId) ?? [];
-      const debit = lines.reduce((sum, line) => sum + Number(line.debit_amount ?? 0), 0);
-      const credit = lines.reduce((sum, line) => sum + Number(line.credit_amount ?? 0), 0);
+      const lines = transactionLines.data?.filter((line) => line.transaction_id === transactionId) ?? [];
+      const debit = lines.reduce((sum, line) => sum + Number(line.debit_functional_amount ?? 0), 0);
+      const credit = lines.reduce((sum, line) => sum + Number(line.credit_functional_amount ?? 0), 0);
 
       expect(lines).toHaveLength(2);
       expect(debit).toBe(500000);
       expect(credit).toBe(500000);
     }
 
-    const metadata = await supabase
-      .from('finance_transaction_metadata')
-      .select('journal_entry_id, tenant_id, canonical_semantic, source_system')
-      .in('journal_entry_id', transactionIds);
+    const f5ReadBack = await supabase.rpc('finance_journal_entries_as_of', {
+      p_tenant_id: HEALTHCARE_TEST_TENANT_ID,
+      p_as_of: new Date(Date.now() + 60_000).toISOString(),
+      p_contract_version: 'F1_GL:v1',
+    });
 
-    expect(metadata.error).toBeNull();
-    expect(metadata.data).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        tenant_id: HEALTHCARE_TEST_TENANT_ID,
-        canonical_semantic: 'PATIENT_SERVICE_REVENUE',
-        source_system: 'HOSPITAL_OS',
-      }),
-      expect.objectContaining({
-        tenant_id: HEALTHCARE_TEST_TENANT_ID,
-        canonical_semantic: 'CASH_RECEIPT',
-        source_system: 'HOSPITAL_OS',
-      }),
-    ]));
+    expect(f5ReadBack.error).toBeNull();
+    expect(f5ReadBack.data?.filter((line) => transactionIds.includes(line.transaction_id))).toHaveLength(4);
 
     const idempotencyRows = await supabase
       .from('finance_event_idempotency')

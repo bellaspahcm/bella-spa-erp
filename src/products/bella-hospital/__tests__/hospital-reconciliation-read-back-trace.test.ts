@@ -17,21 +17,25 @@ function read(filePath: string): string {
 }
 
 describe('Hospital reconciliation read-back trace', () => {
-  it('blocks promotion when Hospital Finance worker persistence is not consumed by F5 read contract', () => {
+  it('aligns Hospital Finance worker persistence with the F5 canonical read contract', () => {
     const kernelClient = read(financeKernelClientPath);
     const f5ReadContract = read(f5ReadContractPath);
     const workerArtifact = read(hospitalFinanceWorkerArtifactPath);
 
-    expect(kernelClient).toContain(".from('journal_entries')");
-    expect(kernelClient).toContain(".from('journal_lines')");
-    expect(kernelClient).toContain('finance_transaction_metadata');
+    expect(kernelClient).toContain('LedgerEngineService');
+    expect(kernelClient).toContain('postTransaction(kernelRequest)');
+    expect(kernelClient).toContain("source_type: 'FINANCE_EVENT'");
+    expect(kernelClient).toContain('source_id: instruction.source_event_id');
+    expect(kernelClient).not.toContain(".from('journal_entries')");
+    expect(kernelClient).not.toContain(".from('journal_lines')");
 
     expect(f5ReadContract).toContain('CREATE OR REPLACE FUNCTION public.finance_journal_entries_as_of');
     expect(f5ReadContract).toContain('FROM public.finance_transactions ft');
     expect(f5ReadContract).toContain('JOIN public.finance_transaction_lines ftl');
 
-    expect(workerArtifact).toContain('journal_entries');
+    expect(workerArtifact).toContain('finance_transactions');
+    expect(workerArtifact).toContain('finance_transaction_lines');
     expect(workerArtifact).toContain('HOSPITAL_FINANCE_WORKER_EXECUTION_PROOF = PASS');
-    expect(workerArtifact).toContain('RECONCILIATION_READ_BACK = NOT_PROVEN');
+    expect(workerArtifact).toContain('RECONCILIATION_READ_BACK = PASS_FOR_F1_GL_READ_CONTRACT_SCOPE');
   });
 });
