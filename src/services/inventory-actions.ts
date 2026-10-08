@@ -80,6 +80,11 @@ async function getSupabaseWithTenant() {
 }
 
 type SupabaseClient = Awaited<ReturnType<typeof getSupabaseWithTenant>>['supabase'];
+type InventoryRuntimeContext = {
+  supabase: SupabaseClient;
+  tenantId: string;
+  userId: string | null;
+};
 
 const INVENTORY_TENANT_ACCESS_ERROR = 'Chưa đăng nhập';
 
@@ -244,8 +249,8 @@ export async function getInventorySummary() {
   return calculateInventorySummary(data);
 }
 
-export async function getPackageMaterials(packageId: string) {
-  const { supabase, tenantId } = await getSupabaseWithTenant();
+export async function getPackageMaterials(packageId: string, context?: InventoryRuntimeContext) {
+  const { supabase, tenantId } = context ?? await getSupabaseWithTenant();
   if (!tenantId) throw new InventoryError(INVENTORY_TENANT_ACCESS_ERROR, 'INVENTORY_TENANT_ACCESS_ERROR');
 
   const { data, error } = await supabase
@@ -900,10 +905,11 @@ export async function consumeInventory(
   itemId: string,
   amount: number,
   sessionLogId?: string,
-  notes?: string
+  notes?: string,
+  context?: InventoryRuntimeContext,
 ) {
   try {
-    const { supabase, tenantId, userId } = await getSupabaseWithTenant();
+    const { supabase, tenantId, userId } = context ?? await getSupabaseWithTenant();
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
     const numericAmount = Number(amount);
     if (!itemId || !Number.isFinite(numericAmount) || numericAmount <= 0) {
@@ -980,6 +986,8 @@ export async function autoConsumeForSession(
   sessionLogId: string,
   options: AutoConsumeForSessionOptions = {}
 ) {
+  let runtimeContext: InventoryRuntimeContext | null = null;
+
   try {
     const { createDevelopmentBypassClient } = await import('@/lib/supabase-dev-bypass-server');
     const supabase = await createDevelopmentBypassClient();
@@ -1030,7 +1038,12 @@ export async function autoConsumeForSession(
       };
     }
 
-    const materials = await getPackageMaterials(packageId);
+    runtimeContext = {
+      supabase: supabase as SupabaseClient,
+      tenantId,
+      userId: user?.id || null,
+    };
+    const materials = await getPackageMaterials(packageId, runtimeContext);
     const consumptionPlan = buildSessionConsumptionPlan(materials);
 
     for (const item of consumptionPlan.items) {
@@ -1040,13 +1053,14 @@ export async function autoConsumeForSession(
         sessionLogId,
         options.source === 'business_health_repair'
           ? 'Health repair: tiêu hao buổi liệu trình'
-          : 'Tự động tiêu hao buổi liệu trình'
+          : 'Tự động tiêu hao buổi liệu trình',
+        runtimeContext,
       );
 
       if (!consumeResult.success) {
         console.warn(`[autoConsumeForSession] Consume failed for item ${item.itemId}, rolling back consumed items...`);
         // Rollback lại các mặt hàng đã trừ của session này
-        const rollbackResult = await rollbackInventoryConsumption(sessionLogId);
+        const rollbackResult = await rollbackInventoryConsumption(sessionLogId, runtimeContext);
         const rollbackError = rollbackResult.success ? '' : `; rollback thất bại: ${rollbackResult.error}`;
         return { success: false, error: `${consumeResult.error || 'Kho không đủ nguyên liệu'}${rollbackError}` };
       }
@@ -1073,7 +1087,7 @@ export async function autoConsumeForSession(
   } catch (e: unknown) {
     console.error('[autoConsumeForSession]', e);
     // Hủy bỏ và hoàn kho nếu gặp lỗi hệ thống giữa chừng
-    const rollbackResult = await rollbackInventoryConsumption(sessionLogId);
+    const rollbackResult = await rollbackInventoryConsumption(sessionLogId, runtimeContext ?? undefined);
     const rollbackError = rollbackResult.success ? '' : `; rollback thất bại: ${rollbackResult.error}`;
     return { success: false, error: `${getErrorMessage(e, 'Lỗi tiêu hao tự động')}${rollbackError}` };
   }
@@ -1082,9 +1096,9 @@ export async function autoConsumeForSession(
 /**
  * Hoàn trả tồn kho vật tư khi hoàn tác ca làm việc (Rollback)
  */
-export async function rollbackInventoryConsumption(sessionLogId: string) {
+export async function rollbackInventoryConsumption(sessionLogId: string, context?: InventoryRuntimeContext) {
   try {
-    const { supabase, tenantId } = await getSupabaseWithTenant();
+    const { supabase, tenantId } = context ?? await getSupabaseWithTenant();
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
 
     // 1. Lấy toàn bộ logs tiêu hao của session này

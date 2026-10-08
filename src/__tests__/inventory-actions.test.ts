@@ -25,6 +25,8 @@ jest.mock('server-only', () => ({}), { virtual: true });
 const mockGetCurrentUser = jest.fn();
 const mockFrom = jest.fn();
 const mockEnqueueWithAutoClient = jest.fn();
+const mockCreateServerClient = jest.fn(() => Promise.resolve({ from: mockFrom }));
+const mockCreateDevelopmentBypassClient = jest.fn(() => Promise.resolve({ from: mockFrom }));
 
 type PackageMaterialRow = Database['public']['Tables']['package_materials']['Row'];
 type PackageMaterialInsert = Database['public']['Tables']['package_materials']['Insert'];
@@ -34,11 +36,11 @@ jest.mock('../services/user-actions', () => ({
 }));
 
 jest.mock('../lib/supabase-server', () => ({
-  createClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
+  createClient: (...args: unknown[]) => mockCreateServerClient(...args),
 }));
 
 jest.mock('@/lib/supabase-dev-bypass-server', () => ({
-  createDevelopmentBypassClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
+  createDevelopmentBypassClient: (...args: unknown[]) => mockCreateDevelopmentBypassClient(...args),
 }));
 
 jest.mock('@/lib/accounting-outbox', () => ({
@@ -878,6 +880,8 @@ describe('inventory write action side effects', () => {
       }),
       '[autoConsumeForSession]'
     );
+    expect(mockCreateDevelopmentBypassClient).toHaveBeenCalledTimes(1);
+    expect(mockCreateServerClient).not.toHaveBeenCalled();
   });
 
   it('does not consume inventory twice when the session already has consumption logs', async () => {
