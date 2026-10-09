@@ -311,7 +311,8 @@ export async function registerNewTenant(input: RegisterTenantInput) {
       }
     ) => Promise<{ data: string | null; error: { message: string } | null }>;
 
-    const onboardingRpcClient = supabase as unknown as { rpc: OnboardTenantRpc };
+    const adminRpc = supabaseAdminForTenantSetup as unknown as { rpc?: OnboardTenantRpc } | null;
+    const onboardingRpcClient = (adminRpc?.rpc ? adminRpc : supabase) as unknown as { rpc: OnboardTenantRpc };
     const { data: tenantId, error: rpcError } = await onboardingRpcClient.rpc('onboard_tenant', {
       p_spa_name: input.spaName,
       p_contact_phone: input.contactPhone || '',

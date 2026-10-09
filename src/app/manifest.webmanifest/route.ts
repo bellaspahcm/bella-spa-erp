@@ -7,6 +7,7 @@ import {
   toPlatformWebAppManifest,
   type PlatformPwaBrandOverlay,
 } from '@/platform/pwa/platform-pwa-contract';
+import { requireSupabasePublicEnv } from '@/lib/supabase-public-env';
 import type { Database, Json } from '@/types/database.types';
 
 export const dynamic = 'force-dynamic';
@@ -35,9 +36,10 @@ function readBrandOverlay(brandTheme: Json, logoUrl: string | null): PlatformPwa
 
 async function createRouteHandlerClient() {
   const cookieStore = await cookies();
+  const { url, publicKey } = requireSupabasePublicEnv();
   return createSupabaseServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    publicKey,
     {
       cookies: {
         get(name: string) {
