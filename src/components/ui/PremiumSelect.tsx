@@ -24,6 +24,7 @@ interface PremiumSelectProps {
   itemClassName?: string;
   selectedItemClassName?: string;
   disabled?: boolean;
+  ariaLabel?: string;
 }
 
 export const PremiumSelect: React.FC<PremiumSelectProps> = ({
@@ -37,7 +38,8 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
   dropdownClassName,
   itemClassName,
   selectedItemClassName,
-  disabled = false
+  disabled = false,
+  ariaLabel
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -72,6 +74,8 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
       <button
         type="button"
         disabled={disabled}
+        aria-label={ariaLabel}
+        aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "w-full min-w-0 max-w-full overflow-hidden flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-300",
@@ -199,7 +203,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                       <span 
                         className={cn(
                           "truncate",
-                          value === option.value ? "!text-slate-900 font-semibold" : "!text-slate-800"
+                          value === option.value ? "text-slate-900 font-semibold" : "text-slate-800"
                         )}
                       >
                         {option.label}
