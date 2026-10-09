@@ -19,6 +19,7 @@ jobs:
       needs_build: ${{ steps.scope.outputs.needs_build }}
       needs_e2e: ${{ steps.scope.outputs.needs_e2e }}
       needs_real_db_e2e: ${{ steps.scope.outputs.needs_real_db_e2e }}
+      needs_migration_gates: ${{ steps.scope.outputs.needs_migration_gates }}
       needs_api_docs: ${{ steps.scope.outputs.needs_api_docs }}
       needs_dependency_security_deep: ${{ steps.scope.outputs.needs_dependency_security_deep }}
       needs_security_lightweight: ${{ steps.scope.outputs.needs_security_lightweight }}
@@ -153,7 +154,7 @@ jobs:
         run: echo "✅ API docs checks skipped - no API surface or API documentation changes"
 
       - name: Supabase migration drift check
-        if: needs.detect_changes.outputs.needs_real_db_e2e == 'true' && steps.check-lint-needed.outputs.needs_db_checks == 'true'
+        if: needs.detect_changes.outputs.needs_migration_gates == 'true' && steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:migration:check
 
       - name: Supabase RPC grant policy
@@ -205,7 +206,7 @@ jobs:
         run: echo "✅ Security checks skipped - no dependency/security files changed"
 
       - name: Install Playwright Chromium
-        if: needs.detect_changes.outputs.needs_e2e == 'true' && steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
+        if: needs.detect_changes.outputs.needs_e2e == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Authenticated route smoke
@@ -217,6 +218,19 @@ jobs:
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
+
+      - name: Hospitality tenant profile HQ smoke
+        if: needs.detect_changes.outputs.needs_e2e == 'true'
+        timeout-minutes: 10
+        run: npm run e2e:hospitality-tenant-profiles
+        env:
+          E2E_NEXT_DEV_BUNDLER: webpack
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.E2E_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SECRET_KEY }}
 
       - name: Beauty operational UAT smoke
         if: needs.detect_changes.outputs.scope_level == 'platform' && steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
