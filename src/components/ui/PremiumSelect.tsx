@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useId } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,6 +43,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listboxId = useId();
   const selectedOption = options.find(opt => opt.value === value);
 
   const groupedOptions = options.reduce((acc, option) => {
@@ -74,7 +75,10 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
       <button
         type="button"
         disabled={disabled}
+        role="combobox"
         aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-controls={listboxId}
         aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
@@ -113,6 +117,8 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id={listboxId}
+            role="listbox"
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}

@@ -82,6 +82,12 @@ export default function AdminNotificationBell({ position = 'bottom', className }
     }
   }, []);
 
+  const handleBellToggle = useCallback(() => {
+    updateCoords();
+    setIsOpen((current) => !current);
+    requestAnimationFrame(updateCoords);
+  }, [updateCoords]);
+
   useEffect(() => {
     setIsMounted(true);
     
@@ -193,6 +199,7 @@ export default function AdminNotificationBell({ position = 'bottom', className }
     const isMobile = window.innerWidth < 768;
     const popoverWidth = 512; // Wider & taller PC popover width (32rem)
     const spacing = 8;
+    const viewportPadding = 16;
     
     if (isMobile) {
       return {
@@ -207,18 +214,24 @@ export default function AdminNotificationBell({ position = 'bottom', className }
       };
     }
     
+    const preferredLeft = coords.left + coords.width - popoverWidth;
+    const maxLeft = Math.max(viewportPadding, window.innerWidth - popoverWidth - viewportPadding);
+    const clampedLeft = Math.min(Math.max(viewportPadding, preferredLeft), maxLeft);
+    const bottomTop = coords.top + coords.height + spacing;
+    const topBottom = window.innerHeight - coords.top + spacing;
+
     return {
       position: 'fixed',
       width: `${popoverWidth}px`,
       zIndex: 9999,
       ...(position === 'top'
         ? {
-            bottom: `${window.innerHeight - coords.top + spacing}px`,
-            left: `${coords.left}px`,
+            bottom: `${topBottom}px`,
+            left: `${clampedLeft}px`,
           }
         : {
-            top: `${coords.top + coords.height + spacing}px`,
-            left: `${coords.left + coords.width - popoverWidth}px`,
+            top: `${bottomTop}px`,
+            left: `${clampedLeft}px`,
           })
     };
   };
@@ -226,9 +239,12 @@ export default function AdminNotificationBell({ position = 'bottom', className }
   return (
     <div className={`relative ${className || ''}`}>
       <button
+        type="button"
         ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleBellToggle}
         aria-label="Thông báo hệ thống"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
         className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all active:scale-95 relative z-10 ${
           isOpen
             ? 'bg-rose-600 text-white border-rose-600 shadow-lg shadow-rose-200'
@@ -241,10 +257,10 @@ export default function AdminNotificationBell({ position = 'bottom', className }
           <span className="absolute inset-0 rounded-xl bg-rose-400/30 animate-ping pointer-events-none" />
         )}
 
-        <Bell className={`w-5 h-5 ${hasUnread && !isOpen ? 'animate-bounce text-rose-600' : ''}`} />
+        <Bell className={`pointer-events-none w-5 h-5 ${hasUnread && !isOpen ? 'animate-bounce text-rose-600' : ''}`} />
 
         {hasUnread && (
-          <span className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-md animate-pulse z-20">
+          <span className="pointer-events-none absolute -top-1 -right-1 w-4.5 h-4.5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-md animate-pulse z-20">
             {unreadCount}
           </span>
         )}
@@ -259,6 +275,7 @@ export default function AdminNotificationBell({ position = 'bottom', className }
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: position === 'top' ? -15 : 15, scale: 0.95 }}
             style={getPopoverStyles()}
+            onClick={(event) => event.stopPropagation()}
             className="bg-white rounded-3xl shadow-2xl border border-slate-100 p-5 md:p-6 overflow-hidden origin-top"
           >
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">

@@ -5350,6 +5350,219 @@ None.
 
 ---
 
+# Architecture Gate - Dashboard Notification Bell Interaction Repair (2026-10-09)
+
+> **Status:** PASS - interaction-only repair for the shared admin notification bell.
+> **Scope:** `src/components/common/AdminNotificationBell.tsx` click/open behavior and `src/app/dashboard/components/BeautySpaV2DashboardView.tsx` consumer wiring only. No notification service contract, database schema, RLS, migration, Healthcare H1-H12, Education Kernel, or Logistics Kernel change.
+
+## 1. Bella OS/Product Development Process Gate
+
+- Truth: The dashboard header uses `AdminNotificationBell`; the reported defect is that the visible bell button does not open/operate reliably.
+- Source of truth: `src/app/dashboard/page.tsx` consumes `AdminNotificationBell`; `src/app/dashboard/components/BeautySpaV2DashboardView.tsx` rendered a static bell icon; `src/components/common/AdminNotificationBell.tsx` owns the bell button, portal popover, and read/unread UI state.
+- Canonical contract: Bell click should open a visible notification popover anchored to the button; notification data and read actions remain owned by existing dashboard/notification actions.
+- Boundary: Shared UI interaction only.
+- Minimum change: Stabilize the shared button toggle/portal positioning and replace the Beauty Spa v2 static bell icon with `AdminNotificationBell` without changing alert generation, tenant filtering, or persistence.
+
+## 2. Product Manifest
+
+- Product: Bella Beauty Spa dashboard shell consuming the shared admin notification bell.
+- Capability: Open notification popover and all-notifications modal from the header bell.
+- Scope: Button accessibility, click target reliability, popover viewport placement.
+- Out of scope: Notification business rules, alert counts, app notification schema, mark-read semantics, realtime subscription contracts.
+
+## 3. Ownership Map
+
+- Bell button/popover UI: `AdminNotificationBell`.
+- Beauty Spa v2 header bell consumer: `BeautySpaV2DashboardView`.
+- Alert data: `getImportantAlerts`.
+- Read/unread persistence: `notification-actions`.
+
+## 4. Contract Dependency Map
+
+`Dashboard UI / BeautySpaV2DashboardView -> AdminNotificationBell -> getImportantAlerts / notification-actions`
+
+No Product -> Public Contract -> Kernel dependency changes are required.
+
+## 5. Change Authority
+
+Authorized:
+- Shared notification bell UI interaction and accessibility attributes.
+- Beauty Spa v2 header consumer wiring from static icon to shared bell component.
+
+Not authorized:
+- Database schema, RLS, migrations, alert semantics, server action contracts, Platform/Core, Healthcare/Education/Logistics kernels.
+
+## 6. UI -> Contract Reconciliation
+
+| UI Element | Existing Contract | Decision |
+|---|---|---|
+| Header bell button | Toggle notification popover | REPAIR shared component and wire Beauty Spa v2 consumer |
+| Unread badge | Derived from active alert count | UNCHANGED |
+| Popover/list content | Existing `DashboardAlert[]` | UNCHANGED |
+| Mark read actions | Existing server actions | UNCHANGED |
+
+## 7. Additive Migration Plan
+
+None.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Architecture boundary: UI interaction-only change.
+2. Contract boundary: no server action/read-model edits.
+3. Tenant isolation: unchanged.
+4. RLS/AuthZ: unchanged.
+5. Migration safety: no migrations.
+6. Event-after-persistence: unchanged.
+7. UI reconciliation: bell opens anchored popover without changing notification data.
+8. Type safety: no `any`, casts, or suppressions.
+9. Static check: targeted ESLint.
+10. Diff check: `git diff --check`.
+11. Regression scope: kernel/database gates not required because frozen kernels and persistence are untouched.
+---
+
+# Architecture Gate - Beauty Spa Branch Selector PremiumSelect Alignment (2026-10-09)
+
+> **Status:** PASS - product UI consumer alignment with the shared PremiumSelect component.
+> **Scope:** `src/components/layout/BeautyRuntimeBranchSelector.tsx` and a backward-compatible `PremiumSelect` accessibility/customization prop. No service, data, schema, RLS, migration, Healthcare H1-H12, Education Kernel, or Logistics Kernel change.
+
+## 1. Bella OS/Product Development Process Gate
+
+- Truth: The current Beauty Spa runtime branch selector renders a native HTML `select`, which produces browser-default dropdown styling.
+- Source of truth: `src/components/layout/BeautyRuntimeBranchSelector.tsx` for the branch selector consumer; `src/components/ui/PremiumSelect.tsx` for the system premium select UI contract.
+- Canonical contract: Product UI should consume the shared PremiumSelect component for premium select dropdown behavior and styling.
+- Ownership: Beauty Spa product shell owns the branch selector consumer; shared UI owns PremiumSelect rendering.
+- Boundary: Product UI consumer only. No Platform/Core/Kernel/database changes.
+- Minimum change: Replace the native `select` in the branch selector with `PremiumSelect` using the same branch data and selection handler.
+
+## 2. Product Manifest
+
+- Product: Bella Beauty Spa v2 shell.
+- Capability: Runtime branch selection for non-customer staff/admin users.
+- Scope: Sidebar UI presentation and interaction only.
+- Out of scope: Branch authorization, tenant resolution, persistence semantics, DB schema, migrations, server actions, Kernel contracts.
+
+## 3. Ownership Map
+
+- Branch list and active branch data: `beauty-runtime-branch-actions` service contract.
+- Runtime branch UI consumer: `BeautyRuntimeBranchSelector`.
+- Dropdown visual contract: shared `PremiumSelect`.
+- Local storage key: UI carrier only; server actions remain authority for access.
+
+## 4. Contract Dependency Map
+
+`Beauty Spa Product UI -> beauty-runtime-branch-actions public service contract -> existing tenant/branch persistence`
+
+This change does not access lower-layer tables directly and does not introduce a new contract.
+
+## 5. Change Authority
+
+Authorized:
+- Beauty Spa sidebar UI consumer.
+- Backward-compatible shared PremiumSelect customization/accessibility props.
+
+Not authorized:
+- Platform/Core contracts.
+- Healthcare H1-H12 Kernel.
+- Logistics E7.1/E7.2/E7.3 Kernel.
+- Database schema or RLS.
+- Server action semantics.
+
+## 6. UI -> Contract Reconciliation
+
+| UI Element | Existing Contract | Decision |
+|---|---|---|
+| Active branch value | `activeBranchId` from `getBeautyRuntimeBranchContext` | UNCHANGED |
+| Branch options | `branches: BeautyRuntimeBranch[]` | UNCHANGED |
+| Branch switch action | `selectBeautyRuntimeBranch(branchId)` | UNCHANGED |
+| Dropdown presentation | Shared `PremiumSelect` visual contract | ALIGN |
+
+## 7. Additive Migration Plan
+
+None.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Architecture scope check: verify no Kernel or migration files are modified.
+2. Type check target: run TypeScript or lint/type verification available for the touched files if feasible.
+3. Unit tests: not required for visual-only component consumption unless existing tests cover it.
+4. UI smoke: verify dropdown renders with PremiumSelect classes.
+5. Branch action contract: unchanged, no new API.
+6. Tenant isolation: unchanged, server action remains authority.
+7. RLS/Real DB: not applicable to visual-only UI change.
+8. Browser E2E: optional visual verification if local runtime credentials/server are available.
+9. Accessibility sanity: keep selectable text and disabled state.
+10. Diff guard: confirm only intended files changed.
+11. Regression guard: confirm no Healthcare/Logistics frozen artifacts touched.
+
+---
+
+# Architecture Gate - Beauty Spa Branch Selector Header Color (2026-10-09)
+
+> **Status:** PASS - presentation-only color alignment for the Beauty Spa branch selector label.
+> **Scope:** `src/components/layout/BeautyRuntimeBranchSelector.tsx` label class only. No data, service, schema, RLS, migration, Healthcare H1-H12, Education Kernel, or Logistics Kernel change.
+
+## 1. Bella OS/Product Development Process Gate
+
+- Truth: The branch selector label currently uses `text-primary/65`, which renders darker than the Beauty Spa sidebar section headers in the active shell.
+- Source of truth: `BeautyRuntimeBranchSelector` label markup and existing `.beauty-erp-nav-header` theme token in `src/app/globals.css`.
+- Canonical contract: Sidebar section labels should consume the same Beauty ERP nav-header presentation token.
+- Boundary: Product UI presentation only.
+- Minimum change: Apply the existing `beauty-erp-nav-header` class to the branch selector label and use the same gold fallback color.
+
+## 2. Product Manifest
+
+- Product: Bella Beauty Spa v2 shell.
+- Capability: Runtime branch selector label readability/visual consistency.
+- Scope: Static label/icon color only.
+- Out of scope: Branch selection behavior, authorization, persistence, server actions, DB schema, migrations.
+
+## 3. Ownership Map
+
+- Branch selector label: Beauty Spa sidebar UI consumer.
+- Gold menu header token: shared Beauty ERP sidebar theme CSS.
+
+## 4. Contract Dependency Map
+
+`Beauty Spa Product UI -> shared Beauty ERP sidebar presentation token`
+
+No Product -> Public Contract -> Kernel dependency changes are required.
+
+## 5. Change Authority
+
+Authorized:
+- Branch selector label class.
+
+Not authorized:
+- Server actions, service contracts, database schema, RLS, migrations, Platform/Core, Healthcare/Education/Logistics kernels.
+
+## 6. UI -> Contract Reconciliation
+
+| UI Element | Existing Contract | Decision |
+|---|---|---|
+| Branch selector label | Sidebar section label presentation | ALIGN with `.beauty-erp-nav-header` |
+| Branch selector dropdown | Existing `PremiumSelect` consumer | UNCHANGED |
+| Branch switch action | `selectBeautyRuntimeBranch(branchId)` | UNCHANGED |
+
+## 7. Additive Migration Plan
+
+None.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Architecture boundary: UI class-only change.
+2. Contract boundary: no service/API/read-model edits.
+3. Tenant isolation: unchanged.
+4. RLS/AuthZ: unchanged.
+5. Migration safety: no migrations.
+6. Event-after-persistence: unchanged.
+7. UI reconciliation: label uses existing sidebar header token.
+8. Type safety: no `any`, casts, or suppressions.
+9. Static check: targeted ESLint.
+10. Diff check: `git diff --check`.
+11. Regression scope: kernel/database gates not required because frozen kernels and persistence are untouched.
+
+---
+
 # ARCHITECTURE GATE RESULT - BEAUTY SPA DARK THEME SIDEBAR PAGE AUDIT
 
 > **Status:** PASS - presentation-only dark theme contrast repair authorized
@@ -5430,3 +5643,87 @@ Not authorized:
 9. Contrast check: audit dark foreground/background pairs on sidebar-linked pages, starting with salary/payroll regression.
 10. Static check: targeted lint/build checks and `git diff --check`.
 11. Regression scope: broad kernel/database gates are not required because frozen kernels and persistence are untouched.
+
+---
+
+# Architecture Gate - Beauty Spa Soft Input Border Repair (2026-10-09)
+
+> **Status:** PASS - presentation-only repair for Beauty Spa input and filter controls.
+> **Scope:** Beauty Spa tenant-level input/select/textarea/PremiumSelect trigger styling plus Dashboard quick search, Customer toolbar search/dropdowns, Booking timeline search/dropdowns, and Booking specialty mobile filter button. No data contract, action, schema, RLS, migration, Healthcare H1-H12, Education Kernel, or Logistics Kernel change.
+
+## Bella OS/Product Development Process Gate
+
+- Truth: User screenshots show several Beauty Spa input/filter controls rendering with visually heavy dark borders.
+- Source of truth: Attached screenshots, Beauty Spa tenant style rules in `src/app/globals.css`, and current component classes in `BeautySpaV2DashboardView`, `customers/page`, `TimelineKtvView`, and `BookingsSpecialtyFilter`.
+- Canonical contract: Input/filter controls must remain the same fields and actions while using softer presentation: no hard black outline, subtle inset shadow for field affordance, and gentle focus ring.
+- Gate result: `PASS` for UI presentation class changes only.
+
+## Product Manifest
+
+- Product: Bella Beauty Spa V2.
+- Capability in scope: visual treatment of search fields and filter controls in Dashboard, Customers, and Bookings.
+- Runtime behavior in scope: none beyond existing input/select interactions.
+- Non-goals: no search/filter semantics change, no API/service change, no data persistence change, no shared kernel or product contract change.
+
+## Ownership Map
+
+| Data / Behavior | Owner | Decision |
+|---|---|---|
+| Search query state | Product UI components | preserve |
+| Filter select state | Product UI components | preserve |
+| PremiumSelect trigger accessibility/presentation | Shared UI component | add semantic combobox role; preserve API and behavior |
+| Beauty Spa visual treatment | Product presentation | may adjust classes |
+
+## Contract Dependency Map
+
+```text
+Beauty Spa UI controls
+  -> existing local state setters
+  -> existing filtering/search display logic
+  -> presentation-only class update
+```
+
+No Product -> Public Contract -> Kernel dependency changes are required.
+
+## Change Authority
+
+Authorized:
+- Tenant-level Beauty Spa control styling in `src/app/globals.css`.
+- Component-level Tailwind class changes for the affected UI controls.
+- Shared `PremiumSelect` trigger ARIA semantics so tenant-level control styling reaches system select triggers.
+- `PremiumSelect` consumer `buttonClassName` overrides on the customer toolbar.
+
+Not authorized:
+- Database schema, migrations, RLS, server actions, search/filter logic, ProductRegistry, Platform/Core, Healthcare/Education/Logistics kernels.
+
+## UI -> Contract Reconciliation
+
+| UI element | Existing contract | Decision |
+|---|---|---|
+| Dashboard quick search | `searchQuery` local state | Preserve behavior; soften border |
+| Customer toolbar search | `searchQuery` local state | Preserve behavior; soften border |
+| Customer filters/sort | Existing `PremiumSelect` values | Preserve behavior; soften trigger style |
+| Booking timeline KTV/status filters | Native select state | Preserve behavior; soften border |
+| Booking timeline search | `searchQuery` local state | Preserve behavior; soften border |
+| Booking specialty mobile filter | Existing specialty selector | Preserve behavior; soften border |
+| Beauty Spa menu input/select/textarea controls | Tenant-level presentation style | Preserve behavior; remove heavy border globally |
+| PremiumSelect trigger | Existing custom select button | Preserve behavior; expose combobox role for accessibility and tenant styling |
+
+## Additive Migration Plan
+
+- No migration.
+- No schema, table, index, RLS, generated type, seed, or production data change.
+
+## 11 Automated Verification Gates Plan
+
+1. Architecture boundary: presentation-only component class updates.
+2. Contract boundary: no service/API/read-model edits.
+3. Tenant isolation: unchanged.
+4. RLS/AuthZ: unchanged.
+5. Database migration safety: no migrations.
+6. Event-after-persistence: unchanged.
+7. UI data/action reconciliation: all inputs/selects keep existing state handlers.
+8. Type safety: no `any`, casts, or suppressions.
+9. Visual intent: black/dark borders removed; soft inset shadow retained for affordance.
+10. Static check: targeted ESLint and `git diff --check`.
+11. Regression scope: kernel/database gates not required because frozen kernels and persistence are untouched.

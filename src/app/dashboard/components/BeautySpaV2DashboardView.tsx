@@ -16,10 +16,10 @@ import {
   Package,
   TrendingUp,
   MoreHorizontal,
-  Bell,
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react';
+import AdminNotificationBell from '@/components/common/AdminNotificationBell';
 import type {
   DashboardStatsViewModel,
   DashboardSessionViewModel,
@@ -241,18 +241,11 @@ export function BeautySpaV2DashboardView({
               placeholder="Tìm kiếm nhanh..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-44 md:w-56 shadow-2xs"
+              className="pl-9 pr-4 py-2 bg-white/90 border border-transparent rounded-xl text-xs text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-primary/15 w-44 md:w-56 shadow-[inset_0_1px_3px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.03)] transition-shadow"
             />
           </div>
 
-          <div className="relative p-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl text-primary cursor-pointer transition-colors">
-            <Bell className="w-4 h-4 text-primary" />
-            {alerts.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-2xs">
-                {alerts.length}
-              </span>
-            )}
-          </div>
+          <AdminNotificationBell position="bottom" className="shrink-0" />
 
           <button
             onClick={onOpenBookingModal}
