@@ -5952,3 +5952,88 @@ No migration. `NOT_APPLICABLE`.
 9. Booking timeline route smoke if local auth/runtime is available
 10. CRM/customers route smoke if local auth/runtime is available
 11. Final diff review for scope containment
+
+---
+
+# ARCHITECTURE GATE RESULT - BELLA HOSPITALITY OPERATIONS BROWSER E2E
+
+> **Status:** PASS - verification-only CI wiring authorized.
+> **Date:** 2026-10-09
+> **Scope:** Verify the merged Hospitality Operations Console with Browser E2E and Real DB evidence in CI. No backend, schema, RPC, migration, or canonical contract change is authorized.
+
+## 1. Bella OS/Product Development Process Gate
+
+- Truth: PR #270 merged the first-pass Hospitality Operations Console into `main`; UI operational seal still requires browser/runtime evidence.
+- Source of Truth: `/hospitality/hotel-core-chain` UI, existing Hotel Core chain action, Playwright spec `e2e/tests/38-hospitality-hotel-core-chain-browser-e2e.spec.ts`, and CI scope router/workflows.
+- Canonical Contract: Product UI must consume the existing Hotel Core action and keep unproven housekeeping/maintenance states as `NOT_PROVEN` or blocked statuses.
+- Gate result: `PASS` for test selectors, Browser E2E assertions, and existing CI pipeline wiring only.
+
+## 2. Product Manifest
+
+- Product: Bella Hospitality (`bella_hospitality`).
+- Capabilities in scope for verification: Room/Reservation, Front Office/Folio, Housekeeping state boundary, Maintenance state boundary.
+- Non-goals: no new operational module, no new backend action, no new DB object, no Go-Live claim.
+
+## 3. Ownership Map
+
+| Data / Behavior | Owner | Decision |
+|---|---|---|
+| Hospitality operations UI selectors | Bella Hospitality Product UI | may add stable test ids |
+| Browser E2E assertions | QA / E2E surface | may extend existing spec |
+| CI scope routing | CI governance | may mark the existing Real DB browser proof as requiring Real DB evidence |
+| Hospitality product persistence | Bella Hospitality Product persistence | no change |
+| Finance/RLS runtime behavior | Existing public contracts and DB policies | verify only |
+
+## 4. Contract Dependency Map
+
+```text
+Playwright Hotel Core browser E2E
+  -> /hospitality/hotel-core-chain UI
+  -> executeHospitalityHotelCoreChainAction
+  -> Hospitality product services and RLS-scoped tables
+  -> Finance public contract evidence
+  -> Real DB readback and cross-tenant negative assertions
+```
+
+## 5. Change Authority
+
+Authorized:
+- Add stable UI test selectors to the existing Hospitality route.
+- Extend the existing Hotel Core browser E2E to assert the operational UI lanes.
+- Wire the existing CI workflow to run that spec with isolated E2E Supabase credentials.
+- Mark that spec as Real DB-relevant in the existing CI scope router.
+
+Not authorized:
+- Backend service changes.
+- Schema, migration, RPC, generated type, RLS policy, or seed changes.
+- Healthcare, Education, Logistics, Platform/Core, or ProductRegistry changes.
+- Seal or Go-Live claims without CI evidence.
+
+## 6. UI -> Contract Reconciliation
+
+| UI Area | Existing Contract / Evidence | Verification Decision |
+|---|---|---|
+| Dashboard | Existing Hotel Core result params | Browser E2E asserts loaded empty state and proof state |
+| Room/Reservation | `roomId`, `reservationId`, occupancy from Hotel Core action | Browser E2E asserts `PROVEN` only after action success |
+| Front Office/Folio | stay, folio, payment result values | Browser E2E asserts completed/closed/payment evidence |
+| Housekeeping | no completion action in Hotel Core proof | Browser E2E asserts `DIRTY_CANDIDATE` and `NOT_PROVEN`, not ready-for-sale |
+| Maintenance | no maintenance request in Hotel Core proof | Browser E2E asserts `NOT_PROVEN` and `BLOCKED_BY_HOUSEKEEPING_PROOF` |
+
+## 7. Additive Migration Plan
+
+- No migration.
+- No schema, table, index, RLS, generated type, seed, or production data change.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Architecture boundary: changed files remain UI/test/CI only.
+2. Contract boundary: no new backend contract or DB field.
+3. Tenant isolation: existing Real DB browser proof keeps cross-tenant negative read/update checks.
+4. RLS/AuthZ: Real DB E2E must use isolated E2E credentials.
+5. Migration safety: no migrations; migration gates may skip.
+6. Event-after-persistence: unchanged.
+7. UI data/action reconciliation: Browser E2E asserts UI states from existing action result only.
+8. Type safety: no `any`, casts, or suppressions.
+9. CI scope: route #38 changes require Browser E2E and Real DB evidence.
+10. Static check: run lint/typecheck/router unit check where dependencies are available.
+11. Closure: seal UI only after CI Browser E2E and Real DB jobs produce PASS evidence.

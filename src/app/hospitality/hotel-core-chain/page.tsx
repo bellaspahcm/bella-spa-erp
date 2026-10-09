@@ -78,7 +78,10 @@ export default async function HotelCoreChainPage({ searchParams }: HotelCoreChai
         ) : null}
 
         <section className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div
+            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+            data-testid="hotel-operations-dashboard"
+          >
             <KpiCard icon={DoorOpen} label="Phòng trống" value={hasProof ? '1' : 'NOT_PROVEN'} detail="Room foundation active" tone="emerald" />
             <KpiCard icon={BedDouble} label="Đang lưu trú" value={evidence.occupancy === 'occupied' ? '1' : '0'} detail={`Occupancy: ${evidence.occupancy}`} tone="blue" />
             <KpiCard icon={Sparkles} label="Cần dọn" value={hasProof ? '1' : 'NOT_PROVEN'} detail="Sau checkout cần housekeeping proof riêng" tone="amber" />
@@ -117,7 +120,11 @@ export default async function HotelCoreChainPage({ searchParams }: HotelCoreChai
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-          <Panel title="Phòng và đặt phòng" description="Danh sách vận hành từ proof room/reservation hiện có.">
+          <Panel
+            title="Phòng và đặt phòng"
+            description="Danh sách vận hành từ proof room/reservation hiện có."
+            testId="hotel-operations-room-reservation"
+          >
             <RoomRow
               room={shortId(evidence.room)}
               roomStatus={hasProof ? 'active' : 'NOT_PROVEN'}
@@ -139,7 +146,11 @@ export default async function HotelCoreChainPage({ searchParams }: HotelCoreChai
             />
           </Panel>
 
-          <Panel title="Lễ tân và thanh toán" description="Nhận phòng -> lưu trú -> folio -> thanh toán -> trả phòng.">
+          <Panel
+            title="Lễ tân và thanh toán"
+            description="Nhận phòng -> lưu trú -> folio -> thanh toán -> trả phòng."
+            testId="hotel-operations-front-office-folio"
+          >
             <FlowStep icon={DoorOpen} title="Nhận phòng" status={evidence.stay} detail={`Stay: ${evidence.stay}`} />
             <FlowStep icon={ReceiptText} title="Folio" status={evidence.folio} detail={`Outstanding: ${evidence.outstanding}`} />
             <FlowStep icon={CreditCard} title="Thanh toán" status={evidence.payment} detail={`Finance: ${shortId(evidence.finance)}`} />
@@ -147,7 +158,11 @@ export default async function HotelCoreChainPage({ searchParams }: HotelCoreChai
         </section>
 
         <section className="grid gap-4 lg:grid-cols-2">
-          <Panel title="Buồng phòng" description="Chỉ hiển thị trạng thái đã được suy ra từ checkout; task dọn phòng cần proof riêng.">
+          <Panel
+            title="Buồng phòng"
+            description="Chỉ hiển thị trạng thái đã được suy ra từ checkout; task dọn phòng cần proof riêng."
+            testId="hotel-operations-housekeeping"
+          >
             <FlowStep
               icon={Sparkles}
               title="Phòng sau trả phòng"
@@ -162,7 +177,11 @@ export default async function HotelCoreChainPage({ searchParams }: HotelCoreChai
             />
           </Panel>
 
-          <Panel title="Bảo trì" description="Bảo trì được tách khỏi quyền mở bán phòng.">
+          <Panel
+            title="Bảo trì"
+            description="Bảo trì được tách khỏi quyền mở bán phòng."
+            testId="hotel-operations-maintenance"
+          >
             <FlowStep
               icon={Wrench}
               title="Sự cố thiết bị"
@@ -274,9 +293,13 @@ function Panel(props: {
   title: string;
   description: string;
   children: React.ReactNode;
+  testId: string;
 }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <section
+      className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+      data-testid={props.testId}
+    >
       <div className="mb-4">
         <h2 className="text-lg font-bold">{props.title}</h2>
         <p className="mt-1 text-sm text-slate-600">{props.description}</p>
