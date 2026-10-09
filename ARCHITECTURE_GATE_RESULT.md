@@ -6327,3 +6327,72 @@ No migration. `NOT_APPLICABLE`.
 9. Static scan confirms no Logistics frozen artifacts changed
 10. Browser/visual smoke if local auth/runtime is available
 11. Final diff review for scope containment
+
+---
+
+## Additional Architecture Gate - Beauty Customer Detail Edit Modal Field Alignment
+
+> **Status:** PASS - focused customer detail UI form alignment.
+> **Date:** 2026-10-09
+> **Scope:** Customer detail edit modal should expose the editable customer fields represented by the customer information card, while showing unsupported/static card values as read-only reference. No schema, RLS, API, Product Registry, Platform/Core, Healthcare H1-H12, Education, or Logistics E7.1-E7.3 change.
+
+### 1. Bella OS/Product Development Process Gate
+
+Truth: the edit modal currently omits persisted customer fields already shown on the detail surface. Source of truth is `Database['public']['Tables']['customers']['Update']`, `updateCustomer`, and the existing customer detail card. Canonical contract is tenant-scoped `updateCustomer(id, CustomerUpdate)`.
+
+Gate decision: `PASS` for Product UI form mapping only.
+
+### 2. Product Manifest
+
+- Product: Bella Beauty Spa customer detail experience.
+- Capabilities in scope: edit modal inputs for customer notes and loyalty points; read-only reference rows for card values without a proven customer-table write contract.
+- Out of scope: customer grouping/source schema, loyalty business rules, referral workflows, migrations, server action semantics, and frozen kernel code.
+
+### 3. Ownership Map
+
+| Surface/Data | Owner | Change Authority |
+| --- | --- | --- |
+| Customer edit modal | Beauty Product UI | may add form controls for existing customer update fields |
+| `customers.notes` / `customers.loyalty_points` | Customer persistence contract | consume existing update contract only |
+| Customer group/source semantics | Unproven customer capability | display only; do not invent write contract |
+| `customers.created_at` | Customer persistence contract | read-only display |
+
+### 4. Contract Dependency Map
+
+```text
+Customer detail card
+  -> EditCustomerModal
+  -> EditCustomerData
+  -> updateCustomer(id, CustomerUpdate)
+  -> tenant-scoped customers row
+```
+
+### 5. Change Authority
+
+Authorized: TSX/type/state edits needed for modal parity with existing persisted customer fields.
+
+Not authorized: schema fields for group/source, new metadata semantics, generated type edits, RLS/policy changes, API/server-action behavior changes, or kernel files.
+
+### 6. UI -> Contract Reconciliation
+
+- Editable: name, phone, secondary profile fields, gender, address, notes, loyalty points, and location coordinates.
+- Read-only until a write contract exists: customer group, customer source, loyalty membership, and created date.
+- Loyalty points remain the persisted editable field; loyalty membership remains a display-only value matching the existing card until a canonical write contract exists.
+
+### 7. Additive Migration Plan
+
+No migration. `NOT_APPLICABLE`.
+
+### 8. 11 Automated Verification Gates Plan
+
+1. `git diff --check`
+2. Targeted ESLint on changed TSX/TS files
+3. `npm run typecheck:changed`
+4. Static scan confirms no generated DB type edits
+5. Static scan confirms no migration/RLS files changed
+6. Static scan confirms no service/API semantics changed
+7. Static scan confirms no Healthcare H1-H12 files changed
+8. Static scan confirms no Education kernel files changed
+9. Static scan confirms no Logistics frozen artifacts changed
+10. UI review confirms modal contains editable persisted card fields and read-only unproven values
+11. Final diff review for scope containment
