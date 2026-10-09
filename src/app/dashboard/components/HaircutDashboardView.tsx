@@ -13,8 +13,9 @@ import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
 import {
   getDashboardPrimaryData,
-  getDashboardSecondaryData,
-  getImportantAlertsForDashboardWidget
+  getImportantAlerts,
+  getMonthlyPerformance,
+  getTopTechnicians
 } from '@/core/services/analytics/dashboard-actions';
 import type {
   DashboardStatsViewModel,
@@ -206,7 +207,14 @@ export function HaircutDashboardView() {
 
     setIsSecondaryLoading(true);
     try {
-      const { ktvsData, alertsData, perfData } = await getDashboardSecondaryData();
+      const [ktvsData, perfData, alertsData] = await Promise.all([
+        getTopTechnicians(),
+        getMonthlyPerformance(),
+        getImportantAlerts().catch((error) => {
+          console.warn('Dashboard alerts are temporarily unavailable:', error);
+          return [] as DashboardAlert[];
+        }),
+      ]);
       setTopKTVs((ktvsData || []).map((ktv) => ({
         ...ktv,
         rating: Number(ktv.rating) || 0,
@@ -225,7 +233,7 @@ export function HaircutDashboardView() {
     if (isTenantModuleLoading || userRole === null || !tenantId) return;
 
     try {
-      const alertsData = await getImportantAlertsForDashboardWidget();
+      const alertsData = await getImportantAlerts();
       setAlerts(alertsData || []);
     } catch (error) {
       console.warn('Dashboard alerts are temporarily unavailable:', error);

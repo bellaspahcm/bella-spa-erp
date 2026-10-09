@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { Bell, AlertTriangle, CheckCircle2, Lightbulb, Search, X, CheckCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { getImportantAlertsForDashboardWidget } from '@/core/services/analytics/dashboard-actions';
+import { getImportantAlerts } from '@/core/services/analytics/dashboard-actions';
 import type { DashboardAlert } from '@/core/services/analytics/dashboard-actions';
 import { 
   markNotificationAsRead, 
@@ -52,7 +52,7 @@ export default function AdminNotificationBell({ position = 'bottom', className }
 
   const fetchAlerts = useCallback(async () => {
     try {
-      const data = await getImportantAlertsForDashboardWidget();
+      const data = await getImportantAlerts();
       setAlerts(data || []);
     } catch (error) {
       console.warn('Dashboard alerts are temporarily unavailable in bell component:', error);

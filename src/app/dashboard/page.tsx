@@ -23,8 +23,9 @@ import { cn } from '@/lib/utils';
 import { completeSession, saveSessionNote } from '@/core/services/order';
 import {
 getDashboardPrimaryData,
-getDashboardSecondaryData,
-getImportantAlertsForDashboardWidget
+getImportantAlerts,
+getMonthlyPerformance,
+getTopTechnicians
 } from '@/core/services/analytics/dashboard-actions';
 import type {
   DashboardStatsViewModel,
@@ -218,7 +219,14 @@ function StandardDashboardPage() {
 
     setIsSecondaryLoading(true);
     try {
-      const { ktvsData, alertsData, perfData } = await getDashboardSecondaryData();
+      const [ktvsData, perfData, alertsData] = await Promise.all([
+        getTopTechnicians(),
+        getMonthlyPerformance(),
+        getImportantAlerts().catch((error) => {
+          console.warn('Dashboard alerts are temporarily unavailable:', error);
+          return [] as DashboardAlert[];
+        }),
+      ]);
       setTopKTVs((ktvsData || []).map((ktv) => ({
         ...ktv,
         rating: Number(ktv.rating) || 0,
@@ -239,7 +247,7 @@ function StandardDashboardPage() {
     if (!tenantId) return;
 
     try {
-      const alertsData = await getImportantAlertsForDashboardWidget();
+      const alertsData = await getImportantAlerts();
       setAlerts(alertsData || []);
     } catch (error) {
       console.warn('Dashboard alerts are temporarily unavailable:', error);
