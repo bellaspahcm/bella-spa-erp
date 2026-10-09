@@ -6483,3 +6483,83 @@ Not authorized:
 9. CI safety: workflow is manual, uses the protected Production environment, and has no deploy/promote/schema steps.
 10. Audit & Evidence Integrity: disable trace/screenshot/video and upload only sanitized JSON/result artifacts without credentials or tokens.
 11. Closure: `AUTHENTICATED_PRODUCTION_SMOKE` remains `NOT_PROVEN` until the workflow runs and passes on production.
+
+---
+
+# Architecture Gate - Hospitality Production Route Auth Guard (2026-10-09)
+
+> **Status:** PASS - minimal route admission fix authorized by production smoke evidence.
+> **Scope:** Protect `/hospitality/hotel-core-chain` with the existing current-user authentication path after workflow run `37934133847` proved unauthenticated production HTML rendered the Operations Console instead of being challenged. No backend, schema, RLS, service, ProductRegistry, deployment, or Hospitality Phase 0-7 change is authorized.
+
+## 1. Bella OS/Product Development Process Gate
+
+- Truth: Manual production smoke run `37934133847` reached the new workflow on `main` with Production secrets, then failed because unauthenticated access stayed on `/hospitality/hotel-core-chain`.
+- Source of Truth: production HTTP response and Playwright JSON evidence showing `Bella Hospitality`, `Hotel Operations Console`, and `hotel-core-chain-form` in unauthenticated HTML.
+- Canonical Contract: the production Operations Console is an authenticated operational surface; unauthenticated requests must be challenged before any console UI or proof form renders.
+- Gate result: `PASS` for a route-only auth guard; `AUTHENTICATED_PRODUCTION_SMOKE` remains `NOT_PROVEN` until the fixed workflow passes on production.
+
+## 2. Product Manifest
+
+- Product: Bella Hospitality (`bella_hospitality`).
+- Capability in scope: authenticated admission for the existing Hotel Operations Console page.
+- Existing capabilities reused: `src/services/user-actions.ts` current-user resolver, existing `/login` route, existing Hospitality page and server action.
+- Non-goals: no new Hospitality module, no Hotel Core chain behavior change, no data write path change, no operational seal or Go-Live claim.
+
+## 3. Ownership Map
+
+| Data / Behavior | Owner | Decision |
+|---|---|---|
+| Current user session | Platform auth runtime | read only through existing current-user resolver |
+| Hospitality Operations page admission | Bella Hospitality route UI | add minimal guard before rendering |
+| Hotel Core chain server action | Bella Hospitality service/action | unchanged |
+| Hospitality schema/RLS/Phase 0-7 services | Bella Hospitality backend/contracts | not modified |
+
+## 4. Contract Dependency Map
+
+```text
+/hospitality/hotel-core-chain request
+  -> src/services/user-actions.ts getCurrentUser()
+  -> unauthenticated: redirect('/login?redirect=/hospitality/hotel-core-chain')
+  -> authenticated: render existing Operations Console
+```
+
+## 5. Change Authority
+
+Authorized:
+- Add `force-dynamic` to the route so authentication is evaluated per request.
+- Add a server-side current-user check before rendering the Operations Console.
+- Redirect unauthenticated users to the existing login route with the Hospitality route as the redirect target.
+- Keep the production smoke workflow/spec unchanged so the auth challenge remains enforced.
+
+Not authorized:
+- Modify Hospitality backend services, schema, RLS, migrations, generated types, ProductRegistry, auth middleware, secrets, or deployment workflows.
+- Submit the Hotel Core proof form or mutate production data.
+- Weaken the production smoke test to accept public console rendering.
+- Declare UI operational seal or Go-Live from this fix alone.
+
+## 6. UI -> Contract Reconciliation
+
+| UI Area | Existing Contract / Evidence | Verification Decision |
+|---|---|---|
+| Unauthenticated Hospitality route | production smoke run `37934133847` showed public console HTML | must redirect to `/login` before rendering console |
+| Authenticated Hospitality route | existing production smoke logs in through `e2e/fixtures/auth.ts` | must render `Hotel Operations Console` and all operational sections |
+| Hotel Core proof form | existing server action already resolves authenticated user and tenant | unchanged; smoke remains read-only and does not submit |
+
+## 7. Additive Migration Plan
+
+- No migration.
+- No schema, table, index, trigger, RLS, generated type, or production data change.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Static scope confirms only route auth guard plus gate/spec documentation changed.
+2. Type safety: no `any`, generated type, or suppression added.
+3. Auth boundary: unauthenticated request redirects to `/login`.
+4. Authenticated boundary: production E2E admin can still render the Operations Console.
+5. Read-only production smoke still rejects same-origin mutations.
+6. Tenant isolation: page admission uses the existing current-user session; action tenant resolution remains unchanged.
+7. Backend contract: no Hospitality product service or repository files changed.
+8. Migration safety: no migration files changed.
+9. CI safety: regular PR checks must pass before merge.
+10. Production evidence: dispatch Hospitality Production UI Smoke on `main` after merge.
+11. Closure: keep `HOSPITALITY_UI_OPERATIONAL_SEAL` and `HOSPITALITY_GO_LIVE` as `NOT_PROVEN` unless separately evaluated.
