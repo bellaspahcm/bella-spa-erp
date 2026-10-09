@@ -74,6 +74,7 @@ test.describe('Hospitality Hotel Core full-chain browser E2E', () => {
       await loginWithMockUser(page, `${ids.marker}-a@example.test`);
 
       await submitHotelCoreChain(page, ids);
+      await assertOperationsConsoleProof(page);
 
       await expect(page.getByTestId('hotel-core-chain-status')).toContainText(
         'Hospitality Hotel Core chain completed'
@@ -140,6 +141,7 @@ test.describe('Hospitality Hotel Core full-chain browser E2E', () => {
 
 async function submitHotelCoreChain(page: Page, ids: ProofIds): Promise<void> {
   await page.goto('/hospitality/hotel-core-chain', { waitUntil: 'domcontentloaded' });
+  await assertOperationsConsoleInitialState(page);
   await page.getByTestId('hotel-core-marker').fill(ids.marker);
   await page.getByTestId('hotel-core-guestPartyId').fill(ids.guestParty);
   await page.getByTestId('hotel-core-checkInDate').fill('2027-11-01');
@@ -154,6 +156,33 @@ async function submitHotelCoreChain(page: Page, ids: ProofIds): Promise<void> {
       && (url.searchParams.has('status') || url.searchParams.has('error')),
     { timeout: 60_000 }
   );
+}
+
+async function assertOperationsConsoleInitialState(page: Page): Promise<void> {
+  await expect(page.getByRole('heading', { name: 'Hotel Operations Console' })).toBeVisible();
+  await expect(page.getByTestId('hotel-operations-dashboard')).toContainText('NOT_PROVEN');
+  await expect(page.getByTestId('hotel-operations-room-reservation')).toContainText('Phòng và đặt phòng');
+  await expect(page.getByTestId('hotel-operations-room-reservation')).toContainText('NOT_PROVEN');
+  await expect(page.getByTestId('hotel-operations-front-office-folio')).toContainText('Lễ tân và thanh toán');
+  await expect(page.getByTestId('hotel-operations-front-office-folio')).toContainText('NOT_PROVEN');
+  await expect(page.getByTestId('hotel-operations-housekeeping')).toContainText('Buồng phòng');
+  await expect(page.getByTestId('hotel-operations-housekeeping')).toContainText('NOT_PROVEN');
+  await expect(page.getByTestId('hotel-operations-maintenance')).toContainText('Bảo trì');
+  await expect(page.getByTestId('hotel-operations-maintenance')).toContainText('NOT_PROVEN');
+}
+
+async function assertOperationsConsoleProof(page: Page): Promise<void> {
+  await expect(page.getByTestId('hotel-operations-dashboard')).toContainText('Phòng trống');
+  await expect(page.getByTestId('hotel-operations-dashboard')).toContainText('Room foundation active');
+  await expect(page.getByTestId('hotel-operations-room-reservation')).toContainText('PROVEN');
+  await expect(page.getByTestId('hotel-operations-room-reservation')).toContainText('active');
+  await expect(page.getByTestId('hotel-operations-front-office-folio')).toContainText('completed');
+  await expect(page.getByTestId('hotel-operations-front-office-folio')).toContainText('closed');
+  await expect(page.getByTestId('hotel-operations-front-office-folio')).toContainText('2400000');
+  await expect(page.getByTestId('hotel-operations-housekeeping')).toContainText('DIRTY_CANDIDATE');
+  await expect(page.getByTestId('hotel-operations-housekeeping')).toContainText('NOT_PROVEN');
+  await expect(page.getByTestId('hotel-operations-maintenance')).toContainText('NOT_PROVEN');
+  await expect(page.getByTestId('hotel-operations-maintenance')).toContainText('BLOCKED_BY_HOUSEKEEPING_PROOF');
 }
 
 async function seedFixture(db: Client, ids: ProofIds): Promise<void> {
