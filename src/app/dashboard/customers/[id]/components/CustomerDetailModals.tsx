@@ -24,6 +24,7 @@ export function EditCustomerModal({
   data,
   setData,
   tenantModuleKey,
+  customerCreatedAt,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -32,9 +33,11 @@ export function EditCustomerModal({
   data: EditCustomerData;
   setData: ModalStateSetter<EditCustomerData>;
   tenantModuleKey: TenantModuleKey | null;
+  customerCreatedAt?: string | null;
 }) {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+  const createdAtLabel = customerCreatedAt ? new Date(customerCreatedAt).toLocaleDateString('vi-VN') : 'Mới tạo';
 
   useScrollLock(isOpen);
 
@@ -82,7 +85,7 @@ export function EditCustomerModal({
       >
         <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200 dark:shadow-none">
+            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
               <User className="w-6 h-6" />
             </div>
             <div>
@@ -183,6 +186,52 @@ export function EditCustomerModal({
               onChange={(e) => setData({ ...data, address: e.target.value })}
               className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700 h-20 resize-none"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Điểm tích lũy</label>
+              <input
+                type="number"
+                min="0"
+                value={data.loyalty_points.toString()}
+                onChange={(e) => setData({ ...data, loyalty_points: parseIntegerInput(e.target.value, { min: 0, max: 1000000 }) })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Khách thân thiết</label>
+              <div className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700">
+                Có
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ghi chú</label>
+            <textarea
+              value={data.notes}
+              onChange={(e) => setData({ ...data, notes: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700 h-24 resize-none"
+              placeholder="Nhập ghi chú chăm sóc khách hàng..."
+            />
+          </div>
+
+          <div className="rounded-3xl border border-slate-100 bg-slate-50/70 p-5">
+            <div className="grid grid-cols-1 gap-3 text-xs font-bold text-slate-600 sm:grid-cols-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Phân nhóm</p>
+                <p className="mt-1 text-slate-900">Chưa phân nhóm</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nguồn khách</p>
+                <p className="mt-1 text-slate-900">Giới thiệu</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ngày tạo hồ sơ</p>
+                <p className="mt-1 text-slate-900">{createdAtLabel}</p>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-6">

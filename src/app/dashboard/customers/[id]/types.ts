@@ -44,6 +44,7 @@ export type EditCustomerData = {
   dob_baby: string;
   address: string;
   notes: string;
+  loyalty_points: number;
   gender_baby: string;
   latitude: number | null;
   longitude: number | null;

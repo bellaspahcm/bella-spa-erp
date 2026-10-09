@@ -332,6 +332,7 @@ export default function CustomerDetailPage() {
         data={editData}
         setData={setEditData}
         tenantModuleKey={tenantModuleKey}
+        customerCreatedAt={customer.created_at}
       />
 
       <BookingPaymentModal
