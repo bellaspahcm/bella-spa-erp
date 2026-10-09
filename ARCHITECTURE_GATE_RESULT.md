@@ -5959,7 +5959,7 @@ No migration. `NOT_APPLICABLE`.
 
 > **Status:** PASS - presentation-only typography normalization for Beauty OS dashboard pages.
 
-> **Scope:** Shared dashboard shell typography class and `beauty_spa` module CSS rules so Beauty OS products that reuse the Beauty module presentation inherit the same font family, heading scale, body text scale, control text scale, table text scale, and letter-spacing baseline as the Beauty dashboard. No data contract, route, menu, API, schema, RLS, Product Registry, Platform/Core, Healthcare H1-H12, Education, or Logistics E7.1-E7.3 change.
+> **Scope:** Shared dashboard shell typography class and `beauty_spa` module CSS rules so Beauty OS products that reuse the Beauty module presentation inherit the same font family, heading scale, body text scale, control text scale, table text scale, and letter-spacing baseline as the Beauty dashboard. Includes CI routing correction so presentation-only CSS does not trigger Real DB E2E. No data contract, route, menu, API, schema, RLS, Product Registry, Platform/Core, Healthcare H1-H12, Education, or Logistics E7.1-E7.3 change.
 
 ### 1. Bella OS/Product Development Process Gate
 
@@ -5970,7 +5970,7 @@ Gate decision: `PASS` for a shared presentation-layer typography fix.
 ### 2. Product Manifest
 
 - Product family: Beauty OS products using the `beauty_spa` module presentation, including Spa/Haircut/Nail surfaces where the tenant runtime resolves to `beauty_spa`.
-- Capabilities in scope: visual font family, font size, line height, letter spacing, and text weight normalization for dashboard content and controls.
+- Capabilities in scope: visual font family, font size, line height, letter spacing, text weight normalization for dashboard content and controls, and CI scope classification for presentation-only CSS.
 - Out of scope: page IA, sidebar labels, KPI values, field/action semantics, persistence, tests that invent business semantics, migrations, RLS, server actions, and frozen kernel code.
 
 ### 3. Ownership Map
@@ -5981,6 +5981,7 @@ Gate decision: `PASS` for a shared presentation-layer typography fix.
 | Beauty module typography | Shared UI/theme CSS | may normalize presentation tokens |
 | Beauty sidebar route pages | Beauty Product UI | consume shared typography |
 | Business data/actions | Product services/contracts | read-only, not modified |
+| CI scope router | CI governance | may prevent CSS-only presentation files from being treated as DB runtime surfaces |
 
 ### 4. Contract Dependency Map
 
@@ -5994,7 +5995,7 @@ Beauty OS dashboard route
 
 ### 5. Change Authority
 
-Authorized: shared dashboard wrapper class and CSS typography rules scoped to `beauty_spa`.
+Authorized: shared dashboard wrapper class, CSS typography rules scoped to `beauty_spa`, and CI scope router classification for presentation-only CSS.
 
 Not authorized: database schema, migrations, RLS, API/server-action behavior, ProductRegistry/ProductResolver changes, menu IA, Healthcare/Education/Logistics kernel files, or business calculations.
 
@@ -6003,6 +6004,7 @@ Not authorized: database schema, migrations, RLS, API/server-action behavior, Pr
 - Dashboard baseline: keep sans font, compact headings, 13px body/control text, 12px table/support text, and zero letter spacing across route content.
 - KPI numbers and visual icons: preserve existing component-specific emphasis where possible; CSS targets text hierarchy and controls, not data semantics.
 - Sidebar branding script remains outside the dashboard content wrapper and is not normalized by this change.
+- Real DB E2E routing: presentation CSS and wrapper class do not create or modify DB runtime surfaces; router must keep Real DB proof reserved for migrations, DB runtime code, real-db tests, and explicit Real DB configs.
 
 ### 7. Additive Migration Plan
 
@@ -6013,12 +6015,12 @@ No migration. `NOT_APPLICABLE`.
 1. `git diff --check`
 2. Targeted ESLint on changed TSX/CSS-owned files where applicable
 3. `npm run typecheck:changed`
-4. Static diff review confirms no service/API/schema files changed
+4. `node scripts/test-ci-scope-router.mjs`
 5. Static scan confirms no Healthcare H1-H12 files changed
 6. Static scan confirms no Education kernel files changed
 7. Static scan confirms no Logistics frozen artifacts changed
 8. Verify typography CSS is scoped to `html[data-tenant-module="beauty_spa"]`
-9. Verify sidebar branding is not globally flattened
+9. Verify router classifies this typography diff with `needs_real_db_e2e=false`
 10. Browser/route smoke if local auth/runtime is available
 11. Final diff review for scope containment
 
