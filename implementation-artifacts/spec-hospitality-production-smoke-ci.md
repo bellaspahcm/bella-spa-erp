@@ -18,6 +18,8 @@ route: 'one-shot'
 
 Manual run `37934133847` proved the workflow could run on `main` with Production secrets, but it failed before authenticated rendering because unauthenticated production HTML contained the Operations Console at `/hospitality/hotel-core-chain`. The follow-up fix is route-only: require the existing current-user session before rendering the console, redirect unauthenticated requests to `/login`, and keep the smoke assertion strict.
 
+Manual run `37938715903` ran after the route guard was merged and the Vercel deployment completed. It failed because the smoke expected browser URL navigation to `/login`, while the production document now contains the Next server redirect digest to `/login?redirect=%2Fhospitality%2Fhotel-core-chain`. The follow-up fix keeps the auth challenge strict by accepting either `/login` navigation or the Next redirect digest, and still fails if unauthenticated HTML renders `Hotel Operations Console`.
+
 ## Suggested Review Order
 
 **Workflow boundary**
@@ -39,7 +41,7 @@ Manual run `37934133847` proved the workflow could run on `main` with Production
 - Production URL and credentials are hard gates, not skips.
   [`40-hospitality-production-auth-smoke.spec.ts:119`](../e2e/tests/40-hospitality-production-auth-smoke.spec.ts#L119)
 
-- Unauthenticated access must be challenged before authenticated proof is accepted.
+- Unauthenticated access must be challenged before authenticated proof is accepted, and must not render the Operations Console.
   [`40-hospitality-production-auth-smoke.spec.ts:132`](../e2e/tests/40-hospitality-production-auth-smoke.spec.ts#L132)
 
 - Read-only proof rejects same-origin mutations and HTTP errors.
