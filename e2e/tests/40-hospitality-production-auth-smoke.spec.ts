@@ -7,7 +7,7 @@
  */
 
 import { canAuthenticateAdminPage, expect, getE2eBaseUrl, test } from "../fixtures/auth";
-import type { ConsoleMessage, Request, Response } from "@playwright/test";
+import { request as playwrightRequest, type ConsoleMessage, type Request, type Response } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -16,6 +16,13 @@ type NetworkEvidence = {
   resourceType: string;
   status: number;
   path: string;
+};
+
+type UnauthenticatedRouteEvidence = {
+  html: string;
+  location: string | null;
+  status: number;
+  url: string;
 };
 
 const routePath = "/hospitality/hotel-core-chain";
@@ -117,12 +124,35 @@ async function writeSanitizedEvidence(evidence: Record<string, unknown>): Promis
   );
 }
 
-function isUnauthenticatedChallenge(url: string, html: string): boolean {
-  const challengedByLoginPage = loginChallengePattern.test(url);
+function isUnauthenticatedChallenge(url: string, location: string | null, html: string): boolean {
+  const challengedByLoginPage = loginChallengePattern.test(url) || Boolean(location && loginChallengePattern.test(location));
   const challengedByServerRedirectDigest =
     html.includes("NEXT_REDIRECT") && html.includes(loginRedirectPath) && html.includes(";307;");
 
   return challengedByLoginPage || challengedByServerRedirectDigest;
+}
+
+async function fetchUnauthenticatedRoute(): Promise<UnauthenticatedRouteEvidence> {
+  const context = await playwrightRequest.newContext({
+    baseURL: getE2eBaseUrl(),
+    storageState: { cookies: [], origins: [] },
+  });
+
+  try {
+    const response = await context.get(routePath, {
+      failOnStatusCode: false,
+      maxRedirects: 0,
+    });
+
+    return {
+      html: await response.text(),
+      location: response.headers().location ?? null,
+      status: response.status(),
+      url: response.url(),
+    };
+  } finally {
+    await context.dispose();
+  }
 }
 
 test.describe("Hospitality production authenticated UI smoke", () => {
@@ -136,31 +166,19 @@ test.describe("Hospitality production authenticated UI smoke", () => {
     }
   });
 
-  test("renders Operations Console read-only after real app authentication", async ({ adminPage, browser }) => {
+  test("renders Operations Console read-only after real app authentication", async ({ adminPage }) => {
     const appOrigin = getAppOrigin();
 
-    const unauthenticatedContext = await browser.newContext({
-      baseURL: getE2eBaseUrl(),
-      locale: "vi-VN",
-      timezoneId: "Asia/Ho_Chi_Minh",
-      viewport: { width: 1440, height: 900 },
-    });
-    try {
-      const unauthenticatedPage = await unauthenticatedContext.newPage();
-      await unauthenticatedPage.goto(routePath, { waitUntil: "domcontentloaded" });
-      await unauthenticatedPage.waitForLoadState("load", { timeout: 8_000 }).catch(() => {});
-      const unauthenticatedHtml = await unauthenticatedPage.content();
-      expect(
-        unauthenticatedHtml,
-        "Unauthenticated Hospitality route must not render the Operations Console",
-      ).not.toContain("Hotel Operations Console");
-      expect(
-        isUnauthenticatedChallenge(unauthenticatedPage.url(), unauthenticatedHtml),
-        "Unauthenticated Hospitality route should be challenged by app auth",
-      ).toBe(true);
-    } finally {
-      await unauthenticatedContext.close();
-    }
+    const unauthenticated = await fetchUnauthenticatedRoute();
+    expect(unauthenticated.status, "Unauthenticated route probe must not hit an HTTP error").toBeLessThan(400);
+    expect(
+      unauthenticated.html,
+      "Unauthenticated Hospitality route must not render the Operations Console",
+    ).not.toContain("Hotel Operations Console");
+    expect(
+      isUnauthenticatedChallenge(unauthenticated.url, unauthenticated.location, unauthenticated.html),
+      "Unauthenticated Hospitality route should be challenged by app auth",
+    ).toBe(true);
 
     const pageErrors: string[] = [];
     const networkEvidence: NetworkEvidence[] = [];
@@ -207,6 +225,8 @@ test.describe("Hospitality production authenticated UI smoke", () => {
       route: routePath,
       finalPath: getAppPath(adminPage.url(), appOrigin),
       routeStatus: response?.status() ?? null,
+      unauthenticatedRouteStatus: unauthenticated.status,
+      unauthenticatedRouteLocation: unauthenticated.location,
       githubSha: process.env.GITHUB_SHA ?? null,
       githubRunId: process.env.GITHUB_RUN_ID ?? null,
       renderedSections: [
