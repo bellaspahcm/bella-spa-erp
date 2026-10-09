@@ -2,6 +2,7 @@ import {
   getDashboardInventorySummary,
   getDashboardStats,
   getImportantAlerts,
+  getImportantAlertsForDashboardWidget,
   getMonthlyPerformance,
   getUpcomingSessions,
 } from '../core/services/analytics/dashboard-actions';
@@ -93,6 +94,12 @@ describe('dashboard read actions', () => {
     expect(queryFilters).toEqual(expect.arrayContaining([
       { column: 'tenant_id', value: 'tenant-1' },
     ]));
+  });
+
+  it('returns an empty alert list for dashboard widgets when alert reads are unavailable', async () => {
+    mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'completed alert failed' }));
+
+    await expect(getImportantAlertsForDashboardWidget()).resolves.toEqual([]);
   });
 
   it('requires a tenant before loading dashboard data', async () => {

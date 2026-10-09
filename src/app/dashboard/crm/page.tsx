@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { CrmHeader } from './components/CrmHeader';
 import { CrmLoadErrorBanner } from './components/CrmLoadErrorBanner';
@@ -53,8 +53,15 @@ export default function CRMPage() {
 
   usePageRefresh(loadData);
 
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab === 'overview' || tab === 'reminders' || tab === 'marketing' || tab === 'logs') {
+      setActiveTab(tab);
+    }
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 overflow-auto p-4 lg:p-8 space-y-8 custom-scrollbar bg-slate-50/50">
+    <div className="flex flex-col flex-1 overflow-auto p-4 lg:p-8 space-y-8 custom-scrollbar bg-slate-50/50 font-sans text-slate-800">
       <CrmHeader
         loading={loading}
         scanning={scanning}

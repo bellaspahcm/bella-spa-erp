@@ -24,7 +24,7 @@ import { completeSession, saveSessionNote } from '@/core/services/order';
 import {
 getDashboardPrimaryData,
 getDashboardSecondaryData,
-getImportantAlerts
+getImportantAlertsForDashboardWidget
 } from '@/core/services/analytics/dashboard-actions';
 import type {
   DashboardStatsViewModel,
@@ -239,11 +239,11 @@ function StandardDashboardPage() {
     if (!tenantId) return;
 
     try {
-      const alertsData = await getImportantAlerts();
+      const alertsData = await getImportantAlertsForDashboardWidget();
       setAlerts(alertsData || []);
     } catch (error) {
-      console.error('Error fetching dashboard alerts:', error);
-      toast.error('Không thể tải thông báo dashboard');
+      console.warn('Dashboard alerts are temporarily unavailable:', error);
+      setAlerts([]);
     }
   }, [tenantId, userRole, isTenantModuleLoading, tenantModuleKey]);
 

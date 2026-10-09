@@ -9,15 +9,12 @@ import {
   AlertTriangle, 
   Users, 
   Search, 
-  Filter, 
   ChevronLeft, 
   ChevronRight,
-  PlusCircle,
-  UserCheck,
   CheckCircle2,
-  Sparkles,
   AlertCircle
 } from 'lucide-react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import type { TimelineSession } from '../../bookings/components/BookingsTimelineGrid';
 
 export interface KtvOption {
@@ -204,6 +201,19 @@ export function TimelineKtvView({
     return { totalToday, uniqueCustomers, unassignedCount, overdueCount, capacityPercent };
   }, [dateSessions, activeKtvs.length, todayStr]);
 
+  const ktvFilterOptions = useMemo(() => [
+    { value: 'all', label: `Tất cả KTV (${activeKtvs.length})` },
+    { value: 'unassigned', label: `Chưa phân công (${stats.unassignedCount})` },
+    ...activeKtvs.map((ktv) => ({ value: ktv.id, label: ktv.name })),
+  ], [activeKtvs, stats.unassignedCount]);
+
+  const statusFilterOptions = useMemo(() => [
+    { value: 'all', label: 'Tất cả trạng thái' },
+    { value: 'in_progress', label: 'Đang thực hiện' },
+    { value: 'completed', label: 'Hoàn thành' },
+    { value: 'unassigned', label: 'Chưa phân công' },
+  ], []);
+
   // Group date sessions by KTV (including 'unassigned')
   const sessionsByKtv = useMemo(() => {
     const grouped = new Map<string, TimelineSession[]>();
@@ -357,28 +367,27 @@ export function TimelineKtvView({
 
       {/* ── Dynamic Filters Toolbar ── */}
       <div className="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-center gap-3 flex-wrap">
-        <select 
+        <PremiumSelect
           value={selectedKtvFilter}
-          onChange={(e) => setSelectedKtvFilter(e.target.value)}
-          className={cn("px-3.5 py-2 rounded-xl text-xs font-bold", softTimelineControlClass)}
-        >
-          <option value="all">Tất cả KTV ({activeKtvs.length})</option>
-          <option value="unassigned">🔴 Chưa phân công ({stats.unassignedCount})</option>
-          {activeKtvs.map((k) => (
-            <option key={k.id} value={k.id}>{k.name}</option>
-          ))}
-        </select>
+          onChange={setSelectedKtvFilter}
+          options={ktvFilterOptions}
+          ariaLabel="Lọc kỹ thuật viên"
+          className="w-full md:w-56 space-y-0"
+          buttonClassName={cn("h-11 rounded-xl px-4 py-2 text-xs font-bold", softTimelineControlClass)}
+          dropdownClassName="min-w-56"
+          itemClassName="hover:bg-slate-50"
+        />
 
-        <select
+        <PremiumSelect
           value={selectedStatusFilter}
-          onChange={(e) => setSelectedStatusFilter(e.target.value)}
-          className={cn("px-3.5 py-2 rounded-xl text-xs font-bold", softTimelineControlClass)}
-        >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="in_progress">Đang thực hiện</option>
-          <option value="completed">Hoàn thành</option>
-          <option value="unassigned">Chưa phân công</option>
-        </select>
+          onChange={setSelectedStatusFilter}
+          options={statusFilterOptions}
+          ariaLabel="Lọc trạng thái lịch hẹn"
+          className="w-full md:w-48 space-y-0"
+          buttonClassName={cn("h-11 rounded-xl px-4 py-2 text-xs font-bold", softTimelineControlClass)}
+          dropdownClassName="min-w-48"
+          itemClassName="hover:bg-slate-50"
+        />
 
         <div className="relative flex-1 min-w-[200px] w-full md:w-auto ml-auto">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />

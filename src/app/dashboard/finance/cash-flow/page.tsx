@@ -44,6 +44,7 @@ import {
   CashFlowForecastChart,
   RevenueBreakdownChart,
 } from '@/components/finance/charts';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -51,6 +52,18 @@ import {
 
 type PeriodType = 'day' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
 type ForecastMonthsType = 3 | 6 | 12;
+const CASH_FLOW_PERIOD_OPTIONS: Array<{ value: PeriodType; label: string }> = [
+  { value: 'day', label: 'Hôm nay' },
+  { value: 'week', label: '7 ngày' },
+  { value: 'month', label: '30 ngày' },
+  { value: 'quarter', label: 'Quý' },
+  { value: 'year', label: 'Năm' },
+];
+const FORECAST_MONTH_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: '3', label: '3 tháng' },
+  { value: '6', label: '6 tháng' },
+  { value: '12', label: '12 tháng' },
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
@@ -265,28 +278,26 @@ export default function CashFlowDashboardPage() {
 
         <div className="flex items-center gap-4">
           {/* Period Selector */}
-          <select
+          <PremiumSelect
             value={period}
-            onChange={(e) => setPeriod(e.target.value as PeriodType)}
-            className="px-4 py-2 border border-slate-300 rounded-lg bg-white hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="day">Hôm nay</option>
-            <option value="week">7 ngày</option>
-            <option value="month">30 ngày</option>
-            <option value="quarter">Quý</option>
-            <option value="year">Năm</option>
-          </select>
+            onChange={(value) => setPeriod(value as PeriodType)}
+            options={CASH_FLOW_PERIOD_OPTIONS}
+            ariaLabel="Chọn kỳ phân tích dòng tiền"
+            className="w-36 space-y-0"
+            buttonClassName="h-11 rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm font-bold shadow-sm hover:border-primary/30"
+            dropdownClassName="min-w-36"
+          />
 
           {/* Forecast Months Selector */}
-          <select
-            value={forecastMonths}
-            onChange={(e) => setForecastMonths(Number(e.target.value) as ForecastMonthsType)}
-            className="px-4 py-2 border border-slate-300 rounded-lg bg-white hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value={3}>3 tháng</option>
-            <option value={6}>6 tháng</option>
-            <option value={12}>12 tháng</option>
-          </select>
+          <PremiumSelect
+            value={String(forecastMonths)}
+            onChange={(value) => setForecastMonths(Number(value) as ForecastMonthsType)}
+            options={FORECAST_MONTH_OPTIONS}
+            ariaLabel="Chọn số tháng dự báo"
+            className="w-32 space-y-0"
+            buttonClassName="h-11 rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm font-bold shadow-sm hover:border-primary/30"
+            dropdownClassName="min-w-32"
+          />
 
           {/* Refresh Button */}
           <button

@@ -860,18 +860,22 @@ export function HaircutCustomerView({
         {/* Page Size Selector */}
         <div className="flex items-center gap-2">
           <span>Hiển thị</span>
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
+          <PremiumSelect
+            value={String(pageSize)}
+            onChange={(value) => {
+              setPageSize(Number(value));
               setCurrentPage(1);
             }}
-            className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 font-bold text-slate-800 text-xs outline-none focus:border-primary"
-          >
-            <option value={10}>10 / trang</option>
-            <option value={20}>20 / trang</option>
-            <option value={50}>50 / trang</option>
-          </select>
+            options={[
+              { value: '10', label: '10 / trang' },
+              { value: '20', label: '20 / trang' },
+              { value: '50', label: '50 / trang' },
+            ]}
+            ariaLabel="Chọn số khách hàng mỗi trang"
+            className="w-32 space-y-0"
+            buttonClassName="h-9 rounded-xl border-slate-200 bg-white px-3 py-1.5 text-xs font-bold shadow-none hover:border-primary/30"
+            dropdownClassName="min-w-32"
+          />
         </div>
       </div>
     </div>

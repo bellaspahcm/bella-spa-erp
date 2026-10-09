@@ -45,6 +45,7 @@ import {
   VarianceTrendChart,
   BudgetStatusChart,
 } from '@/components/finance/charts';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -285,17 +286,15 @@ export default function BudgetTrackingDashboardPage() {
           {/* Month Selector */}
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-slate-500" />
-            <select
+            <PremiumSelect
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="px-4 py-2 border border-slate-300 rounded-lg bg-white hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              {getMonthOptions().map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedMonth}
+              options={getMonthOptions()}
+              ariaLabel="Chọn tháng ngân sách"
+              className="w-48 space-y-0"
+              buttonClassName="h-11 rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm font-bold shadow-sm hover:border-primary/30"
+              dropdownClassName="min-w-48"
+            />
           </div>
 
           {/* Refresh Button */}

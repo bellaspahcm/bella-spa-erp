@@ -960,6 +960,15 @@ export async function getImportantAlerts(): Promise<DashboardAlert[]> {
   }
 }
 
+export async function getImportantAlertsForDashboardWidget(): Promise<DashboardAlert[]> {
+  try {
+    return await getImportantAlerts();
+  } catch (error) {
+    console.warn('Dashboard notification widget alerts unavailable:', error);
+    return [];
+  }
+}
+
 // ─── Dashboard Data Bundles ───────────────────────────────────────────────────
 export async function getDashboardPrimaryData(
   startDate?: string, 
@@ -986,7 +995,7 @@ export async function getDashboardSecondaryData(): Promise<{
 }> {
   const [ktvsData, alertsData, perfData] = await Promise.all([
     getTopTechnicians(),
-    getImportantAlerts(),
+    getImportantAlertsForDashboardWidget(),
     getMonthlyPerformance(),
   ]);
 

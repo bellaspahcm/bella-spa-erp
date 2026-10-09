@@ -873,15 +873,19 @@ export function HaircutInventoryView({
 
         {/* Page Size Selector */}
         <div className="flex items-center gap-2">
-          <select
-            value={pageSize}
-            onChange={(e) => setPageSize(Number(e.target.value))}
-            className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 font-bold text-slate-800 text-xs outline-none focus:border-primary"
-          >
-            <option value={8}>8 / trang</option>
-            <option value={15}>15 / trang</option>
-            <option value={30}>30 / trang</option>
-          </select>
+          <PremiumSelect
+            value={String(pageSize)}
+            onChange={(value) => setPageSize(Number(value))}
+            options={[
+              { value: '8', label: '8 / trang' },
+              { value: '15', label: '15 / trang' },
+              { value: '30', label: '30 / trang' },
+            ]}
+            ariaLabel="Chọn số mặt hàng mỗi trang"
+            className="w-32 space-y-0"
+            buttonClassName="h-9 rounded-xl border-slate-200 bg-white px-3 py-1.5 text-xs font-bold shadow-none hover:border-primary/30"
+            dropdownClassName="min-w-32"
+          />
         </div>
       </div>
     </div>

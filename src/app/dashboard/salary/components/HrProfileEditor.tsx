@@ -5,6 +5,12 @@ import { motion } from 'framer-motion';
 import { adminUpdateKtvHrProfile } from '@/services/attendance-actions';
 import { toast } from 'sonner';
 import { KtvSalaryRecord } from '@/types/domain';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
+
+const HR_STATUS_OPTIONS = [
+  { value: 'active', label: 'Đang làm việc (Active)' },
+  { value: 'inactive', label: 'Đã nghỉ việc (Inactive)' },
+];
 
 interface HrProfileEditorProps {
   isOpen: boolean;
@@ -109,14 +115,15 @@ export default function HrProfileEditor({
               <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">
                 Trạng thái nhân sự
               </label>
-              <select
+              <PremiumSelect
                 value={hrStatus}
-                onChange={(e) => setHrStatus(e.target.value)}
-                className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 outline-none"
-              >
-                <option value="active">Đang làm việc (Active)</option>
-                <option value="inactive">Đã nghỉ việc (Inactive)</option>
-              </select>
+                onChange={setHrStatus}
+                options={HR_STATUS_OPTIONS}
+                ariaLabel="Chọn trạng thái nhân sự"
+                className="space-y-0"
+                buttonClassName="rounded-xl border-transparent bg-slate-50 px-4 py-3 font-bold shadow-none hover:border-primary/20"
+                dropdownClassName="min-w-full"
+              />
             </div>
           </div>
         </div>

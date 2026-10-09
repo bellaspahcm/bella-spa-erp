@@ -10,7 +10,6 @@ import {
   Search,
   Plus,
   ChevronRight,
-  ChevronDown,
   Sparkles,
   AlertTriangle,
   Package,
@@ -20,6 +19,7 @@ import {
   ArrowDownRight,
 } from 'lucide-react';
 import AdminNotificationBell from '@/components/common/AdminNotificationBell';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import type {
   DashboardStatsViewModel,
   DashboardSessionViewModel,
@@ -51,6 +51,16 @@ interface BeautySpaV2DashboardViewProps {
 }
 
 type AppointmentTab = 'all' | 'serving' | 'waiting' | 'done';
+type PerformanceTab = 'revenue' | 'customers';
+type AlertFilter = 'all' | DashboardAlert['type'];
+type AlertTabConfig = {
+  type: AlertFilter;
+  emoji: string;
+  label: string;
+  count: number;
+  className: string;
+  activeClassName: string;
+};
 
 function isServingSession(status: string | null) {
   return status === 'in_progress' || status === 'serving';
@@ -86,7 +96,7 @@ function PerfChart({
   toX: (i: number) => number;
   toY: (v: number) => number;
   performanceData: PerformanceDataPointViewModel[];
-  activePerfTab: string;
+  activePerfTab: PerformanceTab;
 }) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
@@ -212,8 +222,64 @@ export function BeautySpaV2DashboardView({
   updatingId,
 }: BeautySpaV2DashboardViewProps) {
   const [activeAppointmentTab, setActiveAppointmentTab] = useState<AppointmentTab>('all');
-  const [activePerfTab, setActivePerfTab] = useState<'revenue' | 'booking' | 'new_customer' | 'returning'>('revenue');
+  const [activePerfTab, setActivePerfTab] = useState<PerformanceTab>('revenue');
+  const [activeAlertFilter, setActiveAlertFilter] = useState<AlertFilter>('all');
   const visibleSessions = sessions.filter((session) => matchesAppointmentTab(session, activeAppointmentTab));
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
+  const monthSelectOptions = Array.from({ length: 12 }, (_, index) => ({
+    value: String(index),
+    label: `Tháng ${index + 1}`,
+  }));
+  const yearSelectOptions = yearOptions.map((year) => ({
+    value: String(year),
+    label: String(year),
+  }));
+  const filteredAlerts = activeAlertFilter === 'all'
+    ? alerts
+    : alerts.filter((alert) => alert.type === activeAlertFilter);
+  const alertTabs = ([
+    {
+      type: 'all',
+      emoji: '•',
+      label: 'Tất cả',
+      count: alerts.length,
+      className: 'bg-slate-50 text-slate-700 border-slate-200',
+      activeClassName: 'bg-primary text-primary-foreground border-primary',
+    },
+    {
+      type: 'warning',
+      emoji: '🚨',
+      label: 'Buổi liệu trình quá hạn',
+      count: alerts.filter((alert) => alert.type === 'warning').length,
+      className: 'bg-rose-50 text-rose-700 border-rose-200',
+      activeClassName: 'bg-rose-600 text-white border-rose-600',
+    },
+    {
+      type: 'info',
+      emoji: '📋',
+      label: 'Công nợ cần đối soát',
+      count: alerts.filter((alert) => alert.type === 'info').length,
+      className: 'bg-amber-50 text-amber-700 border-amber-200',
+      activeClassName: 'bg-amber-500 text-white border-amber-500',
+    },
+    {
+      type: 'danger',
+      emoji: '⚠️',
+      label: 'Vật tư sắp hết',
+      count: alerts.filter((alert) => alert.type === 'danger').length,
+      className: 'bg-orange-50 text-orange-700 border-orange-200',
+      activeClassName: 'bg-orange-600 text-white border-orange-600',
+    },
+    {
+      type: 'success',
+      emoji: '💬',
+      label: 'Phản hồi khách hàng',
+      count: alerts.filter((alert) => alert.type === 'success').length,
+      className: 'bg-blue-50 text-blue-700 border-blue-200',
+      activeClassName: 'bg-blue-600 text-white border-blue-600',
+    },
+  ] satisfies AlertTabConfig[]).filter((tab) => tab.type === 'all' || tab.count > 0);
 
   const now = new Date();
   const dateString = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -449,9 +515,27 @@ export function BeautySpaV2DashboardView({
                 </div>
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">TÀI CHÍNH</h2>
               </div>
-              <div className="flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 cursor-pointer">
-                <span>Theo tháng</span>
-                <ChevronDown className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-2">
+                <PremiumSelect
+                  value={String(selectedMonth)}
+                  onChange={(value) => setSelectedMonth(Number(value))}
+                  options={monthSelectOptions}
+                  ariaLabel="Chọn tháng tài chính"
+                  className="w-28 space-y-0"
+                  buttonClassName="h-9 rounded-xl border-transparent bg-slate-100 px-3 py-2 shadow-none hover:border-primary/20 hover:shadow-sm"
+                  dropdownClassName="min-w-36"
+                  itemClassName="hover:bg-slate-50"
+                />
+                <PremiumSelect
+                  value={String(selectedYear)}
+                  onChange={(value) => setSelectedYear(Number(value))}
+                  options={yearSelectOptions}
+                  ariaLabel="Chọn năm tài chính"
+                  className="w-24 space-y-0"
+                  buttonClassName="h-9 rounded-xl border-transparent bg-slate-100 px-3 py-2 shadow-none hover:border-primary/20 hover:shadow-sm"
+                  dropdownClassName="min-w-28"
+                  itemClassName="hover:bg-slate-50"
+                />
               </div>
             </div>
 
@@ -549,9 +633,9 @@ export function BeautySpaV2DashboardView({
                 Doanh thu
               </button>
               <button
-                onClick={() => setActivePerfTab('booking')}
+                onClick={() => setActivePerfTab('customers')}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer whitespace-nowrap transition-colors ${
-                  activePerfTab === 'booking' ? 'bg-primary text-primary-foreground' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  activePerfTab === 'customers' ? 'bg-primary text-primary-foreground' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 Khách hàng
@@ -583,11 +667,17 @@ export function BeautySpaV2DashboardView({
               const linePath = `M${toX(0)},${toY(values[0])} ` +
                 values.slice(1).map((v, i) => `L${toX(i + 1)},${toY(v)}`).join(' ');
               return (
-                <PerfChart
-                  W={W} H={H} areaPath={areaPath} linePath={linePath}
-                  values={values} toX={toX} toY={toY}
-                  performanceData={performanceData} activePerfTab={activePerfTab}
-                />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <span>{activePerfTab === 'revenue' ? 'Chỉ số doanh thu' : 'Chỉ số khách hàng'}</span>
+                    <span>{values.reduce((sum, value) => sum + value, 0).toFixed(activePerfTab === 'revenue' ? 1 : 0)}{activePerfTab === 'revenue' ? 'M' : ' khách'}</span>
+                  </div>
+                  <PerfChart
+                    W={W} H={H} areaPath={areaPath} linePath={linePath}
+                    values={values} toX={toX} toY={toY}
+                    performanceData={performanceData} activePerfTab={activePerfTab}
+                  />
+                </div>
               );
             })()}
           </div>
@@ -655,7 +745,7 @@ export function BeautySpaV2DashboardView({
                 </div>
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">ĐÁNH GIÁ KHÁCH HÀNG</h2>
               </div>
-              <Link href="/dashboard/crm" className="text-xs font-bold text-primary hover:opacity-80 flex items-center gap-1">
+              <Link href="/dashboard/customers?focus=reviews" className="text-xs font-bold text-primary hover:opacity-80 flex items-center gap-1">
                 Xem chi tiết <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -706,17 +796,15 @@ export function BeautySpaV2DashboardView({
 
             {/* Action Badges/Tabs */}
             <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-none">
-              {[
-                { type: 'warning', emoji: '🚨', label: alerts.filter(a => a.type === 'warning').length + ' Buổi liệu trình quá hạn', className: 'bg-rose-50 text-rose-700 border-rose-200' },
-                { type: 'info', emoji: '📋', label: alerts.filter(a => a.type === 'info').length + ' Công nợ cần đối soát', className: 'bg-amber-50 text-amber-700 border-amber-200' },
-                { type: 'danger', emoji: '⚠️', label: alerts.filter(a => a.type === 'danger').length + ' Vật tư sắp hết', className: 'bg-orange-50 text-orange-700 border-orange-200' },
-                { type: 'success', emoji: '💬', label: alerts.filter(a => a.type === 'success').length + ' Phản hồi khách hàng', className: 'bg-blue-50 text-blue-700 border-blue-200' },
-              ].filter(t => parseInt(t.label) > 0).map((t, i) => (
+              {alertTabs.map((t) => (
                 <button
-                  key={i}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer whitespace-nowrap border ${t.className}`}
+                  key={t.type}
+                  onClick={() => setActiveAlertFilter(t.type)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer whitespace-nowrap border transition-colors ${
+                    activeAlertFilter === t.type ? t.activeClassName : t.className
+                  }`}
                 >
-                  {t.emoji} <span>{t.label}</span>
+                  {t.emoji} <span>{t.count} {t.label}</span>
                 </button>
               ))}
               {alerts.length === 0 && (
@@ -726,7 +814,7 @@ export function BeautySpaV2DashboardView({
 
             {/* Horizontal Urgent Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {alerts.slice(0, 3).map((item, idx) => (
+              {filteredAlerts.slice(0, 3).map((item, idx) => (
                 <div
                   key={idx}
                   className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-100/80 transition-colors flex flex-col justify-between space-y-3"
@@ -746,6 +834,9 @@ export function BeautySpaV2DashboardView({
               ))}
               {alerts.length === 0 && (
                 <div className="col-span-3 py-4 text-center text-slate-400 text-xs italic">Không có việc cần xử lý gấp</div>
+              )}
+              {alerts.length > 0 && filteredAlerts.length === 0 && (
+                <div className="col-span-3 py-4 text-center text-slate-400 text-xs italic">Không có dữ liệu trong nhóm này</div>
               )}
             </div>
           </div>

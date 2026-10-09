@@ -11,21 +11,21 @@ interface CrmHeaderProps {
 
 export function CrmHeader({ loading, scanning, onRefresh, onManualScan }: CrmHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div>
-        <h1 className="text-4xl font-black text-slate-800 uppercase tracking-tighter flex items-center gap-3">
-          <Megaphone className="w-10 h-10 text-primary" />
+    <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/60 bg-white/60 p-4 shadow-xs backdrop-blur-md md:p-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="min-w-0">
+        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+          <Megaphone className="h-8 w-8 shrink-0 text-primary" />
           CRM & Zalo Marketing
         </h1>
-        <p className="text-slate-400 font-medium mt-1">
+        <p className="mt-1 text-xs font-medium text-slate-500 md:text-sm">
           Hệ thống gửi tin Zalo ZNS tự động, quản lý tệp khách hàng và chiến dịch khuyến mãi
         </p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={onRefresh}
           disabled={loading}
-          className="p-3 bg-white hover:bg-rose-50 text-slate-600 hover:text-primary rounded-2xl transition-all border border-rose-100 flex items-center gap-2 shadow-sm font-black text-xs uppercase tracking-widest disabled:opacity-50"
+          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 shadow-sm transition-all hover:border-primary/20 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Làm mới
@@ -33,7 +33,7 @@ export function CrmHeader({ loading, scanning, onRefresh, onManualScan }: CrmHea
         <button
           onClick={onManualScan}
           disabled={scanning || loading}
-          className="px-6 py-3 bg-gradient-to-r from-primary to-rose-500 hover:from-primary/95 hover:to-rose-600 text-white rounded-2xl transition-all flex items-center gap-2 shadow-lg shadow-rose-200 dark:shadow-none font-black text-xs uppercase tracking-widest disabled:opacity-75"
+          className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-md transition-all hover:bg-primary-hover disabled:opacity-75"
         >
           {scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Quét lịch hẹn hôm nay

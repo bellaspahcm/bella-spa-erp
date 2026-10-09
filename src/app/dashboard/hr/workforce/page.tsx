@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { cn } from '@/lib/utils';
 import type { IntelligenceResponse } from '@/services/intelligence/shared/types';
@@ -45,6 +46,11 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 type PeriodType = 'month' | 'quarter' | 'year';
+const WORKFORCE_PERIOD_OPTIONS: Array<{ value: PeriodType; label: string }> = [
+  { value: 'month', label: 'Tháng gần đây' },
+  { value: 'quarter', label: 'Quý gần đây' },
+  { value: 'year', label: 'Năm gần đây' },
+];
 
 type WorkforceDataPayload = WorkforceAnalytics[] | {
   departmentBreakdown?: Array<{ department?: string | null; employeeCount?: number | null }>;
@@ -393,17 +399,15 @@ export default function WorkforceAnalyticsDashboard() {
 
         <div className="flex flex-wrap items-center gap-4">
           {/* Period Selector */}
-          <div className="relative group">
-            <select
-              value={period}
-              onChange={(e) => setPeriod(e.target.value as PeriodType)}
-              className="px-4 py-3 bg-white/85 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all shadow-sm font-bold text-slate-800"
-            >
-              <option value="month">Tháng gần đây</option>
-              <option value="quarter">Quý gần đây</option>
-              <option value="year">Năm gần đây</option>
-            </select>
-          </div>
+          <PremiumSelect
+            value={period}
+            onChange={(value) => setPeriod(value as PeriodType)}
+            options={WORKFORCE_PERIOD_OPTIONS}
+            ariaLabel="Chọn kỳ phân tích nhân sự"
+            className="w-44 space-y-0"
+            buttonClassName="h-12 rounded-2xl border-border bg-white/85 px-4 py-3 font-bold shadow-sm hover:border-primary/30"
+            dropdownClassName="min-w-44"
+          />
 
           {/* Refresh Button */}
           <button

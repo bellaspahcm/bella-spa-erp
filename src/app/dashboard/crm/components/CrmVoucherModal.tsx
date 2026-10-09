@@ -1,6 +1,7 @@
 'use client';
 
 import type { FormEvent } from 'react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { parsePercentInput } from '@/lib/utils';
 import type { NewVoucherCampaign } from '../types';
@@ -40,6 +41,10 @@ export function CrmVoucherModal({ newVoucher, onChange, onClose, onSubmit, tenan
     : tenantModuleKey === 'beauty_spa'
       ? BEAUTY_TARGET_OPTIONS
       : NEUTRAL_TARGET_OPTIONS;
+  const voucherTargetSelectOptions = voucherTargetOptions.map((option) => ({
+    value: option,
+    label: option,
+  }));
   const codePlaceholder = tenantModuleKey === 'babycare' ? 'Ví dụ: WELCOME_BABY_15' : 'Ví dụ: SKINCARE_15';
 
   return (
@@ -76,15 +81,15 @@ export function CrmVoucherModal({ newVoucher, onChange, onClose, onSubmit, tenan
 
           <div className="space-y-1">
             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Tệp khách hàng mục tiêu</label>
-            <select
+            <PremiumSelect
               value={newVoucher.target}
-              onChange={(event) => onChange({ ...newVoucher, target: event.target.value })}
-              className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 focus:outline-none focus:border-rose-100 text-sm font-semibold"
-            >
-              {voucherTargetOptions.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
+              onChange={(value) => onChange({ ...newVoucher, target: value })}
+              options={voucherTargetSelectOptions}
+              ariaLabel="Chọn tệp khách hàng mục tiêu"
+              className="space-y-0"
+              buttonClassName="rounded-xl border-slate-100 bg-slate-50 px-4 py-3 shadow-none hover:border-primary/20"
+              dropdownClassName="min-w-full"
+            />
           </div>
 
           <div className="pt-4 flex items-center gap-3">

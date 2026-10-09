@@ -17,21 +17,23 @@ const tabs: Array<{ id: CrmTabId; label: string; icon: typeof Settings }> = [
 
 export function CrmTabs({ activeTab, onTabChange }: CrmTabsProps) {
   return (
-    <div className="flex border-b border-rose-100 bg-white p-2.5 rounded-[1.8rem] shadow-sm gap-2 overflow-x-auto">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onTabChange(tab.id)}
-          className={`flex items-center gap-2.5 px-6 py-3.5 rounded-[1.25rem] transition-all duration-300 font-black text-xs uppercase tracking-wider whitespace-nowrap ${
-            activeTab === tab.id
-              ? 'bg-primary text-white shadow-md'
-              : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
-          }`}
-        >
-          <tab.icon className="w-4.5 h-4.5" />
-          {tab.label}
-        </button>
-      ))}
+    <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white/80 p-1.5 shadow-sm">
+      <div className="flex min-w-max items-center gap-1.5">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={`flex h-10 items-center gap-2 rounded-xl px-4 text-xs font-bold whitespace-nowrap transition-all ${
+              activeTab === tab.id
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+            }`}
+          >
+            <tab.icon className="h-4 w-4 shrink-0" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
