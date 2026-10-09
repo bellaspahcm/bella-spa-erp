@@ -150,9 +150,23 @@ const cases = [
   },
   {
     name: 'RUN real database E2E when real-db test file changes',
-    files: ['src/__tests__/beauty-v2-go-live-payroll-commission-real-db.test.ts'],
+    files: ['src/products/bella-hospitality/__tests__/housekeeping-real-db.test.ts'],
     expect(result) {
       assert.equal(result.scope_status, 'ALLOW');
+      assert.equal(result.scope_level, 'product');
+      assert.deepEqual(result.products, ['hospitality']);
+      assert.equal(result.needs_tests, true);
+      assert.equal(result.needs_real_db_e2e, true);
+      assert.equal(result.has_real_db_test_file, true);
+    },
+  },
+  {
+    name: 'RUN real database E2E when Hospitality maintenance real-db test changes',
+    files: ['src/products/bella-hospitality/__tests__/maintenance-real-db.test.ts'],
+    expect(result) {
+      assert.equal(result.scope_status, 'ALLOW');
+      assert.equal(result.scope_level, 'product');
+      assert.deepEqual(result.products, ['hospitality']);
       assert.equal(result.needs_tests, true);
       assert.equal(result.needs_real_db_e2e, true);
       assert.equal(result.has_real_db_test_file, true);

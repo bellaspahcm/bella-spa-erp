@@ -246,6 +246,500 @@ ACCOUNTING_POLICY_NOT_PROVEN
 and AI MUST STOP. AI coding may implement only accounting mappings already
 proven by an accounting specification with authoritative source evidence.
 
+## Multi-Agent Coding Protocol
+
+Status: ACTIVE.
+
+Default execution is single-agent unless the user explicitly requests
+Multi-Agent Mode or the current task context authorizes it after dependency and
+ownership analysis.
+
+```text
+MULTI_AGENT = OFF
+```
+
+When Multi-Agent Mode is activated:
+
+```text
+MULTI_AGENT = ON
+```
+
+Parallelism is a means, not a requirement. Do not create extra agents merely to
+increase agent count. Use the minimum number of agents required by the proven
+task structure.
+
+### Activation Rule
+
+Multi-Agent Mode may be activated only when:
+
+1. The user explicitly requests it; or
+2. The Lead/Orchestrator determines that the task contains sufficiently
+   independent workstreams and activation is authorized by the current task
+   context.
+
+If ownership, dependencies, architecture authority, or runtime semantics are
+unclear, execute sequentially or stop at the boundary. Do not parallelize
+uncertainty.
+
+### Lead / Orchestrator Authority
+
+One goal has one Lead. The Lead owns:
+
+```text
+task decomposition
+dependency analysis
+agent count
+agent assignment
+ownership boundaries
+worktree allocation
+branch strategy
+PR strategy
+merge order
+cross-agent coordination
+integration
+final verification
+seal decision
+```
+
+The Lead may delegate implementation or verification. The Lead MUST NOT
+delegate architectural authority, frozen-kernel authority, product-boundary
+authority, public-contract authority, major database architecture authority, or
+Go-Live authority without explicit user or human architect authorization.
+
+### Builder Agent Rules
+
+A Builder Agent:
+
+- Implements only its assigned scope.
+- Works only inside its assigned worktree.
+- Uses its assigned branch.
+- Produces a coherent PR for its owned capability when PR work is requested.
+- Runs required scoped verification.
+- Reports evidence.
+- Stops when the assigned boundary is complete.
+
+A Builder Agent MUST NOT:
+
+- Expand scope independently.
+- Modify another agent's ownership.
+- Edit another agent's worktree.
+- Create speculative abstractions.
+- Create a new global kernel.
+- Modify frozen kernels without authorization.
+- Bypass public contracts.
+- Modify ProductRegistry outside assigned scope.
+- Merge directly to `main`.
+
+### QA / Verification Agent Rules
+
+QA verifies tests, type safety, architecture guards, RLS/auth boundaries,
+migration safety, integration behavior, regression, browser E2E when required,
+and evidence completeness.
+
+QA MUST NOT silently modify business implementation to make tests pass.
+
+If implementation is wrong:
+
+```text
+FAIL
+-> REPORT ROOT CAUSE
+-> RETURN TO BUILDER / LEAD
+```
+
+### Worktree, Branch, and PR Isolation
+
+Every Builder Agent MUST use an isolated worktree with independent uncommitted
+changes and clearly assigned ownership.
+
+Each implementation stream SHOULD have its own branch. Branch names SHOULD
+identify product, capability, and purpose. Avoid generic branch names such as
+`feature/fix`, `feature/test`, or `feature/new`.
+
+Each independently owned capability SHOULD produce its own PR. A PR MUST
+represent one coherent capability. Avoid one PR containing unrelated work from
+multiple agents.
+
+Builders MUST NOT merge directly to `main`. The Lead determines merge order
+based on dependencies.
+
+### Ownership Manifest
+
+Before implementation, the Lead SHOULD define ownership for each agent by
+directory, file, migration namespace, business capability, public contract, test
+scope, or other clear boundary.
+
+Example:
+
+```text
+Agent A
+
+OWNERS:
+  src/products/bella-hospitality/housekeeping/**
+  hospitality_housekeeping_*.sql
+
+FORBIDDEN:
+  src/products/bella-hospitality/maintenance/**
+  global resource kernel
+  ProductRegistry outside assigned scope
+```
+
+Ownership is a boundary, not a suggestion.
+
+### No Shared File Ownership by Default
+
+Two active agents MUST NOT modify the same file unless the Lead explicitly
+authorizes shared ownership.
+
+High-risk shared files include:
+
+```text
+ProductRegistry
+global route configuration
+shared navigation
+global contracts
+Core OS services
+frozen kernels
+migration baseline files
+shared type definitions
+shared configuration
+```
+
+If two agents need the same file:
+
+```text
+SHARED OWNERSHIP REQUIRED
+-> STOP
+-> Lead decides
+```
+
+### Dependency Analysis Before Parallelization
+
+The Lead MUST inspect dependencies before assigning parallel work. Classify work
+as:
+
+```text
+INDEPENDENT
+DEPENDENT
+SHARED
+BLOCKED
+```
+
+Independent work may run in parallel. Dependent work should wait until its
+required contract is sealed.
+
+### Dynamic Agent Count
+
+Agent count is determined by task structure:
+
+```text
+1 agent    -> tightly coupled task
+2 agents   -> two independent workstreams
+3-5 agents -> multiple independent capabilities
+>5 agents  -> only when collision risk is demonstrably low
+```
+
+Never create agents merely because capacity exists.
+
+### Public Contract Boundary
+
+Agents communicate across domains through public contracts.
+
+Allowed:
+
+```text
+Product A -> Public Contract -> Product B
+```
+
+Forbidden:
+
+```text
+Product A -> Product B internal table
+Product A -> Product B private repository
+Product A -> direct database bypass -> Product B internals
+```
+
+Cross-domain ambiguity requires:
+
+```text
+STOP
+-> Lead review
+```
+
+### Global and Frozen Kernel Protection
+
+No Builder Agent may create or promote a global OS kernel without an explicit
+architecture decision. This includes resource, availability, allocation,
+transaction, workflow, or cross-industry kernels.
+
+If an agent encounters a potential shared abstraction:
+
+```text
+STOP
+-> REPORT ARCHITECTURE GAP
+-> Lead / Architecture Decision
+```
+
+Frozen kernels MUST NOT be modified unless the task explicitly authorizes the
+change through the required architecture process. This includes Healthcare,
+Education, and Logistics kernels.
+
+If implementation appears to require frozen-kernel modification:
+
+```text
+FROZEN KERNEL IMPACT
+-> STOP
+-> ESCALATE
+```
+
+Do not work around the restriction by creating hidden duplicate logic.
+
+### ProductRegistry Protection
+
+Product identity changes are controlled. A Builder MUST NOT independently
+register a new product, rename a product key, change canonical product
+ownership, or modify product resolver semantics unless Product Identity is
+explicitly included in its assigned scope.
+
+If multiple agents require registry changes, the Lead assigns ownership to one
+agent or performs the integration centrally.
+
+### Database, RLS, and Authentication Rules
+
+Each agent SHOULD own its migration scope. Agents MUST NOT modify another
+agent's migration, rewrite historical migrations, fix unrelated migration drift,
+modify production baselines for convenience, bypass RLS, or use privileged
+database access to hide authorization problems.
+
+All agents MUST preserve:
+
+```text
+tenant isolation
+user authorization
+organization / branch boundaries
+public authentication contracts
+RLS semantics
+```
+
+No agent may make a test pass by disabling RLS, using service-role bypass
+unnecessarily, injecting privileged clients, hardcoding tenant IDs, hardcoding
+user IDs, or bypassing public contracts.
+
+If authenticated runtime behavior cannot be proven:
+
+```text
+NOT_PROVEN
+```
+
+Do not convert it into `PASS` by weakening security.
+
+### Type Safety and Evidence
+
+Multi-Agent Mode does not relax Bella type-safety rules. Agents MUST NOT
+introduce `any`, type escapes, suppressions, or casts merely to unblock
+compilation. Existing historical violations must be distinguished from new
+violations.
+
+Every agent MUST report evidence for its completed scope:
+
+```text
+SCOPE
+IMPLEMENTATION
+TESTS
+DATABASE / RLS
+ARCHITECTURE
+TYPE CHECK
+LINT
+MIGRATION
+REGRESSION
+RESULT
+```
+
+Valid evidence states include:
+
+```text
+PASS
+PROVEN
+NOT_PROVEN
+BLOCKED
+NOT_STARTED
+```
+
+Do not report `PASS` when evidence is `TIMEOUT`, `SKIPPED`, `NOT_RUN`, or
+`ASSUMED`.
+
+### Builder Execution Rule
+
+Every Builder follows:
+
+```text
+Root Cause
+-> Minimal Fix
+-> Verify
+-> Seal
+-> Stop
+```
+
+Do not expand scope after the assigned capability is proven. Do not refactor
+nearby unrelated code.
+
+### Conflict Detection
+
+If an agent discovers another agent owns the file or migration, a shared
+contract must change, a frozen kernel must change, a new global abstraction is
+required, product ownership is ambiguous, RLS/auth semantics conflict, or
+another agent's implementation must be changed:
+
+```text
+STOP
+-> REPORT
+-> LEAD DECISION
+```
+
+Do not solve cross-agent conflicts independently.
+
+### Pre-Existing Failures
+
+Agents MUST distinguish:
+
+```text
+NEW REGRESSION
+```
+
+from:
+
+```text
+PRE-EXISTING FAILURE
+```
+
+A historical failure MUST NOT be silently fixed if it is outside scope.
+
+Document:
+
+```text
+PRE-EXISTING
+-> NOT CAUSED BY CURRENT CHANGE
+-> NOT MODIFIED
+```
+
+Only fix it when explicitly included in scope.
+
+### PR, Merge, and Main Verification
+
+Before a PR is considered merge-ready, the Builder MUST provide branch,
+worktree, scope, changed files, tests, database evidence, RLS evidence,
+architecture evidence, typecheck, lint, migration verification, regression
+status, and known findings.
+
+After parallel implementation:
+
+```text
+Builder PRs
+-> Lead integration
+-> Regression
+-> Real DB
+-> Browser E2E where required
+-> Full business chain
+-> Seal
+```
+
+Integration is not complete merely because all PRs are individually green.
+
+After merging a group of PRs:
+
+```text
+Run regression
+-> Verify main
+-> Verify affected product
+-> Verify architecture
+-> Verify DB/RLS
+```
+
+Do not assume:
+
+```text
+PR PASS = MAIN PASS
+```
+
+### Stop Conditions
+
+The affected agent MUST stop when any of these is true:
+
+```text
+Architecture ambiguity
+Cross-product ownership ambiguity
+Shared kernel requirement
+Frozen kernel modification
+Public contract change outside scope
+Shared file collision
+Migration ownership conflict
+RLS/auth bypass requirement
+Unknown production behavior
+Unverified dependency
+Unexpected semantic change
+Need for speculative abstraction
+```
+
+Status:
+
+```text
+STOPPED_AT_BOUNDARY
+```
+
+is preferable to unauthorized implementation.
+
+### When Not to Use Multi-Agent Mode
+
+Use a single agent when the task is small, tightly coupled, primarily
+debugging, mostly touches the same files, depends on one end-to-end migration,
+requires an architecture decision, has unclear ownership, or has unsettled
+runtime semantics.
+
+### Recommended Operating Flow
+
+```text
+USER GOAL
+-> LEAD AUDIT
+-> DECOMPOSE
+-> DEPENDENCY ANALYSIS
+-> OWNERSHIP ASSIGNMENT
+-> CREATE WORKTREES
+-> CREATE BRANCHES
+-> PARALLEL BUILDERS
+-> SCOPED VERIFICATION
+-> INDIVIDUAL PRs
+-> LEAD INTEGRATION
+-> FULL REGRESSION
+-> REAL DB / RLS
+-> BROWSER E2E
+-> FULL BUSINESS CHAIN
+-> SEAL
+-> STOP
+```
+
+Not every task requires every stage. Use only the stages required by the task
+boundary.
+
+### User Command and User Authority
+
+The user may activate the protocol with:
+
+```text
+Enable Multi-Agent Mode for this task.
+```
+
+The user remains the final authority for architecture decisions, new OS
+kernels, product boundaries, frozen-kernel changes, major public-contract
+changes, major database architecture changes, Go-Live decisions, and
+exceptional boundary overrides.
+
+Final principle:
+
+```text
+One goal. One Lead. Clear ownership. Isolated worktrees. Isolated branches.
+One capability per PR. Public contracts across boundaries. QA before merge.
+Evidence before status. Seal before expansion.
+```
+
 ## Bella OS & Product Development Process v1.0
 
 Use this single process for every new Bella OS and Product. It exists to prevent technical debt before code starts while preserving Bella's rule against unnecessary bureaucracy.
