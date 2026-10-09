@@ -152,8 +152,8 @@ test.describe("Hospitality tenant profile HQ runtime onboarding", () => {
       };
 
       await expect.poll(async () => {
-        return (await readCreatedTenant())?.id ?? null;
-      }, { timeout: 60_000 }).not.toBeNull();
+        return (await readCreatedTenant())?.product_key ?? null;
+      }, { timeout: 90_000 }).toBe("bella_hospitality");
 
       const createdTenant = await readCreatedTenant();
       expect(createdTenant).not.toBeNull();
