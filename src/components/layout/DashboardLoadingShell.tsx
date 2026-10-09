@@ -125,7 +125,7 @@ export function DashboardAuthorizedShell({ children }: { children: React.ReactNo
   return (
     <div className="dashboard-shell flex h-screen overflow-hidden bg-background">
       <Sidebar />
-      <main className="dashboard-main flex-1 flex flex-col min-w-0 pt-16 lg:pt-0 max-w-full overflow-y-auto overflow-x-auto">
+      <main className="dashboard-main beauty-erp-content flex-1 flex flex-col min-w-0 pt-16 lg:pt-0 max-w-full overflow-y-auto overflow-x-auto">
         {children}
       </main>
     </div>
