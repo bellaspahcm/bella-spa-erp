@@ -86,6 +86,10 @@ const BACKGROUND_CUSTOMER_LOAD_LIMIT = 120;
 const BACKGROUND_CUSTOMER_LOAD_DELAY_MS = 1200;
 const ALL_STATUS_FILTER = 'Tất cả trạng thái';
 const ACTIVE_CARE_PACKAGE_FILTER = 'Đang có gói liệu trình';
+const SOFT_INPUT_CLASS =
+  'border-transparent bg-white/90 shadow-[inset_0_1px_3px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.03)] focus:ring-2 focus:ring-primary/15 dark:bg-slate-800/70 dark:shadow-none';
+const SOFT_SELECT_BUTTON_CLASS =
+  '!border-transparent bg-white/90 !shadow-[inset_0_1px_3px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.03)] hover:!shadow-[inset_0_1px_4px_rgba(15,23,42,0.1),0_3px_10px_rgba(15,23,42,0.05)] dark:bg-slate-800/70 dark:!shadow-none';
 
 function getErrorMessage(error: unknown, fallback = 'Có lỗi xảy ra') {
   return error instanceof Error ? error.message : fallback;
@@ -776,7 +780,10 @@ export default function CustomersPage() {
               placeholder={customerLabels.customerSearchPlaceholder}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none font-medium text-slate-700 dark:text-slate-200 text-xs sm:text-sm"
+              className={cn(
+                "w-full pl-10 pr-3.5 py-2 rounded-xl border outline-none font-medium text-slate-700 dark:text-slate-200 text-xs sm:text-sm transition-shadow",
+                SOFT_INPUT_CLASS
+              )}
             />
           </div>
 
@@ -787,6 +794,7 @@ export default function CustomersPage() {
               options={statusOptions.map(opt => ({ value: opt, label: opt, icon: <Filter className="w-3.5 h-3.5" /> }))}
               onChange={val => setStatusFilter(val)}
               placeholder="Trạng thái..."
+              buttonClassName={SOFT_SELECT_BUTTON_CLASS}
             />
           </div>
 
@@ -797,6 +805,7 @@ export default function CustomersPage() {
               options={monthOptions}
               onChange={val => setMonthFilter(val)}
               placeholder="Tháng..."
+              buttonClassName={SOFT_SELECT_BUTTON_CLASS}
             />
           </div>
 
@@ -807,6 +816,7 @@ export default function CustomersPage() {
               options={yearOptions.map(y => ({ value: y, label: y }))}
               onChange={val => setYearFilter(val)}
               placeholder="Năm..."
+              buttonClassName={SOFT_SELECT_BUTTON_CLASS}
             />
           </div>
         </div>
@@ -820,6 +830,7 @@ export default function CustomersPage() {
               options={sortOptions}
               onChange={val => setSortBy(val)}
               placeholder="Sắp xếp..."
+              buttonClassName={SOFT_SELECT_BUTTON_CLASS}
             />
           </div>
 

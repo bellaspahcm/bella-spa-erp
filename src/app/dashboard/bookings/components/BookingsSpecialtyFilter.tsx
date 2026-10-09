@@ -39,6 +39,9 @@ const specialtyIconClass: Record<KtvSpecialty, string> = {
   relaxation: 'text-emerald-400',
 };
 
+const softFilterButtonClass =
+  'border-transparent bg-white/90 shadow-[inset_0_1px_3px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.03)] hover:shadow-[inset_0_1px_4px_rgba(15,23,42,0.1),0_3px_10px_rgba(15,23,42,0.05)] focus-visible:ring-2 focus-visible:ring-primary/15';
+
 function buildSpecialties(moduleKey: TenantModuleKey): SpecialtyOption[] {
   return getTenantSpecialtyOptions(moduleKey).map((specialty) => ({
     ...specialty,
@@ -69,7 +72,10 @@ export function BookingsSpecialtyFilter({
         <button
           type="button"
           onClick={() => onOpenChange(!isOpen)}
-          className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-300 bg-white border-slate-200 text-slate-800 shadow-sm hover:shadow-md active:scale-[0.98] outline-none"
+          className={cn(
+            "w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-300 text-slate-800 active:scale-[0.98] outline-none",
+            softFilterButtonClass,
+          )}
         >
           <div className="flex items-center gap-3 min-w-0">
             {currentSpec.icon}

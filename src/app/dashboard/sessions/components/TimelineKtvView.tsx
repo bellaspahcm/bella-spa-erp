@@ -33,6 +33,9 @@ export interface TimelineKtvViewProps {
   onOpenBookingModal?: () => void;
 }
 
+const softTimelineControlClass =
+  'border border-transparent bg-white/90 text-slate-700 shadow-[inset_0_1px_3px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.03)] outline-none transition-shadow focus:ring-2 focus:ring-primary/15';
+
 function getLocalDateString(d = new Date()): string {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -357,7 +360,7 @@ export function TimelineKtvView({
         <select 
           value={selectedKtvFilter}
           onChange={(e) => setSelectedKtvFilter(e.target.value)}
-          className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 outline-none"
+          className={cn("px-3.5 py-2 rounded-xl text-xs font-bold", softTimelineControlClass)}
         >
           <option value="all">Tất cả KTV ({activeKtvs.length})</option>
           <option value="unassigned">🔴 Chưa phân công ({stats.unassignedCount})</option>
@@ -369,7 +372,7 @@ export function TimelineKtvView({
         <select
           value={selectedStatusFilter}
           onChange={(e) => setSelectedStatusFilter(e.target.value)}
-          className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 outline-none"
+          className={cn("px-3.5 py-2 rounded-xl text-xs font-bold", softTimelineControlClass)}
         >
           <option value="all">Tất cả trạng thái</option>
           <option value="in_progress">Đang thực hiện</option>
@@ -384,7 +387,7 @@ export function TimelineKtvView({
             placeholder="Tìm khách hàng, SĐT, gói dịch vụ..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-slate-400"
+            className={cn("w-full pl-9 pr-4 py-2 rounded-xl text-xs font-bold", softTimelineControlClass)}
           />
         </div>
       </div>
