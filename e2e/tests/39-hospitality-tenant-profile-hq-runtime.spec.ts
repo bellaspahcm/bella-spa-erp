@@ -127,7 +127,7 @@ test.describe("Hospitality tenant profile HQ runtime onboarding", () => {
 
       await page.getByRole("button", { name: /Hospitality/i }).click();
       await expect(page.getByText("Hospitality profile *")).toBeVisible();
-      await page.getByRole("button", { name: /Homestay/i }).click();
+      await page.getByRole("button", { name: /^Homestay\s+Owner-operated/i }).click();
       await page.getByLabel(/Front desk/i).selectOption("self_check_in");
       await page.getByLabel(/Housekeeping/i).selectOption("turnover_only");
       await page.getByLabel(/Maintenance/i).selectOption("owner_approval_required");
