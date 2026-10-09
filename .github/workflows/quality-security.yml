@@ -19,6 +19,7 @@ jobs:
       needs_build: ${{ steps.scope.outputs.needs_build }}
       needs_e2e: ${{ steps.scope.outputs.needs_e2e }}
       needs_real_db_e2e: ${{ steps.scope.outputs.needs_real_db_e2e }}
+      needs_migration_gates: ${{ steps.scope.outputs.needs_migration_gates }}
       needs_api_docs: ${{ steps.scope.outputs.needs_api_docs }}
       needs_dependency_security_deep: ${{ steps.scope.outputs.needs_dependency_security_deep }}
       needs_security_lightweight: ${{ steps.scope.outputs.needs_security_lightweight }}
@@ -155,7 +156,7 @@ jobs:
         run: echo "✅ API docs checks skipped - no API surface or API documentation changes"
 
       - name: Supabase migration drift check
-        if: needs.detect_changes.outputs.needs_real_db_e2e == 'true' && steps.check-lint-needed.outputs.needs_db_checks == 'true'
+        if: needs.detect_changes.outputs.needs_migration_gates == 'true' && steps.check-lint-needed.outputs.needs_db_checks == 'true'
         run: npm run db:migration:check
 
       - name: Supabase RPC grant policy
