@@ -118,7 +118,7 @@ const DB_RUNTIME_SURFACE_PATTERN = /^(src\/(app|core|lib|modules|platform|produc
 const SECURITY_SCRIPT_PATTERN = /^scripts\/(audit-production|check-secret-leaks|check-ci-quality-env)\.mjs$/;
 const BELLA_AUTO_REAL_DB_SURFACE_PATTERN = /^src\/modules\/bella-auto\/services\//;
 const REAL_DB_TEST_CONFIG_PATTERN = /^jest\.real-db\.(config|setup)\.ts$/;
-const REAL_DB_TEST_FILE_PATTERN = /^(src\/__tests__\/bella-auto-phase5-experience\.test\.ts|src\/__tests__\/beauty-v2-go-live-payroll-commission-real-db\.test\.ts|src\/__tests__\/e2e-(order-lifecycle-real|refund-full|accounting-gl-verification|payroll-month-close)\.test\.ts|src\/app\/api\/english-center\/__tests__\/post-rc-real-db-validation\.test\.ts|src\/__tests__\/haircut-f3-debt-real-db-diagnostic\.test\.ts|src\/products\/beauty-spa-v2\/__tests__\/beauty-spa-v2-real-db\.test\.ts|src\/products\/bella-education\/__tests__\/preschool-chain-real-db\.test\.ts|src\/products\/bella-hospitality\/__tests__\/housekeeping-real-db\.test\.ts)$/;
+const REAL_DB_TEST_FILE_PATTERN = /^(src\/__tests__\/bella-auto-phase5-experience\.test\.ts|src\/__tests__\/beauty-v2-go-live-payroll-commission-real-db\.test\.ts|src\/__tests__\/e2e-(order-lifecycle-real|refund-full|accounting-gl-verification|payroll-month-close)\.test\.ts|src\/app\/api\/english-center\/__tests__\/post-rc-real-db-validation\.test\.ts|src\/__tests__\/haircut-f3-debt-real-db-diagnostic\.test\.ts|src\/products\/beauty-spa-v2\/__tests__\/beauty-spa-v2-real-db\.test\.ts|src\/products\/bella-education\/__tests__\/preschool-chain-real-db\.test\.ts|src\/products\/bella-hospitality\/__tests__\/(housekeeping|maintenance)-real-db\.test\.ts)$/;
 
 function normalize(file) {
   return file.replace(/\\/g, '/').replace(/^\.\//, '').trim();

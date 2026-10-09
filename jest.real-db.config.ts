@@ -29,6 +29,7 @@ const config: Config = {
     '<rootDir>/src/products/beauty-spa-v2/__tests__/beauty-spa-v2-real-db.test.ts',
     '<rootDir>/src/products/bella-education/__tests__/preschool-chain-real-db.test.ts',
     '<rootDir>/src/products/bella-hospitality/__tests__/housekeeping-real-db.test.ts',
+    '<rootDir>/src/products/bella-hospitality/__tests__/maintenance-real-db.test.ts',
   ],
 }
 
