@@ -5727,3 +5727,88 @@ Not authorized:
 9. Visual intent: black/dark borders removed; soft inset shadow retained for affordance.
 10. Static check: targeted ESLint and `git diff --check`.
 11. Regression scope: kernel/database gates not required because frozen kernels and persistence are untouched.
+
+---
+
+# ARCHITECTURE GATE RESULT - BELLA HOSPITALITY OPERATIONS UI
+
+> **Status:** PASS - presentation-only Hospitality UI upgrade authorized.
+> **Date:** 2026-10-09
+> **Scope:** Upgrade the existing `/hospitality/hotel-core-chain` browser proof page into an operations console for Dashboard and Room/Reservation workflows while preserving sealed Product services and E2E proof selectors.
+
+## 1. Bella OS/Product Development Process Gate
+
+- Truth: Bella Hospitality already owns sealed product services for property/room, guest/reservation, stay, folio/payment, housekeeping, and maintenance under `src/products/bella-hospitality`.
+- Source of Truth: product types/services in `src/products/bella-hospitality`, browser proof entry `src/app/hospitality/hotel-core-chain/page.tsx`, action `src/services/hospitality-hotel-core-chain-actions.ts`, and E2E proof `e2e/tests/38-hospitality-hotel-core-chain-browser-e2e.spec.ts`.
+- Canonical Contract: Product UI consumes the existing Hotel Core chain action and its returned value. No new schema, RPC, OS kernel, Platform contract, or Finance contract is authorized.
+- Gate result: `PASS` for presentation-layer UI implementation only.
+
+## 2. Product Manifest
+
+- Product: Bella Hospitality (`bella_hospitality`).
+- Capabilities in scope: hotel dashboard, room/reservation overview, front-office/folio evidence display, and unproven housekeeping/maintenance lanes.
+- Non-goals: no new backend query API, no migration, no new housekeeping or maintenance workflow action, no Go-Live claim.
+
+## 3. Ownership Map
+
+| Data / Behavior | Owner | Decision |
+|---|---|---|
+| Hospitality UI page | Bella Hospitality Product UI | may modify |
+| Hotel Core chain action | Bella Hospitality Product service | consume existing contract; minimal returned-value display only |
+| `hospitality_*` tables | Bella Hospitality Product persistence | no schema change |
+| Finance invoice/allocation/cash movement | Finance Platform public contract | consume only through existing service |
+| Product identity | Platform Product Registry | consume only |
+
+## 4. Contract Dependency Map
+
+```text
+/hospitality/hotel-core-chain UI
+  -> executeHospitalityHotelCoreChainAction
+  -> Hospitality product services/repositories
+  -> hospitality_* product tables with RLS context
+  -> Finance public service contract for folio charge/payment
+  -> Product Registry identity proof
+```
+
+## 5. Change Authority
+
+Authorized:
+- Presentation/layout changes in `src/app/hospitality/hotel-core-chain/page.tsx`.
+- Display-only derivations from already returned action values.
+- Preserving and surfacing proof IDs/statuses for Dashboard and Room/Reservation UI.
+
+Not authorized:
+- Healthcare H1-H12 changes.
+- Education kernel changes.
+- Logistics E7.1/E7.2/E7.3 changes.
+- Platform/Core/Frozen kernel changes.
+- New database tables, columns, RPCs, or invented statuses.
+
+## 6. UI -> Contract Reconciliation
+
+| UI Element | Contract Trace | Result |
+|---|---|---|
+| Dashboard KPIs | Existing redirect params from Hotel Core action | MATCH; empty state is `NOT_PROVEN` |
+| Room list row | `roomId`, reservation proof, occupancy status from existing action result | MATCH after returned proof params are surfaced |
+| Front-office lane | stay, occupancy, folio, payment result values | MATCH |
+| Housekeeping lane | No current completion action in Hotel Core proof | `NOT_PROVEN`; no ready-for-sale claim |
+| Maintenance lane | No current maintenance request in Hotel Core proof | `NOT_PROVEN`; cannot mark room sellable |
+
+## 7. Additive Migration Plan
+
+- No migration.
+- No schema, table, index, RLS, generated type, seed, or production data change.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Architecture boundary: inspect changed files only.
+2. Contract boundary: verify UI consumes existing action/result values only.
+3. Tenant isolation: preserve existing action auth/RLS context.
+4. RLS/AuthZ: existing E2E Real DB proof remains the authority when env is available.
+5. Migration safety: no migrations.
+6. Event-after-persistence: no write/event semantics changed.
+7. Product identity: preserve `hotel-core-product` evidence.
+8. Finance chain: preserve folio/payment evidence.
+9. Type safety: no `any`, casts, or suppressions.
+10. Static check: targeted ESLint/typecheck where dependencies are installed.
+11. Browser E2E: run `e2e/tests/38-hospitality-hotel-core-chain-browser-e2e.spec.ts` when DB/env/server are available.
