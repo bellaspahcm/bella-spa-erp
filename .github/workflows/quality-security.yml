@@ -218,6 +218,16 @@ jobs:
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
 
+      - name: Hospitality tenant profile HQ smoke
+        if: needs.detect_changes.outputs.needs_e2e == 'true' && steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
+        timeout-minutes: 10
+        run: npm run e2e:hospitality-tenant-profiles
+        env:
+          E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
+
       - name: Beauty operational UAT smoke
         if: needs.detect_changes.outputs.scope_level == 'platform' && steps.check-lint-needed.outputs.needs_e2e_checks == 'true'
         timeout-minutes: 12

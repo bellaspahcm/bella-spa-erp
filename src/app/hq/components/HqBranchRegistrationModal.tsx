@@ -1,8 +1,17 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Baby, Building2, GraduationCap, Mail, MapPin, Paintbrush, Phone, RefreshCw, Scissors, Sparkles, User, X } from 'lucide-react';
+import { Baby, Building2, GraduationCap, Hotel, Mail, MapPin, Paintbrush, Phone, RefreshCw, Scissors, Sparkles, User, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import {
+  HOSPITALITY_PROFILE_IDS,
+  getHospitalityProfileContract,
+  type HospitalityFrontDeskMode,
+  type HospitalityHousekeepingCadence,
+  type HospitalityMaintenancePriority,
+  type HospitalityProfileId,
+  type HospitalityTenantConfiguration,
+} from '@/products/bella-hospitality/profile-contract';
 
 type TenantProductKey =
   | 'bella_babycare'
@@ -10,7 +19,8 @@ type TenantProductKey =
   | 'bella_haircut'
   | 'bella_nail'
   | 'bella_preschool'
-  | 'bella_english_center';
+  | 'bella_english_center'
+  | 'bella_hospitality';
 
 export type HqBranchRegistrationInput = {
   spaName: string;
@@ -21,7 +31,11 @@ export type HqBranchRegistrationInput = {
   adminEmail: string;
   adminPassword: string;
   productKey: TenantProductKey;
-  businessModule: 'babycare' | 'beauty_spa' | 'bella_education';
+  businessModule: 'babycare' | 'beauty_spa' | 'bella_education' | 'hospitality';
+  hospitality?: {
+    profileId: HospitalityProfileId;
+    configuration: HospitalityTenantConfiguration;
+  };
 };
 
 interface HqBranchRegistrationModalProps {
@@ -80,7 +94,40 @@ const productOptions: Array<{
     description: 'Trung tâm tiếng Anh, lớp học, học phí',
     icon: GraduationCap,
   },
+  {
+    productKey: 'bella_hospitality',
+    businessModule: 'hospitality',
+    label: 'Hospitality',
+    description: 'Khách sạn, homestay, lưu trú ngắn hạn',
+    icon: Hotel,
+  },
 ];
+
+function defaultHospitalitySelection(profileId: HospitalityProfileId = 'hotel'): HqBranchRegistrationInput['hospitality'] {
+  const profile = getHospitalityProfileContract(profileId);
+  return {
+    profileId,
+    configuration: profile.defaults,
+  };
+}
+
+function resolveFrontDeskMode(profileId: HospitalityProfileId, value: string): HospitalityFrontDeskMode {
+  const profile = getHospitalityProfileContract(profileId);
+  return profile.supportedConfiguration.frontDeskMode.find((option) => option === value)
+    ?? profile.defaults.frontDeskMode;
+}
+
+function resolveHousekeepingCadence(profileId: HospitalityProfileId, value: string): HospitalityHousekeepingCadence {
+  const profile = getHospitalityProfileContract(profileId);
+  return profile.supportedConfiguration.housekeepingCadence.find((option) => option === value)
+    ?? profile.defaults.housekeepingCadence;
+}
+
+function resolveMaintenancePriority(profileId: HospitalityProfileId, value: string): HospitalityMaintenancePriority {
+  const profile = getHospitalityProfileContract(profileId);
+  return profile.supportedConfiguration.maintenancePriority.find((option) => option === value)
+    ?? profile.defaults.maintenancePriority;
+}
 
 const emptyForm: HqBranchRegistrationInput = {
   spaName: '',
@@ -110,6 +157,10 @@ export function HqBranchRegistrationModal({
   ) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
+
+  const selectedHospitalityProfile = form.hospitality
+    ? getHospitalityProfileContract(form.hospitality.profileId)
+    : null;
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -153,8 +204,14 @@ export function HqBranchRegistrationModal({
                     key={option.productKey}
                     type="button"
                     onClick={() => {
-                      updateField('productKey', option.productKey);
-                      updateField('businessModule', option.businessModule);
+                      setForm((current) => ({
+                        ...current,
+                        productKey: option.productKey,
+                        businessModule: option.businessModule,
+                        hospitality: option.productKey === 'bella_hospitality'
+                          ? current.hospitality ?? defaultHospitalitySelection()
+                          : undefined,
+                      }));
                     }}
                     className={`rounded-2xl border px-4 py-3 text-left transition-all ${
                       selected
@@ -174,6 +231,99 @@ export function HqBranchRegistrationModal({
               })}
             </div>
           </div>
+
+          {form.productKey === 'bella_hospitality' && selectedHospitalityProfile ? (
+            <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-[#3E3A35] dark:bg-[#11100F]">
+              <div className="space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hospitality profile *</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {HOSPITALITY_PROFILE_IDS.map((profileId) => {
+                    const profile = getHospitalityProfileContract(profileId);
+                    const selected = form.hospitality?.profileId === profileId;
+                    return (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        onClick={() => updateField('hospitality', defaultHospitalitySelection(profile.id))}
+                        className={`rounded-2xl border px-4 py-3 text-left transition-all ${
+                          selected
+                            ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-[#3E3A35] dark:bg-[#1C1B19]'
+                        }`}
+                      >
+                        <span className="text-xs font-black uppercase tracking-wider">{profile.displayName}</span>
+                        <span className="mt-1 block text-[11px] font-bold leading-relaxed text-slate-400">
+                          {profile.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <label className="space-y-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Front desk</span>
+                  <select
+                    value={form.hospitality?.configuration.frontDeskMode ?? selectedHospitalityProfile.defaults.frontDeskMode}
+                    onChange={(event) => updateField('hospitality', {
+                      profileId: selectedHospitalityProfile.id,
+                      configuration: {
+                        ...selectedHospitalityProfile.defaults,
+                        ...form.hospitality?.configuration,
+                        frontDeskMode: resolveFrontDeskMode(selectedHospitalityProfile.id, event.target.value),
+                      },
+                    })}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs font-black outline-none focus:border-primary dark:border-[#3E3A35] dark:bg-[#1C1B19]"
+                  >
+                    {selectedHospitalityProfile.supportedConfiguration.frontDeskMode.map((value) => (
+                      <option key={value} value={value}>{value}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Housekeeping</span>
+                  <select
+                    value={form.hospitality?.configuration.housekeepingCadence ?? selectedHospitalityProfile.defaults.housekeepingCadence}
+                    onChange={(event) => updateField('hospitality', {
+                      profileId: selectedHospitalityProfile.id,
+                      configuration: {
+                        ...selectedHospitalityProfile.defaults,
+                        ...form.hospitality?.configuration,
+                        housekeepingCadence: resolveHousekeepingCadence(selectedHospitalityProfile.id, event.target.value),
+                      },
+                    })}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs font-black outline-none focus:border-primary dark:border-[#3E3A35] dark:bg-[#1C1B19]"
+                  >
+                    {selectedHospitalityProfile.supportedConfiguration.housekeepingCadence.map((value) => (
+                      <option key={value} value={value}>{value}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Maintenance</span>
+                  <select
+                    value={form.hospitality?.configuration.maintenancePriority ?? selectedHospitalityProfile.defaults.maintenancePriority}
+                    onChange={(event) => updateField('hospitality', {
+                      profileId: selectedHospitalityProfile.id,
+                      configuration: {
+                        ...selectedHospitalityProfile.defaults,
+                        ...form.hospitality?.configuration,
+                        maintenancePriority: resolveMaintenancePriority(selectedHospitalityProfile.id, event.target.value),
+                      },
+                    })}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs font-black outline-none focus:border-primary dark:border-[#3E3A35] dark:bg-[#1C1B19]"
+                  >
+                    {selectedHospitalityProfile.supportedConfiguration.maintenancePriority.map((value) => (
+                      <option key={value} value={value}>{value}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <label className="space-y-2">

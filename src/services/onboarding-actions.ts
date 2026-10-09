@@ -11,6 +11,10 @@ import {
   type TenantPrimaryBusinessModuleKey,
 } from '@/lib/business-rules/tenant-modules';
 import { productRegistry } from '@/platform/registry/product-registry';
+import {
+  validateHospitalityTenantProfile,
+  type HospitalityTenantProfile,
+} from '@/products/bella-hospitality/profile-contract';
 import { checkHqAuth } from './hq-actions';
 import type { Database } from '@/types/database.types';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -25,14 +29,15 @@ type AdminAuthClient = {
 };
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
 type OrgUnitInsert = Database['public']['Tables']['org_units']['Insert'];
-type RegisterTenantBusinessModule = TenantPrimaryBusinessModuleKey;
+type RegisterTenantBusinessModule = TenantPrimaryBusinessModuleKey | 'hospitality';
 type RegisterTenantProductKey =
   | 'bella_babycare'
   | 'bella_spa'
   | 'bella_haircut'
   | 'bella_nail'
   | 'bella_preschool'
-  | 'bella_english_center';
+  | 'bella_english_center'
+  | 'bella_hospitality';
 
 const PRODUCT_HQ_ONLY_ERROR = 'Chỉ Admin HQ mới được setup tenant sản phẩm này.';
 
@@ -43,6 +48,7 @@ const PRODUCT_MODULE_MAP: Record<RegisterTenantProductKey, RegisterTenantBusines
   bella_nail: 'beauty_spa',
   bella_preschool: 'bella_education',
   bella_english_center: 'bella_education',
+  bella_hospitality: 'hospitality',
 };
 
 function getErrorMessage(error: unknown) {
@@ -110,9 +116,14 @@ export interface RegisterTenantInput {
   accentColor?: string;
   portalDisplayName?: string;
   invoiceDisplayName?: string;
+  hospitality?: {
+    profileId?: unknown;
+    configuration?: unknown;
+  };
 }
 
 function normalizeBusinessModule(value: unknown): RegisterTenantBusinessModule {
+  if (value === 'hospitality') return 'hospitality';
   if (value === 'bella_education') return 'bella_education';
   return value === 'beauty_spa' ? 'beauty_spa' : 'babycare';
 }
@@ -130,6 +141,7 @@ function normalizeProductKey(
   const moduleKey = normalizeBusinessModule(businessModule);
   if (moduleKey === 'beauty_spa') return 'bella_spa';
   if (moduleKey === 'bella_education') return 'bella_preschool';
+  if (moduleKey === 'hospitality') return 'bella_hospitality';
   return 'bella_babycare';
 }
 
@@ -143,6 +155,28 @@ function getEnabledModulesForBusinessModule(moduleKey: RegisterTenantBusinessMod
     bella_auto: false,
     bella_healthcare: false,
     bella_education: moduleKey === 'bella_education',
+  };
+}
+
+function toEnabledModulesJsonForBusinessModule(
+  moduleKey: RegisterTenantBusinessModule,
+): TenantUpdate['enabled_modules'] {
+  const modules = getEnabledModulesForBusinessModule(moduleKey);
+  return moduleKey === 'hospitality'
+    ? { ...modules }
+    : toTenantModuleJson(modules);
+}
+
+function toHospitalityMetadataJson(profile: HospitalityTenantProfile): TenantUpdate['metadata'] {
+  return {
+    hospitality: {
+      schemaVersion: 1,
+      profileId: profile.profileId,
+      displayName: profile.displayName,
+      description: profile.description,
+      capabilities: profile.capabilities,
+      configuration: profile.configuration,
+    },
   };
 }
 
@@ -170,6 +204,15 @@ export async function registerNewTenant(input: RegisterTenantInput) {
     const productAuthError = await assertProductSetupAllowed(productKey);
     if (productAuthError) {
       return { success: false, error: productAuthError };
+    }
+    const hospitalityProfileResult = productKey === 'bella_hospitality'
+      ? validateHospitalityTenantProfile(
+        input.hospitality?.profileId,
+        input.hospitality?.configuration,
+      )
+      : null;
+    if (hospitalityProfileResult?.success === false) {
+      return { success: false, error: hospitalityProfileResult.error };
     }
 
     // 2. Auth SignUp
@@ -290,10 +333,11 @@ export async function registerNewTenant(input: RegisterTenantInput) {
     const tenantSetupClient = supabaseAdminForTenantSetup ?? supabase;
     const postOnboardingUpdate: TenantUpdate = {
       product_key: productKey,
-      enabled_modules: toTenantModuleJson(
-        getEnabledModulesForBusinessModule(businessModule),
-      ),
+      enabled_modules: toEnabledModulesJsonForBusinessModule(businessModule),
     };
+    if (hospitalityProfileResult?.success) {
+      postOnboardingUpdate.metadata = toHospitalityMetadataJson(hospitalityProfileResult.profile);
+    }
     if (businessModule === 'beauty_spa') {
       const brandTheme = normalizeTenantBrandThemeForModule({
         brandName: input.brandName || input.spaName,
