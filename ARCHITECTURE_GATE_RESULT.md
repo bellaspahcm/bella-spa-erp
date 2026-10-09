@@ -6108,7 +6108,6 @@ Not authorized:
 9. CI scope: route #38 changes require Browser E2E and Real DB evidence.
 10. Static check: run lint/typecheck/router unit check where dependencies are available.
 11. Closure: seal UI only after CI Browser E2E and Real DB jobs produce PASS evidence.
-
 ---
 
 ## Additional Architecture Gate - Admin Notification Popover Viewport Fit
@@ -6176,3 +6175,86 @@ No migration. `NOT_APPLICABLE`.
 9. Verify notification read/navigation handlers remain unchanged
 10. Browser/visual smoke if local auth/runtime is available
 11. Final diff review for scope containment
+
+---
+
+# Architecture Gate - Beauty V2 Real DB Cleanup Gate Repair (2026-10-09)
+
+> **Status:** PASS - fixture-only repair for Beauty V2 Real DB cleanup failures blocking the aggregate Real Database Business E2E gate.
+> **Scope:** `src/__tests__/beauty-v2-commission-branch-real-db.test.ts` and `src/__tests__/beauty-v2-finance-branch-real-db.test.ts` cleanup paths, the Beauty Spa V2 Real DB worker assertion that was proven sensitive to stale shared outbox rows, plus the minimum CI scope-router update required to run Real DB evidence for those files. No Hospitality backend/UI change, no schema migration, no RLS policy change, no accounting business-rule change, no Healthcare/Education/Logistics kernel change.
+
+## Bella OS/Product Development Process Gate
+
+- Truth: Post-merge `main` CI run `37906928475` attempt 2 failed the aggregate Real Database Business E2E gate on two Beauty V2 cleanup suites, while Hospitality Real DB suites passed in the same run.
+- Source of Truth: GitHub Actions job `113746606127` logs, `jest.real-db.config.ts`, `.github/workflows/ci-tests.yml`, and the two failing test files.
+- Canonical Contract: Real DB proof fixtures may use service-role Supabase cleanup for marker-scoped test rows; production RLS policies and business runtime contracts must not be weakened to make cleanup pass.
+- Gate result: `PASS` for a minimal test-fixture cleanup repair only.
+
+## Product Manifest
+
+- Product: Bella Beauty Spa V2 (`bella_spa`).
+- Capability in scope: Real DB proof cleanup for Beauty V2 branch commission and SALARY_PAID finance branch tests, plus current-event-focused Beauty Spa V2 worker assertion under a shared Real DB queue.
+- Existing capabilities reused: service-role Supabase test client, existing Real DB Jest lane, existing fixture markers.
+- Non-goals: no Hospitality change, no Finance accounting policy change, no RLS/migration/schema/generated type change, no Product Registry change, no UI change.
+
+## Ownership Map
+
+| Data / Behavior | Owner | Decision |
+|---|---|---|
+| Beauty V2 commission proof fixture | Beauty V2 test harness | may repair cleanup |
+| Beauty V2 SALARY_PAID finance proof fixture | Beauty V2 / Finance proof test harness | may repair cleanup |
+| Beauty Spa V2 SESSION_DONE worker proof fixture | Beauty V2 / Finance proof test harness | may focus assertions on the current proof event |
+| `salary_records` production semantics | Beauty payroll / HR salary domain | do not change |
+| `accounting_worker_runs` observability table | Finance/accounting worker observability | do not change schema or RLS |
+| CI scope router | Engineering CI harness | may add the two Real DB test paths so evidence is not skipped |
+| Hospitality 7 phases and UI | Hospitality product | not modified |
+
+## Contract Dependency Map
+
+```text
+Real Database Business E2E
+  -> jest.real-db.config.ts
+  -> Beauty V2 commission / finance branch proof fixtures
+  -> Beauty Spa V2 SESSION_DONE proof fixture
+  -> fixture setup and cleanup
+  -> service-role Supabase cleanup for marker-scoped rows
+  -> no production contract mutation
+```
+
+## Change Authority
+
+Authorized:
+- Modify the two failing Beauty V2 Real DB test cleanup paths.
+- Modify the Beauty Spa V2 Real DB worker assertion so stale shared queue rows do not invalidate the current proof event.
+- Modify `scripts/ci-scope-router.mjs` and its focused router test only to ensure these Real DB test files trigger the Real DB gate.
+- Add investigation evidence for the CI failure.
+- Update this architecture gate record.
+
+Not authorized:
+- Modify Hospitality backend/UI/Real DB suites.
+- Modify database schema, RLS policies, migrations, generated types, Product Registry, or accounting legal/business mappings.
+- Skip tests or remove business assertions.
+
+## UI -> Contract Reconciliation
+
+- No UI change.
+- No UI data/action/state/workflow contract changed.
+
+## Additive Migration Plan
+
+- No migration.
+- No schema, table, index, trigger, RLS, generated type, or production data change.
+
+## 11 Automated Verification Gates Plan
+
+1. Architecture Compliance: verify changed files remain test/investigation/gate scoped.
+2. Contract Boundary: preserve production Beauty payroll/finance contracts.
+3. Tenant Isolation: cleanup remains marker/id scoped to test rows.
+4. RLS & Authorization: do not weaken production RLS; use existing service-role test cleanup contract.
+5. Database Migration Safety: no migration.
+6. Event-After-Persistence: no production event path changed.
+7. Domain Safety Routing: no Healthcare/Education/Logistics/Hospitality runtime change.
+8. Temporal Provenance: no historical migration or production data rewrite.
+9. Rule Governance: no accounting policy or posting rule change.
+10. Audit & Evidence Integrity: distinguish targeted fixture PASS from aggregate gate PASS until CI reruns.
+11. Regression: run targeted static/lint checks and Real DB CI when credentials are available.
