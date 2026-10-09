@@ -297,6 +297,19 @@ describe('Tenant Onboarding System (Product Selection)', () => {
         businessModule: 'bella_education' as const,
         enabled: { beauty_spa: false, babycare: false, bella_education: true },
       },
+      {
+        productKey: 'bella_hospitality' as const,
+        businessModule: 'hospitality' as const,
+        enabled: { beauty_spa: false, babycare: false, bella_education: false },
+        hospitality: {
+          profileId: 'homestay',
+          configuration: {
+            frontDeskMode: 'self_check_in',
+            housekeepingCadence: 'turnover_only',
+            maintenancePriority: 'owner_approval_required',
+          },
+        },
+      },
     ];
 
     for (const item of cases) {
@@ -322,6 +335,7 @@ describe('Tenant Onboarding System (Product Selection)', () => {
         adminEmail: `${item.productKey}.admin@tenant.vn`,
         adminPassword: 'Password123!',
         productKey: item.productKey,
+        hospitality: item.hospitality,
       });
 
       expect(result.success).toBe(true);
@@ -337,6 +351,172 @@ describe('Tenant Onboarding System (Product Selection)', () => {
         }),
       }));
     }
+  });
+
+  it('should persist validated Hospitality tenant profile config for bella_hospitality', async () => {
+    const result = await registerNewTenant({
+      spaName: 'Bella Hotel Saigon',
+      contactPhone: '0912345678',
+      address: '123 Hospitality',
+      email: 'hotel@bella.vn',
+      adminName: 'Hotel Admin',
+      adminEmail: 'hotel.admin@bella.vn',
+      adminPassword: 'Password123!',
+      productKey: 'bella_hospitality',
+      hospitality: {
+        profileId: 'hotel',
+        configuration: {
+          frontDeskMode: 'scheduled',
+          housekeepingCadence: 'on_request',
+          maintenancePriority: 'standard',
+        },
+      },
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockCheckHqAuth).toHaveBeenCalledTimes(1);
+    expect(tenantQueryMock.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      product_key: 'bella_hospitality',
+      enabled_modules: expect.objectContaining({
+        babycare: false,
+        beauty_spa: false,
+        bella_education: false,
+      }),
+      metadata: {
+        hospitality: expect.objectContaining({
+          schemaVersion: 1,
+          profileId: 'hotel',
+          displayName: 'Hotel',
+          capabilities: expect.arrayContaining([
+            'property_rooms',
+            'guest_reservations',
+            'front_office_stays',
+            'folios',
+            'housekeeping',
+            'maintenance',
+          ]),
+          configuration: {
+            frontDeskMode: 'scheduled',
+            housekeepingCadence: 'on_request',
+            maintenancePriority: 'standard',
+          },
+        }),
+      },
+    }));
+    expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      new_data: expect.objectContaining({
+        product_key: 'bella_hospitality',
+        business_module: 'hospitality',
+      }),
+    }));
+  });
+
+  it('should reject unknown Hospitality profiles before auth and database writes', async () => {
+    const result = await registerNewTenant({
+      spaName: 'Unknown Hospitality',
+      contactPhone: '0912345678',
+      address: '123 Hospitality',
+      email: 'unknown@bella.vn',
+      adminName: 'Unknown Admin',
+      adminEmail: 'unknown.admin@bella.vn',
+      adminPassword: 'Password123!',
+      productKey: 'bella_hospitality',
+      hospitality: {
+        profileId: 'villa',
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Hospitality profile không được hỗ trợ.',
+    });
+    expect(mockCreateUser).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('should reject unsupported Hospitality config settings before auth and database writes', async () => {
+    const result = await registerNewTenant({
+      spaName: 'Unsupported Hospitality',
+      contactPhone: '0912345678',
+      address: '123 Hospitality',
+      email: 'unsupported@bella.vn',
+      adminName: 'Unsupported Admin',
+      adminEmail: 'unsupported.admin@bella.vn',
+      adminPassword: 'Password123!',
+      productKey: 'bella_hospitality',
+      hospitality: {
+        profileId: 'hotel',
+        configuration: {
+          channelManagerMode: 'ota',
+        },
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Hospitality config không hỗ trợ: channelManagerMode.',
+    });
+    expect(mockCreateUser).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('should reject incompatible Hospitality config settings before auth and database writes', async () => {
+    const result = await registerNewTenant({
+      spaName: 'Incompatible Hospitality',
+      contactPhone: '0912345678',
+      address: '123 Hospitality',
+      email: 'incompatible@bella.vn',
+      adminName: 'Incompatible Admin',
+      adminEmail: 'incompatible.admin@bella.vn',
+      adminPassword: 'Password123!',
+      productKey: 'bella_hospitality',
+      hospitality: {
+        profileId: 'short_stay_rental',
+        configuration: {
+          frontDeskMode: 'full_service',
+        },
+      },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Hospitality frontDeskMode không tương thích với profile đã chọn.',
+    });
+    expect(mockCreateUser).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('should keep non-Hospitality onboarding working without a Hospitality profile', async () => {
+    const result = await registerNewTenant({
+      spaName: 'Beauty Spa No Hospitality Profile',
+      contactPhone: '0912345678',
+      address: '123 Beauty',
+      email: 'beauty.no.profile@spa.vn',
+      adminName: 'Beauty Admin',
+      adminEmail: 'beauty.no.profile.admin@spa.vn',
+      adminPassword: 'Password123!',
+      productKey: 'bella_spa',
+      businessModule: 'beauty_spa',
+    });
+
+    expect(result.success).toBe(true);
+    expect(tenantQueryMock.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      product_key: 'bella_spa',
+      enabled_modules: expect.objectContaining({
+        babycare: false,
+        beauty_spa: true,
+        bella_education: false,
+      }),
+    }));
+    expect(tenantQueryMock.updateSpy).not.toHaveBeenCalledWith(expect.objectContaining({
+      metadata: expect.any(Object),
+    }));
   });
 
   it('should create a default Platform branch when Admin HQ onboards English Center', async () => {
