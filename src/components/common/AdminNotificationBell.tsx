@@ -21,6 +21,8 @@ type AdminNotificationBellProps = {
   className?: string;
 };
 
+type PopoverPlacement = 'top' | 'bottom' | 'inset';
+
 // Unique identifier helper for alerts (dynamic & static)
 const getAlertKey = (alert: DashboardAlert) => {
   if (alert.isAppNotification && alert.id) return alert.id;
@@ -195,23 +197,56 @@ export default function AdminNotificationBell({ position = 'bottom', className }
   const hasUnread = unreadCount > 0;
 
   // Compute portal positioning inline styles dynamically
-  const getPopoverStyles = (): React.CSSProperties => {
-    if (typeof window === 'undefined') return {};
+  const getPopoverLayout = (): { styles: React.CSSProperties; placement: PopoverPlacement } => {
+    if (typeof window === 'undefined') {
+      return { styles: {}, placement: position };
+    }
+
     const isMobile = window.innerWidth < 768;
     const popoverWidth = 512; // Wider & taller PC popover width (32rem)
     const spacing = 8;
     const viewportPadding = 16;
+    const maxViewportHeight = isMobile ? window.innerHeight * 0.72 : window.innerHeight * 0.7;
+    const belowTop = coords.top + coords.height + spacing;
+    const belowAvailable = Math.max(0, window.innerHeight - belowTop - viewportPadding);
+    const aboveBottom = window.innerHeight - coords.top + spacing;
+    const aboveAvailable = Math.max(0, coords.top - spacing - viewportPadding);
+    const shouldOpenAbove = position === 'top' || (position === 'bottom' && belowAvailable < 280 && aboveAvailable > belowAvailable);
+    const maxHeight = Math.min(maxViewportHeight, shouldOpenAbove ? aboveAvailable : belowAvailable);
+    const needsInsetLayout = maxHeight < 320;
+
+    if (needsInsetLayout) {
+      return {
+        placement: 'inset',
+        styles: {
+          position: 'fixed',
+          top: `${viewportPadding}px`,
+          bottom: `${viewportPadding}px`,
+          left: isMobile ? `${viewportPadding}px` : `${Math.max(viewportPadding, Math.min(coords.left + coords.width - popoverWidth, window.innerWidth - popoverWidth - viewportPadding))}px`,
+          right: isMobile ? `${viewportPadding}px` : undefined,
+          width: isMobile ? 'auto' : `${popoverWidth}px`,
+          maxHeight: `${Math.max(0, window.innerHeight - viewportPadding * 2)}px`,
+          transformOrigin: 'top right',
+          zIndex: 9999,
+        },
+      };
+    }
     
     if (isMobile) {
       return {
-        position: 'fixed',
-        left: '16px',
-        right: '16px',
-        width: 'auto',
-        zIndex: 9999,
-        ...(position === 'top'
-          ? { bottom: `${window.innerHeight - coords.top + spacing}px` }
-          : { top: `${coords.top + coords.height + spacing}px` })
+        placement: shouldOpenAbove ? 'top' : 'bottom',
+        styles: {
+          position: 'fixed',
+          left: '16px',
+          right: '16px',
+          width: 'auto',
+          maxHeight: `${maxHeight}px`,
+          transformOrigin: shouldOpenAbove ? 'bottom right' : 'top right',
+          zIndex: 9999,
+          ...(shouldOpenAbove
+            ? { bottom: `${aboveBottom}px` }
+            : { top: `${belowTop}px` })
+        },
       };
     }
     
@@ -222,20 +257,30 @@ export default function AdminNotificationBell({ position = 'bottom', className }
     const topBottom = window.innerHeight - coords.top + spacing;
 
     return {
-      position: 'fixed',
-      width: `${popoverWidth}px`,
-      zIndex: 9999,
-      ...(position === 'top'
-        ? {
-            bottom: `${topBottom}px`,
-            left: `${clampedLeft}px`,
-          }
-        : {
-            top: `${bottomTop}px`,
-            left: `${clampedLeft}px`,
-          })
+      placement: shouldOpenAbove ? 'top' : 'bottom',
+      styles: {
+        position: 'fixed',
+        width: `${popoverWidth}px`,
+        maxHeight: `${maxHeight}px`,
+        transformOrigin: shouldOpenAbove ? 'bottom right' : 'top right',
+        zIndex: 9999,
+        ...(shouldOpenAbove
+          ? {
+              bottom: `${topBottom}px`,
+              left: `${clampedLeft}px`,
+            }
+          : {
+              top: `${bottomTop}px`,
+              left: `${clampedLeft}px`,
+            })
+      },
     };
   };
+
+  const popoverLayout = isOpen
+    ? getPopoverLayout()
+    : { styles: {}, placement: position as PopoverPlacement };
+  const popoverAnimationY = popoverLayout.placement === 'top' ? -15 : 15;
 
   return (
     <div className={`relative ${className || ''}`}>
@@ -272,14 +317,14 @@ export default function AdminNotificationBell({ position = 'bottom', className }
         <>
           <div className="fixed inset-0 z-[9998]" onClick={() => setIsOpen(false)} />
           <motion.div
-            initial={{ opacity: 0, y: position === 'top' ? -15 : 15, scale: 0.95 }}
+            initial={{ opacity: 0, y: popoverAnimationY, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: position === 'top' ? -15 : 15, scale: 0.95 }}
-            style={getPopoverStyles()}
+            exit={{ opacity: 0, y: popoverAnimationY, scale: 0.95 }}
+            style={popoverLayout.styles}
             onClick={(event) => event.stopPropagation()}
-            className="bg-white rounded-3xl shadow-2xl border border-slate-100 p-5 md:p-6 overflow-hidden origin-top"
+            className="bg-white rounded-3xl shadow-2xl border border-slate-100 p-5 md:p-6 overflow-hidden origin-top flex flex-col"
           >
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-black uppercase tracking-widest text-xs md:text-sm text-slate-900">Thông báo</h3>
                 <span className="px-2.5 py-0.5 bg-rose-100 text-rose-600 text-[10px] font-black rounded-full uppercase">
@@ -297,13 +342,13 @@ export default function AdminNotificationBell({ position = 'bottom', className }
               )}
             </div>
             
-            <div className="space-y-3.5 max-h-[30rem] md:max-h-[38rem] overflow-y-auto pr-1 custom-scrollbar">
+            <div className="flex-1 min-h-0 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
               {activeAlerts.length > 0 ? (
                 activeAlerts.map((alert, idx) => (
                   <div
                     key={idx}
                     onClick={() => handleNotificationClick(alert)}
-                    className={`p-4 rounded-2xl border transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer text-left ${
+                    className={`p-3.5 rounded-2xl border transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer text-left ${
                       alert.type === 'warning' ? 'bg-amber-50/50 border-amber-100 hover:border-amber-200' :
                       alert.type === 'success' ? 'bg-emerald-50/50 border-emerald-100 hover:border-emerald-200' :
                       'bg-blue-50/50 border-blue-100 hover:border-blue-200'
@@ -345,7 +390,7 @@ export default function AdminNotificationBell({ position = 'bottom', className }
                 setIsOpen(false);
                 setIsAllNotificationsOpen(true);
               }}
-              className="w-full mt-4 py-3 text-[11px] font-black uppercase text-rose-600 hover:bg-rose-50 rounded-2xl border border-rose-200 hover:border-rose-300 transition-all tracking-widest text-center"
+              className="w-full mt-4 py-3 text-[11px] font-black uppercase text-rose-600 hover:bg-rose-50 rounded-2xl border border-rose-200 hover:border-rose-300 transition-all tracking-widest text-center shrink-0"
             >
               Xem tất cả thông báo
             </button>

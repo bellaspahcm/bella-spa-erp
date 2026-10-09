@@ -6108,3 +6108,71 @@ Not authorized:
 9. CI scope: route #38 changes require Browser E2E and Real DB evidence.
 10. Static check: run lint/typecheck/router unit check where dependencies are available.
 11. Closure: seal UI only after CI Browser E2E and Real DB jobs produce PASS evidence.
+
+---
+
+## Additional Architecture Gate - Admin Notification Popover Viewport Fit
+
+> **Status:** PASS - presentation-only notification popover sizing fix.
+> **Date:** 2026-10-09
+> **Scope:** Shared admin notification bell popover layout only. No notification data semantics, persistence, schema, RLS, server action, routing, Product Registry, Platform/Core, Healthcare H1-H12, Education, or Logistics E7.1-E7.3 change.
+
+### 1. Bella OS/Product Development Process Gate
+
+Truth: the reported issue is a browser-facing overlay layout defect where the notification dropdown can exceed the visible viewport and be clipped by the lower screen edge. Source of truth is the existing notification bell UI and current alert rendering contract. Canonical contract remains the existing `DashboardAlert` list and read/navigation handlers.
+
+Gate decision: `PASS` for a boundary-local Shared UI presentation fix.
+
+### 2. Product Manifest
+
+- Surface: Admin notification bell used by Beauty/Spa dashboard shell and other dashboard products.
+- Capabilities in scope: popover viewport-aware max height, internal list scrolling, compact card spacing, and preserved read/open behavior.
+- Out of scope: alert generation, unread count semantics, mark-as-read server actions, realtime subscriptions, database migrations, RLS, and product routing rules.
+
+### 3. Ownership Map
+
+| Surface/Data | Owner | Change Authority |
+| --- | --- | --- |
+| Notification popover positioning | Shared dashboard UI | may adjust presentation sizing |
+| Alert rows and unread count | Existing notification/analytics services | read-only, not modified |
+| Mark read / mark all read | Notification server actions | consume unchanged handlers |
+| Product navigation target | Existing alert link contract | consume unchanged links |
+
+### 4. Contract Dependency Map
+
+```text
+AdminNotificationBell
+  -> existing DashboardAlert data
+  -> existing read/navigation handlers
+  -> viewport-aware popover presentation
+```
+
+### 5. Change Authority
+
+Authorized: local CSS class changes and inline viewport sizing calculation in `AdminNotificationBell`.
+
+Not authorized: schema, RLS, server actions, alert queries, routing semantics, Product Registry, frozen kernel files, or new notification capabilities.
+
+### 6. UI -> Contract Reconciliation
+
+- The dropdown still renders the same active alerts and existing "Đọc tất cả" / "Xem tất cả thông báo" actions.
+- The list scrolls inside the popover when alert count is high instead of letting the whole overlay extend beyond the viewport.
+- Alert click behavior and backend read marking remain unchanged.
+
+### 7. Additive Migration Plan
+
+No migration. `NOT_APPLICABLE`.
+
+### 8. 11 Automated Verification Gates Plan
+
+1. `git diff --check`
+2. Targeted ESLint on the changed TSX component
+3. `npm run typecheck:changed`
+4. Static scan confirms no schema/migration/RLS files changed
+5. Static scan confirms no Healthcare H1-H12 files changed
+6. Static scan confirms no Education kernel files changed
+7. Static scan confirms no Logistics frozen artifacts changed
+8. Verify popover sizing uses viewport-derived max height
+9. Verify notification read/navigation handlers remain unchanged
+10. Browser/visual smoke if local auth/runtime is available
+11. Final diff review for scope containment
