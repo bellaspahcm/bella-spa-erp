@@ -18,12 +18,23 @@ import {
   executeHospitalityHotelCoreChainAction,
   type HospitalityHotelCoreChainActionInput,
 } from '@/services/hospitality-hotel-core-chain-actions';
+import { getCurrentUser } from '@/services/user-actions';
+
+export const dynamic = 'force-dynamic';
+
+const HOTEL_CORE_CHAIN_ROUTE = '/hospitality/hotel-core-chain';
 
 interface HotelCoreChainPageProps {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function HotelCoreChainPage({ searchParams }: HotelCoreChainPageProps) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect(`/login?redirect=${encodeURIComponent(HOTEL_CORE_CHAIN_ROUTE)}`);
+  }
+
   const params = await searchParams;
   const status = readParam(params, 'status');
   const error = readParam(params, 'error');

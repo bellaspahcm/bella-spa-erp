@@ -14,6 +14,10 @@ route: 'one-shot'
 
 **Approach:** Add a manually dispatched, read-only GitHub Actions workflow with production-specific credentials, a focused Playwright production smoke config, and a Hospitality spec that verifies auth challenge, authenticated rendering, no same-origin mutations, no same-origin HTTP errors, and sanitized evidence only.
 
+## Production Smoke Follow-Up
+
+Manual run `37934133847` proved the workflow could run on `main` with Production secrets, but it failed before authenticated rendering because unauthenticated production HTML contained the Operations Console at `/hospitality/hotel-core-chain`. The follow-up fix is route-only: require the existing current-user session before rendering the console, redirect unauthenticated requests to `/login`, and keep the smoke assertion strict.
+
 ## Suggested Review Order
 
 **Workflow boundary**
@@ -28,6 +32,9 @@ route: 'one-shot'
   [`hospitality-production-smoke.yml:62`](../.github/workflows/hospitality-production-smoke.yml#L62)
 
 **Smoke behavior**
+
+- The production route now performs server-side auth before rendering the Operations Console.
+  [`hotel-core-chain/page.tsx:32`](../src/app/hospitality/hotel-core-chain/page.tsx#L32)
 
 - Production URL and credentials are hard gates, not skips.
   [`40-hospitality-production-auth-smoke.spec.ts:119`](../e2e/tests/40-hospitality-production-auth-smoke.spec.ts#L119)
