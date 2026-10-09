@@ -9,6 +9,7 @@ import {
   type BeautyRuntimeBranch,
 } from '@/services/beauty-runtime-branch-actions';
 import { cn } from '@/lib/utils';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 const ACTIVE_BRANCH_STORAGE_KEY = 'bella.beauty.active_branch.v1';
 
@@ -93,29 +94,29 @@ export function BeautyRuntimeBranchSelector({ enabled }: BeautyRuntimeBranchSele
 
   return (
     <div className="px-3 pb-2">
-      <label className="mb-1.5 flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-primary/65 dark:text-[#A67D44]/70">
+      <label className="beauty-erp-nav-header mb-1.5 flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#E5B861]">
         <GitFork className="h-3 w-3" />
         Chi nhánh
       </label>
-      <select
+      <PremiumSelect
+        options={branches.map((branch) => ({
+          value: branch.id,
+          label: branch.name,
+        }))}
         value={activeBranchId ?? ''}
-        onChange={(event) => handleChange(event.target.value)}
+        onChange={handleChange}
+        placeholder="Chọn chi nhánh"
         disabled={isPending}
-        className={cn(
-          'h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-800 shadow-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60 dark:border-slate-800 dark:bg-[#181a20] dark:text-slate-100',
-          requiresSelection && 'border-amber-400 ring-2 ring-amber-200/70',
+        ariaLabel="Chọn chi nhánh hoạt động"
+        className="space-y-0"
+        buttonClassName={cn(
+          'h-11 rounded-[18px] border-[#D7E1DD]/80 bg-[#E7EFEC] px-4 py-0 text-left shadow-[0_10px_24px_rgba(0,0,0,0.18)] hover:border-[#E5C982]/70 hover:bg-white active:scale-[0.99] [&_span]:!text-[#10231F] dark:border-[#315E53]/70 dark:bg-[#062F29]/95 dark:hover:bg-[#073A33] dark:[&_span]:!text-[#F6F1E7]',
+          requiresSelection && 'border-amber-300 ring-2 ring-amber-200/80 dark:ring-amber-300/25',
         )}
-        aria-label="Chọn chi nhánh hoạt động"
-      >
-        <option value="" disabled>
-          Chọn chi nhánh
-        </option>
-        {branches.map((branch) => (
-          <option key={branch.id} value={branch.id}>
-            {branch.name}
-          </option>
-        ))}
-      </select>
+        dropdownClassName="mt-2 rounded-[18px] border-[#D7E1DD]/80 bg-[#F7FBF9] shadow-[0_18px_40px_rgba(0,0,0,0.22)] dark:border-[#315E53]/80 dark:bg-[#062F29]"
+        itemClassName="text-slate-700 hover:bg-emerald-50/90 dark:text-[#DDEAE5] dark:hover:bg-[#0B4B40]"
+        selectedItemClassName="bg-[#0F5C4F]/12 font-extrabold text-[#074E44] dark:bg-[#D6B565]/18 dark:text-[#F1D889]"
+      />
     </div>
   );
 }
