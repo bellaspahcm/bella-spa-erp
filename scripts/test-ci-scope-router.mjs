@@ -122,6 +122,23 @@ const cases = [
     },
   },
   {
+    name: 'SKIP real database E2E for Beauty typography presentation-only CSS and shell class',
+    files: [
+      'ARCHITECTURE_GATE_RESULT.md',
+      'src/app/globals.css',
+      'src/components/layout/DashboardLoadingShell.tsx',
+    ],
+    expect(result) {
+      assert.equal(result.scope_status, 'ALLOW');
+      assert.equal(result.scope_level, 'platform');
+      assert.equal(result.has_db_runtime_surface, false);
+      assert.equal(result.needs_real_db_e2e, false);
+      assert.equal(result.needs_build, true);
+      assert.equal(result.needs_typecheck, true);
+      assert.equal(result.typecheck_mode, 'full');
+    },
+  },
+  {
     name: 'RUN real database E2E for Bella Auto service surface',
     files: [
       'src/modules/bella-auto/services/CustomerHealthScoreService.ts',
