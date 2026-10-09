@@ -102,7 +102,7 @@ export function BookingSelectorPanel({
                 className={cn(
                   "relative cursor-pointer rounded-2xl border p-4 transition-all flex items-start gap-4 shadow-sm hover:shadow-md",
                   isActive
-                    ? "bg-slate-950 text-white border-slate-900 shadow-xl shadow-slate-900/20"
+                    ? "beauty-customer-theme-card text-white border-transparent shadow-xl"
                     : isSelected
                     ? "bg-indigo-50 border-indigo-400 text-slate-900 ring-2 ring-indigo-300"
                     : "bg-slate-50/60 text-slate-900 border-slate-200 hover:bg-white hover:border-slate-300"
@@ -122,7 +122,7 @@ export function BookingSelectorPanel({
                 {/* Info Content */}
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className={cn("font-black text-sm line-clamp-1", isActive ? "!text-white" : "text-slate-900")}>
+                    <h4 className={cn("font-black text-sm line-clamp-1", isActive ? "beauty-customer-theme-title" : "text-slate-900")}>
                       {b.package_name || (b.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')}
                     </h4>
                     <span className={cn(
@@ -136,16 +136,16 @@ export function BookingSelectorPanel({
                   {/* Progress Bar */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-[10px]">
-                      <span className={isActive ? "!text-slate-300 font-bold" : "text-slate-500 font-bold"}>
+                      <span className={isActive ? "beauty-customer-theme-muted font-bold" : "text-slate-500 font-bold"}>
                         {completed}/{total} buổi
                       </span>
-                      <span className={isActive ? "!text-emerald-300 font-black" : "text-emerald-600 font-black"}>
+                      <span className={isActive ? "beauty-customer-theme-accent font-black" : "text-emerald-600 font-black"}>
                         {percent}%
                       </span>
                     </div>
-                    <div className={cn("h-1.5 w-full rounded-full overflow-hidden", isActive ? "bg-slate-800" : "bg-slate-200")}>
+                    <div className={cn("h-1.5 w-full rounded-full overflow-hidden", isActive ? "beauty-customer-theme-progress-track" : "bg-slate-200")}>
                       <div
-                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                        className={cn("h-full rounded-full transition-all duration-500", isActive ? "beauty-customer-theme-progress-fill" : "bg-emerald-500")}
                         style={{ width: `${percent}%` }}
                       />
                     </div>
@@ -153,11 +153,11 @@ export function BookingSelectorPanel({
 
                   {/* Dates / Deposit info */}
                   <div className="flex items-center gap-2 text-[10px] font-medium pt-0.5 flex-wrap">
-                    <span className={isActive ? "!text-slate-300" : "text-slate-500"}>
+                    <span className={isActive ? "beauty-customer-theme-muted" : "text-slate-500"}>
                       📅 Bắt đầu: {b.start_date ? new Date(b.start_date).toLocaleDateString('vi-VN') : '--/--/----'}
                     </span>
                     {b.deposit_amount && b.deposit_amount > 0 && (
-                      <span className={isActive ? "!text-amber-300 font-bold" : "text-amber-600 font-bold"}>
+                      <span className={isActive ? "beauty-customer-theme-accent font-bold" : "text-amber-600 font-bold"}>
                         • Cọc: {b.deposit_amount.toLocaleString('vi-VN')}đ
                       </span>
                     )}

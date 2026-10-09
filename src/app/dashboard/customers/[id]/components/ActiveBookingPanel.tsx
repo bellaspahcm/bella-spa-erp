@@ -116,12 +116,12 @@ export function ActiveBookingPanel({
 
   return (
     <div className="space-y-6 mb-6">
-      {/* ── Dark Navy Active Package Card ── */}
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-2xl shadow-slate-950/40 border border-slate-800">
+      {/* ── Theme-aware Active Package Card ── */}
+      <div className="beauty-customer-theme-card beauty-customer-theme-hero-card relative overflow-hidden rounded-[2.5rem] p-6 text-white shadow-2xl border">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-6">
           {/* Header left */}
           <div className="flex items-start gap-4 min-w-0">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-2xl overflow-hidden bg-slate-800 border border-slate-700">
+            <div className="beauty-customer-theme-media-frame w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-2xl overflow-hidden bg-white/15 border">
               <Image
                 src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=300&q=80"
                 alt="Package Thumbnail"
@@ -132,63 +132,63 @@ export function ActiveBookingPanel({
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-black uppercase tracking-widest !text-indigo-300">
+                <span className="beauty-customer-theme-accent text-[10px] font-black uppercase tracking-widest">
                   GÓI DỊCH VỤ HIỆN TẠI
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/20 !text-emerald-300 border border-emerald-500/30">
                   Đang thực hiện
                 </span>
-                <span className="text-[10px] font-medium !text-slate-300">
+                <span className="beauty-customer-theme-muted text-[10px] font-medium">
                   • Bắt đầu: {activeBooking?.start_date ? new Date(activeBooking.start_date).toLocaleDateString('vi-VN') : '24/07/2026'}
                 </span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black !text-white leading-tight">
+              <h2 className="beauty-customer-theme-title text-xl sm:text-2xl font-black leading-tight">
                 {activeBooking?.packages?.name || activeBooking?.package_name || 'Gội Đầu Dưỡng Sinh Demo'}
               </h2>
             </div>
           </div>
 
           {/* Progress Widget (Right Box) */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 min-w-[200px] w-full lg:w-auto">
+          <div className="beauty-customer-theme-panel backdrop-blur-md rounded-2xl p-4 min-w-[200px] w-full lg:w-auto">
             <div className="flex justify-between items-center text-xs font-black mb-1">
-              <span className="text-slate-300 uppercase text-[10px] tracking-wider">TIẾN ĐỘ</span>
-              <span className="text-white">{completedSessions} / {totalSessions} buổi</span>
+              <span className="beauty-customer-theme-muted uppercase text-[10px] tracking-wider">TIẾN ĐỘ</span>
+              <span className="beauty-customer-theme-title">{completedSessions} / {totalSessions} buổi</span>
             </div>
-            <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden mb-1">
+            <div className="beauty-customer-theme-progress-track h-2 w-full rounded-full overflow-hidden mb-1">
               <div
-                className="h-full bg-emerald-400 rounded-full transition-all duration-700"
+                className="beauty-customer-theme-progress-fill h-full rounded-full transition-all duration-700"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <p className="text-[10px] text-right font-bold text-emerald-300">{progressPercent}% hoàn thành</p>
+            <p className="beauty-customer-theme-accent text-[10px] text-right font-bold">{progressPercent}% hoàn thành</p>
           </div>
         </div>
 
         {/* 4 Metric Pills Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
-            <p className="text-[9px] font-bold uppercase text-slate-400 mb-0.5">Giá gói</p>
-            <p className="font-black text-base text-white">{formatNumberWithSeparator(activeBooking?.full_price || 4290000)}đ</p>
+          <div className="beauty-customer-theme-panel rounded-2xl p-3">
+            <p className="beauty-customer-theme-muted text-[9px] font-bold uppercase mb-0.5">Giá gói</p>
+            <p className="beauty-customer-theme-title font-black text-base">{formatNumberWithSeparator(activeBooking?.full_price || 4290000)}đ</p>
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
-            <p className="text-[9px] font-bold uppercase text-slate-400 mb-0.5">Đã thanh toán</p>
-            <p className="font-black text-base text-emerald-400">{formatNumberWithSeparator(paymentState?.totalPaid || 4290000)}đ</p>
+          <div className="beauty-customer-theme-panel rounded-2xl p-3">
+            <p className="beauty-customer-theme-muted text-[9px] font-bold uppercase mb-0.5">Đã thanh toán</p>
+            <p className="beauty-customer-theme-accent font-black text-base">{formatNumberWithSeparator(paymentState?.totalPaid || 4290000)}đ</p>
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
-            <p className="text-[9px] font-bold uppercase text-slate-400 mb-0.5">Còn lại</p>
-            <p className="font-black text-base text-white">{remainingBalance > 0 ? `${formatNumberWithSeparator(remainingBalance)}đ` : '0đ'}</p>
+          <div className="beauty-customer-theme-panel rounded-2xl p-3">
+            <p className="beauty-customer-theme-muted text-[9px] font-bold uppercase mb-0.5">Còn lại</p>
+            <p className="beauty-customer-theme-title font-black text-base">{remainingBalance > 0 ? `${formatNumberWithSeparator(remainingBalance)}đ` : '0đ'}</p>
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
-            <p className="text-[9px] font-bold uppercase text-slate-400 mb-0.5">Ngày kết thúc dự kiến</p>
-            <p className="font-black text-base text-white">15/09/2026</p>
+          <div className="beauty-customer-theme-panel rounded-2xl p-3">
+            <p className="beauty-customer-theme-muted text-[9px] font-bold uppercase mb-0.5">Ngày kết thúc dự kiến</p>
+            <p className="beauty-customer-theme-title font-black text-base">15/09/2026</p>
           </div>
         </div>
 
         {/* Action Buttons Row */}
-        <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-white/10">
+        <div className="beauty-customer-theme-divider flex items-center gap-3 flex-wrap pt-2 border-t">
           <button
             onClick={onOpenBookingSessions}
-            className="flex-1 sm:flex-initial bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs px-5 py-3 rounded-xl transition-all shadow-lg shadow-amber-500/20 active:scale-95 flex items-center justify-center gap-2"
+            className="beauty-customer-theme-accent-cta flex-1 sm:flex-initial font-black text-xs px-5 py-3 rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
           >
             <Calendar className="w-4 h-4" />
             <span>Đặt lịch buổi tiếp theo</span>
@@ -197,7 +197,7 @@ export function ActiveBookingPanel({
           {userRole === 'admin' && (
             <button
               onClick={onEditBooking}
-              className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/15 transition-colors"
+              className="beauty-customer-theme-ghost-button px-4 py-3 font-bold text-xs rounded-xl border transition-colors"
             >
               Sửa dịch vụ
             </button>
@@ -206,7 +206,7 @@ export function ActiveBookingPanel({
           <button
             onClick={onExportQuotation}
             disabled={isExportingQuotation}
-            className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/15 transition-colors flex items-center gap-1.5"
+            className="beauty-customer-theme-ghost-button px-4 py-3 font-bold text-xs rounded-xl border transition-colors flex items-center gap-1.5"
           >
             {isExportingQuotation ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
             Xuất báo giá
@@ -215,14 +215,14 @@ export function ActiveBookingPanel({
           {userRole === 'admin' && (
             <button
               onClick={onExportContract}
-              className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/15 transition-colors flex items-center gap-1.5"
+              className="beauty-customer-theme-ghost-button px-4 py-3 font-bold text-xs rounded-xl border transition-colors flex items-center gap-1.5"
             >
               <FileText className="w-3.5 h-3.5" />
               Xuất hợp đồng
             </button>
           )}
 
-          <button className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/15 transition-colors ml-auto">
+          <button className="beauty-customer-theme-ghost-button p-3 rounded-xl border transition-colors ml-auto">
             <MoreHorizontal className="w-4 h-4" />
           </button>
         </div>
