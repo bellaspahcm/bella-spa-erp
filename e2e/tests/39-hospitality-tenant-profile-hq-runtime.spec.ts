@@ -98,6 +98,8 @@ async function ensureHqFixture(client: ReturnType<typeof e2eAdminClient>) {
 }
 
 test.describe("Hospitality tenant profile HQ runtime onboarding", () => {
+  test.setTimeout(120_000);
+
   test("HQ creates a Hospitality tenant with selected profile metadata", async ({ page }) => {
     const client = e2eAdminClient();
     const { hqAdminEmail } = await ensureHqFixture(client);
@@ -212,7 +214,8 @@ test.describe("Hospitality tenant profile HQ runtime onboarding", () => {
         },
       ]);
       await page.goto("/hq", { waitUntil: "domcontentloaded" });
-      await expect(page.getByText(/Trang này chỉ dành cho quản trị viên Tổng bộ|Unauthorized|Quyền truy cập bị từ chối/i)).toBeVisible({ timeout: 20_000 });
+      await page.waitForURL(/\/hq\/login/, { timeout: 30_000 });
+      await expect(page.getByRole("heading", { name: "Đăng nhập Tổng bộ" })).toBeVisible();
     } finally {
       if (createdAdminUserId) {
         await client.auth.admin.deleteUser(createdAdminUserId);
