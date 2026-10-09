@@ -203,7 +203,14 @@ describeWithRealDb('Hospitality tenant profile Real DB and RLS proof', () => {
   async function cleanupProofRows(): Promise<void> {
     await client.query('SET row_security = off');
     await client.query('DELETE FROM public.users WHERE id = ANY($1::uuid[])', [[ids.userA, ids.userB]]);
-    await client.query('DELETE FROM public.tenants WHERE id = ANY($1::uuid[])', [[ids.tenantA, ids.tenantB]]);
+    try {
+      await client.query('DELETE FROM public.tenants WHERE id = ANY($1::uuid[])', [[ids.tenantA, ids.tenantB]]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(
+        `[Hospitality tenant profile Real DB cleanup] retained tenant shells because public.timeline_events is append-only and may hold tenant FK rows: ${ids.tenantA}, ${ids.tenantB}. ${message}`,
+      );
+    }
   }
 });
 
