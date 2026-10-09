@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import {
   assignBeautyStaffToBranch,
   createBeautyBranch,
@@ -309,19 +310,22 @@ export function BeautyChainManagementClient() {
                 </div>
 
                 <form onSubmit={handleAssignStaff} className="grid gap-2 border-t border-slate-100 pt-4 md:grid-cols-[minmax(0,1fr)_auto]">
-                  <select
-                    className="h-8 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm outline-none focus:border-slate-400"
+                  <PremiumSelect
                     value={selectedStaffUserId}
-                    onChange={(event) => setSelectedStaffUserId(event.target.value)}
+                    onChange={setSelectedStaffUserId}
+                    options={[
+                      { value: '', label: 'Chọn nhân sự' },
+                      ...assignableStaff.map((member) => ({
+                        value: member.userId,
+                        label: `${member.fullName} - ${member.role}`,
+                      })),
+                    ]}
+                    ariaLabel="Chọn nhân sự gán vào chi nhánh"
+                    className="space-y-0"
+                    buttonClassName="h-9 rounded-lg border-slate-200 bg-white px-2.5 py-2 text-sm shadow-none hover:border-slate-400"
+                    dropdownClassName="min-w-full"
                     disabled={isPending || assignableStaff.length === 0}
-                  >
-                    <option value="">Chọn nhân sự</option>
-                    {assignableStaff.map((member) => (
-                      <option key={member.userId} value={member.userId}>
-                        {member.fullName} - {member.role}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   <Button type="submit" disabled={isPending || !selectedStaffUserId}>
                     <UserPlus className="size-4" />
                     Gán vào chi nhánh

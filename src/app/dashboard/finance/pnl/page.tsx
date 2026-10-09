@@ -42,12 +42,18 @@ import {
   ExpenseBreakdownChart,
   ProfitabilityTrendChart,
 } from '@/components/finance/charts';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
 type PeriodType = 'current_month' | 'last_month' | 'custom';
+const PNL_PERIOD_OPTIONS: Array<{ value: PeriodType; label: string }> = [
+  { value: 'current_month', label: 'Tháng này' },
+  { value: 'last_month', label: 'Tháng trước' },
+  { value: 'custom', label: 'Tùy chỉnh' },
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
@@ -269,15 +275,15 @@ export default function PnLDashboardPage() {
 
         <div className="flex items-center gap-4">
           {/* Period Selector */}
-          <select
+          <PremiumSelect
             value={period}
-            onChange={(e) => setPeriod(e.target.value as PeriodType)}
-            className="px-4 py-2 border border-slate-300 rounded-lg bg-white hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="current_month">Tháng này</option>
-            <option value="last_month">Tháng trước</option>
-            <option value="custom">Tùy chỉnh</option>
-          </select>
+            onChange={(value) => setPeriod(value as PeriodType)}
+            options={PNL_PERIOD_OPTIONS}
+            ariaLabel="Chọn kỳ báo cáo lãi lỗ"
+            className="w-40 space-y-0"
+            buttonClassName="h-11 rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm font-bold shadow-sm hover:border-primary/30"
+            dropdownClassName="min-w-40"
+          />
 
           {/* Custom Date Range (shown when period is 'custom') */}
           {period === 'custom' && (

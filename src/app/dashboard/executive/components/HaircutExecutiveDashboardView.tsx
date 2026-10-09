@@ -32,7 +32,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@bella/shared';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { cn } from '@/lib/utils';
+
+const TREND_VIEW_OPTIONS = [
+  { value: 'daily', label: 'Theo ngày (Daily)' },
+  { value: 'cumulative', label: 'Lũy kế (Cumulative)' },
+];
 
 export function HaircutExecutiveDashboardView() {
   const [timeRange, setTimeRange] = useState<'today' | '7days' | '30days' | 'month'>('30days');
@@ -198,14 +204,15 @@ export function HaircutExecutiveDashboardView() {
             </div>
 
             <div className="flex items-center gap-2">
-              <select
+              <PremiumSelect
                 value={trendView}
-                onChange={(e) => setTrendView(e.target.value as typeof trendView)}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 outline-none cursor-pointer"
-              >
-                <option value="daily">Theo ngày (Daily)</option>
-                <option value="cumulative">Lũy kế (Cumulative)</option>
-              </select>
+                onChange={(value) => setTrendView(value as typeof trendView)}
+                options={TREND_VIEW_OPTIONS}
+                ariaLabel="Chọn kiểu xem xu hướng doanh thu"
+                className="w-44 space-y-0"
+                buttonClassName="h-9 rounded-xl border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-bold shadow-none hover:border-primary/30"
+                dropdownClassName="min-w-44"
+              />
             </div>
           </div>
 

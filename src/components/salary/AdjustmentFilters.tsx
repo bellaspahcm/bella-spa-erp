@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface AdjustmentsFilters {
   startDate?: string;
@@ -73,18 +74,21 @@ export function AdjustmentFilters({
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             KTV
           </label>
-          <select
+          <PremiumSelect
             value={filters.ktvId || ''}
-            onChange={(e) => onFilterChange('ktvId', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option value="">Tất cả KTV</option>
-            {ktvList.map((ktv) => (
-              <option key={ktv.id} value={ktv.id}>
-                {ktv.email ? `${ktv.full_name} (${ktv.email})` : ktv.full_name}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => onFilterChange('ktvId', value)}
+            options={[
+              { value: '', label: 'Tất cả KTV' },
+              ...ktvList.map((ktv) => ({
+                value: ktv.id,
+                label: ktv.email ? `${ktv.full_name} (${ktv.email})` : ktv.full_name,
+              })),
+            ]}
+            ariaLabel="Lọc KTV"
+            className="space-y-0"
+            buttonClassName="rounded-lg border-gray-300 bg-white px-3 py-2 shadow-none dark:border-gray-600 dark:bg-gray-900"
+            dropdownClassName="min-w-full"
+          />
         </div>
 
         {/* Type */}
@@ -92,15 +96,19 @@ export function AdjustmentFilters({
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Loại
           </label>
-          <select
+          <PremiumSelect
             value={filters.type || ''}
-            onChange={(e) => onFilterChange('type', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option value="">Tất cả</option>
-            <option value="bonus">Thưởng</option>
-            <option value="deduction">Phạt</option>
-          </select>
+            onChange={(value) => onFilterChange('type', value)}
+            options={[
+              { value: '', label: 'Tất cả' },
+              { value: 'bonus', label: 'Thưởng' },
+              { value: 'deduction', label: 'Phạt' },
+            ]}
+            ariaLabel="Lọc loại điều chỉnh"
+            className="space-y-0"
+            buttonClassName="rounded-lg border-gray-300 bg-white px-3 py-2 shadow-none dark:border-gray-600 dark:bg-gray-900"
+            dropdownClassName="min-w-full"
+          />
         </div>
 
         {/* Status */}
@@ -108,17 +116,21 @@ export function AdjustmentFilters({
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Trạng thái
           </label>
-          <select
+          <PremiumSelect
             value={filters.status || ''}
-            onChange={(e) => onFilterChange('status', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option value="">Tất cả</option>
-            <option value="draft">Chờ duyệt</option>
-            <option value="approved">Đã duyệt</option>
-            <option value="rejected">Từ chối</option>
-            <option value="cancelled">Đã hủy</option>
-          </select>
+            onChange={(value) => onFilterChange('status', value)}
+            options={[
+              { value: '', label: 'Tất cả' },
+              { value: 'draft', label: 'Chờ duyệt' },
+              { value: 'approved', label: 'Đã duyệt' },
+              { value: 'rejected', label: 'Từ chối' },
+              { value: 'cancelled', label: 'Đã hủy' },
+            ]}
+            ariaLabel="Lọc trạng thái điều chỉnh"
+            className="space-y-0"
+            buttonClassName="rounded-lg border-gray-300 bg-white px-3 py-2 shadow-none dark:border-gray-600 dark:bg-gray-900"
+            dropdownClassName="min-w-full"
+          />
         </div>
 
         {/* Category */}
@@ -126,18 +138,18 @@ export function AdjustmentFilters({
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Danh mục
           </label>
-          <select
+          <PremiumSelect
             value={filters.category || ''}
-            onChange={(e) => onFilterChange('category', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option value="">Tất cả</option>
-            {ALL_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => onFilterChange('category', value)}
+            options={[
+              { value: '', label: 'Tất cả' },
+              ...ALL_CATEGORIES.map((category) => ({ value: category, label: category })),
+            ]}
+            ariaLabel="Lọc danh mục điều chỉnh"
+            className="space-y-0"
+            buttonClassName="rounded-lg border-gray-300 bg-white px-3 py-2 shadow-none dark:border-gray-600 dark:bg-gray-900"
+            dropdownClassName="min-w-full"
+          />
         </div>
 
         {/* Date Range */}

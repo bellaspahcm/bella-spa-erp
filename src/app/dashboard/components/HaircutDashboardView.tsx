@@ -3,6 +3,7 @@
 import { KtvPerformanceTable } from '@/components/features/dashboard/KtvPerformanceTable';
 import { RevenueChart } from '@/components/features/dashboard/RevenueChart';
 import AdminNotificationBell from '@/components/common/AdminNotificationBell';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
@@ -12,9 +13,10 @@ import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
 import {
   getDashboardPrimaryData,
-  getDashboardSecondaryData,
-  getImportantAlerts
+  getMonthlyPerformance,
+  getTopTechnicians
 } from '@/core/services/analytics/dashboard-actions';
+import { getDashboardWidgetAlerts } from '@/components/common/dashboard-widget-actions';
 import type {
   DashboardStatsViewModel,
   DashboardSessionViewModel,
@@ -93,6 +95,14 @@ export function HaircutDashboardView() {
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
   const vocab = useModuleVocabulary();
   const { user: profile, product } = useUser();
+  const monthSelectOptions = [
+    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
+  ].map((label, index) => ({ value: String(index), label }));
+  const yearSelectOptions = [2024, 2025, 2026].map((year) => ({
+    value: String(year),
+    label: String(year),
+  }));
 
   const businessLabel = product?.displayName ?? 'Bella Haircut Shop';
 
@@ -197,7 +207,11 @@ export function HaircutDashboardView() {
 
     setIsSecondaryLoading(true);
     try {
-      const { ktvsData, alertsData, perfData } = await getDashboardSecondaryData();
+      const [ktvsData, perfData, alertsData] = await Promise.all([
+        getTopTechnicians(),
+        getMonthlyPerformance(),
+        getDashboardWidgetAlerts(),
+      ]);
       setTopKTVs((ktvsData || []).map((ktv) => ({
         ...ktv,
         rating: Number(ktv.rating) || 0,
@@ -216,10 +230,11 @@ export function HaircutDashboardView() {
     if (isTenantModuleLoading || userRole === null || !tenantId) return;
 
     try {
-      const alertsData = await getImportantAlerts();
+      const alertsData = await getDashboardWidgetAlerts();
       setAlerts(alertsData || []);
     } catch (error) {
-      console.error('Error fetching dashboard alerts:', error);
+      console.warn('Dashboard alerts are temporarily unavailable:', error);
+      setAlerts([]);
     }
   }, [tenantId, userRole, isTenantModuleLoading]);
 
@@ -344,31 +359,26 @@ export function HaircutDashboardView() {
           <div className="flex flex-col items-end gap-3">
             <div className="flex items-center flex-wrap gap-3">
               {/* Month Dropdown */}
-              <div className="flex items-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-2xl px-4 py-2.5 shadow-xs text-sm font-semibold text-slate-700 dark:text-slate-200 gap-2">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <select 
-                  value={selectedMonth.toString()} 
-                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                  className="bg-transparent outline-none cursor-pointer font-bold"
-                >
-                  {['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'].map((m, i) => (
-                    <option key={i} value={i.toString()}>{m}</option>
-                  ))}
-                </select>
-              </div>
+              <PremiumSelect
+                value={String(selectedMonth)}
+                onChange={(value) => setSelectedMonth(Number(value))}
+                options={monthSelectOptions}
+                ariaLabel="Chọn tháng dashboard"
+                className="w-36 space-y-0"
+                buttonClassName="h-11 rounded-2xl border-slate-200/80 bg-white/90 px-4 py-2.5 shadow-xs backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90"
+                dropdownClassName="min-w-40"
+              />
 
               {/* Year Dropdown */}
-              <div className="flex items-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-2xl px-4 py-2.5 shadow-xs text-sm font-semibold text-slate-700 dark:text-slate-200 gap-2">
-                <select 
-                  value={selectedYear.toString()} 
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="bg-transparent outline-none cursor-pointer font-bold"
-                >
-                  {[2024, 2025, 2026].map(y => (
-                    <option key={y} value={y.toString()}>{y}</option>
-                  ))}
-                </select>
-              </div>
+              <PremiumSelect
+                value={String(selectedYear)}
+                onChange={(value) => setSelectedYear(Number(value))}
+                options={yearSelectOptions}
+                ariaLabel="Chọn năm dashboard"
+                className="w-28 space-y-0"
+                buttonClassName="h-11 rounded-2xl border-slate-200/80 bg-white/90 px-4 py-2.5 shadow-xs backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90"
+                dropdownClassName="min-w-32"
+              />
 
               {/* Quick Search Input */}
               <div className="relative">

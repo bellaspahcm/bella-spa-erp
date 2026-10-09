@@ -5812,3 +5812,143 @@ Not authorized:
 9. Type safety: no `any`, casts, or suppressions.
 10. Static check: targeted ESLint/typecheck where dependencies are installed.
 11. Browser E2E: run `e2e/tests/38-hospitality-hotel-core-chain-browser-e2e.spec.ts` when DB/env/server are available.
+
+---
+
+## Additional Architecture Gate - Beauty Spa Dashboard Sidebar UI Repair
+
+> **Status:** PASS - focused Beauty Spa Product UI repair for dashboard month/year filtering, CRM/Zalo tab layout, customer-rating detail routing, and typography alignment with the Beauty dashboard baseline.
+
+> **Scope:** `src/app/dashboard/components/BeautySpaV2DashboardView.tsx`, `src/app/dashboard/crm/*`, and a shared dashboard notification widget server-action wrapper outside `src/core`. No database schema, RLS, accounting, Platform/Core, Healthcare H1-H12, Education kernel, or Logistics E7.1-E7.3 changes.
+
+### 1. Bella OS/Product Development Process Gate
+
+Truth: the reported defects are browser-facing Product UI defects on Beauty Spa dashboard/sidebar pages. Source of truth is the existing Product Registry identity (`bella_spa` / Beauty Spa current implementation), dashboard parent state (`selectedMonth`, `selectedYear`), and existing sidebar route map. Canonical contract is Product UI consuming existing dashboard data/actions without changing persistence or kernel contracts.
+
+Gate decision: `PASS` for a boundary-local UI fix.
+
+### 2. Product Manifest
+
+- Product: Bella Beauty Spa V2 (`bella_spa`).
+- Capabilities in scope: dashboard finance period selector, customer-rating detail navigation, CRM/Zalo tabs/header presentation.
+- Out of scope: new CRM analytics module, session review schema, customer review workflow semantics, Product Registry changes, Platform/Core changes, Healthcare/Education/Logistics kernels.
+
+### 3. Ownership Map
+
+| Surface/Data | Owner | Change Authority |
+| --- | --- | --- |
+| Beauty dashboard view composition | Beauty Spa Product UI | may change visual controls and links |
+| Dashboard period state | Dashboard page/UI state | may consume existing setters |
+| CRM/Zalo page tabs | Beauty Spa Product UI | may change presentation and client tab routing |
+| Dashboard notification widget | Shared dashboard UI/read-model | may fail-soft through a UI-owned wrapper for non-critical alert reads |
+| Session reviews / rating persistence | Beauty/Spa customer feedback workflow | read-only for this task |
+
+### 4. Contract Dependency Map
+
+```text
+Beauty dashboard UI
+  -> selectedMonth / selectedYear setters from dashboard page
+  -> existing getDashboardPrimaryData refresh path
+  -> CRM/customers routes via sidebar contract
+```
+
+No Product UI code may bypass server actions or directly mutate product data. Shared dashboard widgets may consume a UI-owned fail-soft wrapper while the underlying service contract remains unchanged.
+
+### 5. Change Authority
+
+Authorized: localized TSX UI edits, query/anchor routing for existing pages, typography/control class alignment with the dashboard baseline, and a UI-owned fail-soft wrapper for non-critical notification reads.
+
+Not authorized: database migrations, server action semantics, Product Registry identity changes, Platform/Core refactors, kernel changes, broad sidebar permission changes.
+
+### 6. UI -> Contract Reconciliation
+
+- Month selector: UI must call the existing `setSelectedMonth` / `setSelectedYear` props so the parent dashboard data reloads through its existing effect.
+- Rating detail link: UI must route to an existing customer/CRM surface instead of an unrelated generic CRM default.
+- CRM tabs: UI must preserve existing `CrmTabId` values and only repair layout/typography.
+
+### 7. Additive Migration Plan
+
+No migration. `NOT_APPLICABLE`.
+
+### 8. 11 Automated Verification Gates Plan
+
+1. `git diff --check`
+2. Targeted lint for changed files
+3. TypeScript changed-file gate if available
+4. Static scan for forbidden `any` in changed files
+5. Static scan for Healthcare H1-H12 kernel changes
+6. Static scan for Logistics frozen artifacts changes
+7. Route sanity for `/dashboard`
+8. Route sanity for `/dashboard/crm`
+9. Route sanity for customer/CRM detail target
+10. Browser or Playwright smoke if local auth/runtime is available
+11. Final git diff review for scope containment
+
+## Additional Architecture Gate - Beauty Spa Premium Select and Data Tabs Repair
+
+> **Status:** PASS - focused Beauty Spa Product UI repair for dropdown consistency and dashboard data-tab behavior.
+
+> **Scope:** Beauty/Spa dashboard, booking timeline filters, CRM voucher modal target selector, customer table page-size selector, and Beauty/Spa finance report dropdowns. No persistence, schema, RLS, Product Registry, Platform/Core, Healthcare H1-H12, Education, or Logistics E7.1-E7.3 changes.
+
+### 1. Bella OS/Product Development Process Gate
+
+Truth: the reported defects are Product UI defects. Existing state values and filters are the source of truth; the change must keep the same values while replacing native browser dropdown chrome with the shared `PremiumSelect` component and making tab buttons drive visible filtered data.
+
+Gate decision: `PASS` for a boundary-local Product UI/state fix.
+
+### 2. Product Manifest
+
+- Product: Bella Beauty Spa V2 / Spa sidebar experience.
+- Capabilities in scope: dashboard finance period dropdowns, finance report period/month/forecast dropdowns, booking timeline filters, CRM voucher audience selector, customer pagination selector, dashboard performance and urgent-action tabs.
+- Out of scope: new product capabilities, database migrations, RLS, server actions, kernel contracts.
+
+### 3. Ownership Map
+
+| Surface/Data | Owner | Change Authority |
+| --- | --- | --- |
+| Dashboard period state | Beauty dashboard UI | may keep existing setters and change presentation |
+| Timeline KTV/status filters | Booking/Sessions Product UI | may keep existing filter state and change presentation |
+| CRM voucher target | CRM Product UI | may keep existing campaign target values and change presentation |
+| Customer pagination size | Customer Product UI | may keep existing page-size state and change presentation |
+| Dashboard tab filtering | Beauty dashboard UI | may add local active-tab state and filtered rendering |
+
+### 4. Contract Dependency Map
+
+```text
+Beauty/Spa Product UI controls
+  -> existing local state setters
+  -> existing in-memory filtering/rendering
+  -> shared PremiumSelect presentation component
+```
+
+No Product UI code may bypass existing server actions or mutate data outside existing handlers.
+
+### 5. Change Authority
+
+Authorized: localized TSX imports, local state types, `PremiumSelect` consumers, and data-tab render filtering.
+
+Not authorized: schema changes, generated DB types, RLS/policy changes, server action semantics, Platform/Core abstractions, or frozen kernel edits.
+
+### 6. UI -> Contract Reconciliation
+
+- Dropdowns: preserve exact existing values (`month`, `year`, `ktv`, `status`, `target`, `pageSize`) and handlers.
+- Performance tabs: active tab must visibly switch chart metric and empty-state copy.
+- Urgent-action tabs: active tab must filter displayed alert cards by alert type.
+
+### 7. Additive Migration Plan
+
+No migration. `NOT_APPLICABLE`.
+
+### 8. 11 Automated Verification Gates Plan
+
+1. `git diff --check`
+2. Targeted ESLint on changed TSX/TS files
+3. `npm run typecheck:changed`
+4. Static scan for remaining native selects in the touched Beauty/Spa surfaces
+5. Static scan for forbidden `any` in changed files
+6. Confirm no Healthcare H1-H12 files changed
+7. Confirm no Logistics frozen artifacts changed
+8. Dashboard route smoke if local auth/runtime is available
+9. Booking timeline route smoke if local auth/runtime is available
+10. CRM/customers route smoke if local auth/runtime is available
+11. Final diff review for scope containment

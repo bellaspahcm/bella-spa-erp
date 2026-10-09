@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { AlertTriangle, CheckCircle2, Clock, DollarSign, Loader2, RefreshCw, Search, ShieldCheck, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@bella/shared';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { cn } from '@/lib/utils';
 import {
   collectHaircutF3ReceivablePayment,
@@ -223,16 +224,20 @@ export function HaircutReconciliationView() {
               className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
-          <select
+          <PremiumSelect
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
-            className="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 outline-none bg-white"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="overdue">Quá hạn</option>
-            <option value="due_soon">Cần theo dõi</option>
-            <option value="upcoming">Mới phát sinh</option>
-          </select>
+            onChange={(value) => setStatusFilter(value as typeof statusFilter)}
+            options={[
+              { value: 'all', label: 'Tất cả trạng thái' },
+              { value: 'overdue', label: 'Quá hạn' },
+              { value: 'due_soon', label: 'Cần theo dõi' },
+              { value: 'upcoming', label: 'Mới phát sinh' },
+            ]}
+            ariaLabel="Lọc trạng thái công nợ"
+            className="w-full lg:w-44 space-y-0"
+            buttonClassName="h-11 rounded-xl border-slate-200 bg-white px-3 py-2.5 text-xs font-bold shadow-none hover:border-primary/30"
+            dropdownClassName="min-w-44"
+          />
         </div>
 
         <div className="overflow-x-auto">
@@ -347,14 +352,18 @@ export function HaircutReconciliationView() {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Phương thức thanh toán</label>
-                <select
+                <PremiumSelect
                   value={paymentMethod}
-                  onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
-                >
-                  <option value="bank_transfer">Chuyển khoản ngân hàng</option>
-                  <option value="cash">Tiền mặt tại quầy</option>
-                </select>
+                  onChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                  options={[
+                    { value: 'bank_transfer', label: 'Chuyển khoản ngân hàng' },
+                    { value: 'cash', label: 'Tiền mặt tại quầy' },
+                  ]}
+                  ariaLabel="Chọn phương thức thanh toán"
+                  className="space-y-0"
+                  buttonClassName="rounded-xl border-slate-200 bg-white px-4 py-2.5 text-xs font-bold shadow-none hover:border-primary/30"
+                  dropdownClassName="min-w-full"
+                />
               </div>
 
               <div>

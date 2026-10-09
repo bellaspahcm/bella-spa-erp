@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Plus, Download, Filter, X, CheckCircle2, TrendingUp, DollarSign, ArrowLeft } from 'lucide-react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { cn } from '@/lib/utils';
 import { ProductSaleRow } from './ProductSaleRow';
 import { ProductSaleModal } from './ProductSaleModal';
@@ -559,17 +560,21 @@ export function ProductSalesListPage() {
                   <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
                     Trạng thái
                   </label>
-                  <select
-                    value={filters.status}
-                    onChange={(e) => handleFilterChange('status', e.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-800 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 font-bold"
-                  >
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="completed">Hoàn thành</option>
-                    <option value="pending">Chờ xử lý</option>
-                    <option value="cancelled">Đã hủy</option>
-                    <option value="refunded">Đã hoàn tiền</option>
-                  </select>
+                  <PremiumSelect
+                    value={filters.status || ''}
+                    onChange={(value) => handleFilterChange('status', value)}
+                    options={[
+                      { value: '', label: 'Tất cả trạng thái' },
+                      { value: 'completed', label: 'Hoàn thành' },
+                      { value: 'pending', label: 'Chờ xử lý' },
+                      { value: 'cancelled', label: 'Đã hủy' },
+                      { value: 'refunded', label: 'Đã hoàn tiền' },
+                    ]}
+                    ariaLabel="Lọc trạng thái bán hàng"
+                    className="space-y-0"
+                    buttonClassName="rounded-2xl border-slate-200 bg-white px-4 py-3.5 font-bold shadow-none hover:border-primary/50"
+                    dropdownClassName="min-w-full"
+                  />
                 </div>
 
                 {/* Date Range */}

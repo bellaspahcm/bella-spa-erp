@@ -15,6 +15,15 @@ import {
   User,
 } from 'lucide-react';
 import { SupportTicketItem } from '@/modules/support/ticket-resource-provider';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
+
+const PRIORITY_FILTER_OPTIONS = [
+  { value: 'ALL', label: 'Tất cả Độ Ưu Tiên' },
+  { value: 'CRITICAL', label: 'Khẩn Cấp (Critical)' },
+  { value: 'HIGH', label: 'Cao (High)' },
+  { value: 'MEDIUM', label: 'Trung Bình (Medium)' },
+  { value: 'LOW', label: 'Thấp (Low)' },
+];
 
 // Mock Initial Tickets using Generic Capability Types
 const INITIAL_TICKETS: SupportTicketItem[] = [
@@ -187,17 +196,16 @@ export default function SupportTicketsPage() {
         <div className="flex items-center gap-3">
           <Filter className="w-4 h-4 text-slate-400" />
           <span className="text-xs text-slate-400">Độ Ưu Tiên:</span>
-          <select
+          <PremiumSelect
             value={filterPriority}
-            onChange={(e) => setFilterPriority(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-xs rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"
-          >
-            <option value="ALL">Tất cả Độ Ưu Tiên</option>
-            <option value="CRITICAL">Khẩn Cấp (Critical)</option>
-            <option value="HIGH">Cao (High)</option>
-            <option value="MEDIUM">Trung Bình (Medium)</option>
-            <option value="LOW">Thấp (Low)</option>
-          </select>
+            onChange={setFilterPriority}
+            options={PRIORITY_FILTER_OPTIONS}
+            ariaLabel="Lọc độ ưu tiên ticket"
+            className="w-48 space-y-0"
+            buttonClassName="h-10 rounded-xl border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold shadow-none hover:border-indigo-500 [&_span]:!text-slate-200"
+            dropdownClassName="min-w-48"
+            selectedItemClassName="bg-indigo-50 font-bold"
+          />
         </div>
       </div>
 
