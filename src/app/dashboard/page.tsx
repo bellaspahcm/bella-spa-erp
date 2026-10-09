@@ -23,10 +23,10 @@ import { cn } from '@/lib/utils';
 import { completeSession, saveSessionNote } from '@/core/services/order';
 import {
 getDashboardPrimaryData,
-getImportantAlerts,
 getMonthlyPerformance,
 getTopTechnicians
 } from '@/core/services/analytics/dashboard-actions';
+import { getDashboardWidgetAlerts } from '@/components/common/dashboard-widget-actions';
 import type {
   DashboardStatsViewModel,
   DashboardSessionViewModel,
@@ -222,10 +222,7 @@ function StandardDashboardPage() {
       const [ktvsData, perfData, alertsData] = await Promise.all([
         getTopTechnicians(),
         getMonthlyPerformance(),
-        getImportantAlerts().catch((error) => {
-          console.warn('Dashboard alerts are temporarily unavailable:', error);
-          return [] as DashboardAlert[];
-        }),
+        getDashboardWidgetAlerts(),
       ]);
       setTopKTVs((ktvsData || []).map((ktv) => ({
         ...ktv,
@@ -247,7 +244,7 @@ function StandardDashboardPage() {
     if (!tenantId) return;
 
     try {
-      const alertsData = await getImportantAlerts();
+      const alertsData = await getDashboardWidgetAlerts();
       setAlerts(alertsData || []);
     } catch (error) {
       console.warn('Dashboard alerts are temporarily unavailable:', error);

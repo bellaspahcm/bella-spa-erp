@@ -5819,7 +5819,7 @@ Not authorized:
 
 > **Status:** PASS - focused Beauty Spa Product UI repair for dashboard month/year filtering, CRM/Zalo tab layout, customer-rating detail routing, and typography alignment with the Beauty dashboard baseline.
 
-> **Scope:** `src/app/dashboard/components/BeautySpaV2DashboardView.tsx`, `src/app/dashboard/crm/*`, and shared dashboard notification widget presentation/error handling used by sidebar pages. No database schema, RLS, accounting, Platform/Core, Healthcare H1-H12, Education kernel, or Logistics E7.1-E7.3 changes.
+> **Scope:** `src/app/dashboard/components/BeautySpaV2DashboardView.tsx`, `src/app/dashboard/crm/*`, and a shared dashboard notification widget server-action wrapper outside `src/core`. No database schema, RLS, accounting, Platform/Core, Healthcare H1-H12, Education kernel, or Logistics E7.1-E7.3 changes.
 
 ### 1. Bella OS/Product Development Process Gate
 
@@ -5840,7 +5840,7 @@ Gate decision: `PASS` for a boundary-local UI fix.
 | Beauty dashboard view composition | Beauty Spa Product UI | may change visual controls and links |
 | Dashboard period state | Dashboard page/UI state | may consume existing setters |
 | CRM/Zalo page tabs | Beauty Spa Product UI | may change presentation and client tab routing |
-| Dashboard notification widget | Shared dashboard UI/read-model | may fail-soft at the UI boundary for non-critical alert reads |
+| Dashboard notification widget | Shared dashboard UI/read-model | may fail-soft through a UI-owned wrapper for non-critical alert reads |
 | Session reviews / rating persistence | Beauty/Spa customer feedback workflow | read-only for this task |
 
 ### 4. Contract Dependency Map
@@ -5852,11 +5852,11 @@ Beauty dashboard UI
   -> CRM/customers routes via sidebar contract
 ```
 
-No Product UI code may bypass server actions or directly mutate product data. Shared dashboard widgets may catch non-critical alert read failures at the UI boundary while the underlying service contract remains unchanged.
+No Product UI code may bypass server actions or directly mutate product data. Shared dashboard widgets may consume a UI-owned fail-soft wrapper while the underlying service contract remains unchanged.
 
 ### 5. Change Authority
 
-Authorized: localized TSX UI edits, query/anchor routing for existing pages, typography/control class alignment with the dashboard baseline, and fail-soft UI handling for non-critical notification reads.
+Authorized: localized TSX UI edits, query/anchor routing for existing pages, typography/control class alignment with the dashboard baseline, and a UI-owned fail-soft wrapper for non-critical notification reads.
 
 Not authorized: database migrations, server action semantics, Product Registry identity changes, Platform/Core refactors, kernel changes, broad sidebar permission changes.
 
