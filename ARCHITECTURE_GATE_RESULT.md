@@ -6396,3 +6396,90 @@ No migration. `NOT_APPLICABLE`.
 9. Static scan confirms no Logistics frozen artifacts changed
 10. UI review confirms modal contains editable persisted card fields and read-only unproven values
 11. Final diff review for scope containment
+---
+
+# Architecture Gate - Hospitality Production Authenticated UI Smoke Workflow (2026-10-09)
+
+> **Status:** PASS - read-only CI verification workflow authorized.
+> **Scope:** Add a manually dispatched GitHub Actions workflow and focused Playwright smoke that logs into production with production-specific E2E admin credentials from secrets and verifies `/hospitality/hotel-core-chain` renders the merged Operations Console. No deploy, promote, schema, backend, RLS, auth-bypass, or product runtime change is authorized.
+
+## 1. Bella OS/Product Development Process Gate
+
+- Truth: Hospitality phases 0-7 and the Operations UI are already merged and separately proven by CI, but authenticated production UI smoke remains `NOT_PROVEN`.
+- Source of Truth: production route `/hospitality/hotel-core-chain`, existing Playwright real-auth fixture `e2e/fixtures/auth.ts`, existing Hospitality Operations selectors, and GitHub Actions repository secrets.
+- Canonical Contract: production UI verification must use the real app authentication path with production E2E admin credentials, prove unauthenticated access is challenged, and remain read-only.
+- Gate result: `PASS` for CI/test verification-only implementation.
+
+## 2. Product Manifest
+
+- Product: Bella Hospitality (`bella_hospitality`).
+- Capability in scope: authenticated production smoke evidence for the Hotel Operations Console.
+- Existing capabilities reused: real-auth Playwright fixture, production route, existing Operations UI selectors, and pinned GitHub artifact upload action.
+- Non-goals: no Hospitality backend change, no data mutation, no new operational module, no deploy/promote workflow, no Go-Live claim.
+- Evidence boundary: because this is a new manual workflow, the PR can only prove static wiring; `AUTHENTICATED_PRODUCTION_SMOKE` can move to `PASS` only after the workflow exists on `main`, is dispatched against production, and passes.
+
+## 3. Ownership Map
+
+| Data / Behavior | Owner | Decision |
+|---|---|---|
+| Production credentials | GitHub Actions Production environment secrets / Platform auth operations | consume only; never log values |
+| Hospitality Operations UI selectors | Bella Hospitality Product UI | consume unchanged |
+| Production route access | App auth middleware and product route | verify only |
+| CI workflow dispatch | Engineering CI harness | may add read-only workflow |
+| Hospitality backend, RLS, schema | Bella Hospitality Product persistence | not modified |
+
+## 4. Contract Dependency Map
+
+```text
+Manual workflow_dispatch
+  -> Production E2E admin credentials from GitHub Secrets
+  -> e2e/fixtures/auth.ts real login
+  -> /hospitality/hotel-core-chain
+  -> existing Operations UI test ids
+  -> Playwright JSON result and sanitized evidence
+```
+
+## 5. Change Authority
+
+Authorized:
+- Add a focused Playwright spec for authenticated production Hospitality UI smoke.
+- Add a package script and production-smoke Playwright config pointing only to that spec.
+- Add a manually dispatched, read-only CI workflow that runs the spec and uploads sanitized Playwright JSON evidence only.
+- Update this architecture gate record.
+
+Not authorized:
+- Modify Hospitality product/backend/service code.
+- Modify schema, migrations, generated types, RLS policies, seed data, ProductRegistry, or auth middleware.
+- Submit the Hotel Core form or mutate production data.
+- Use deployment workflows, promote deployments, generic E2E credentials, or bypass app authentication.
+- Seal UI operational readiness or Go-Live without the workflow actually passing.
+
+## 6. UI -> Contract Reconciliation
+
+| UI Area | Existing Contract / Evidence | Verification Decision |
+|---|---|---|
+| Authenticated access | `e2e/fixtures/auth.ts` uses E2E admin credentials and refuses dev mock auth outside localhost | workflow provides production secrets, verifies unauthenticated route redirects to `/login`, and verifies authenticated route is not `/login` |
+| Dashboard | existing `hotel-operations-dashboard` selector | assert rendered and still labels unproven data as `NOT_PROVEN` |
+| Rooms / Reservations | existing `hotel-operations-room-reservation` selector | assert lane renders, no action submitted and no same-origin mutation occurs |
+| Front Office / Folio | existing `hotel-operations-front-office-folio` selector | assert lane renders, no action submitted and no same-origin mutation occurs |
+| Housekeeping | existing `hotel-operations-housekeeping` selector | assert lane renders without declaring production proof |
+| Maintenance | existing `hotel-operations-maintenance` selector | assert lane renders without marking rooms ready for sale |
+
+## 7. Additive Migration Plan
+
+- No migration.
+- No schema, table, index, trigger, RLS, generated type, or production data change.
+
+## 8. 11 Automated Verification Gates Plan
+
+1. Architecture boundary: changed files remain CI/test/gate/package-script/config scoped.
+2. Contract boundary: smoke consumes existing route and selectors only.
+3. Tenant isolation: production app auth/RLS remain enforced; no service-role or fixture bypass.
+4. RLS & Authorization: require production-specific E2E admin login, fail if unauthenticated access is not challenged, and fail if authenticated access redirects to `/login`.
+5. Database Migration Safety: no migration.
+6. Event-after-persistence: no mutation or event path touched.
+7. Domain Safety Routing: no Healthcare, Education, Logistics, Beauty, or Hospitality runtime code changed.
+8. Type safety: no `any`, suppressions, or generated type edits.
+9. CI safety: workflow is manual, uses the protected Production environment, and has no deploy/promote/schema steps.
+10. Audit & Evidence Integrity: disable trace/screenshot/video and upload only sanitized JSON/result artifacts without credentials or tokens.
+11. Closure: `AUTHENTICATED_PRODUCTION_SMOKE` remains `NOT_PROVEN` until the workflow runs and passes on production.

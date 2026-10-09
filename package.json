@@ -93,6 +93,7 @@
     "policy:rollback": "tsx scripts/rollback-policy-migration.ts",
     "e2e": "playwright test",
     "e2e:auth-smoke": "playwright test e2e/tests/12-authenticated-core-routes-smoke.spec.ts",
+    "e2e:hospitality-production-smoke": "playwright test --config=playwright.production-smoke.config.ts e2e/tests/40-hospitality-production-auth-smoke.spec.ts",
     "e2e:tenant-isolation": "playwright test e2e/tests/13-tenant-isolation-smoke.spec.ts",
     "e2e:english-center-post-rc": "playwright test e2e/tests/28-english-center-post-rc-validation.spec.ts",
     "e2e:hospitality-tenant-profiles": "playwright test e2e/tests/39-hospitality-tenant-profile-hq-runtime.spec.ts",
