@@ -19,6 +19,8 @@ type NetworkEvidence = {
 };
 
 const routePath = "/hospitality/hotel-core-chain";
+const loginChallengePattern = /\/login(?:\?|$)/;
+const loginRedirectPath = `/login?redirect=${encodeURIComponent(routePath)}`;
 
 const appErrorPatterns = [
   /application error/i,
@@ -115,6 +117,14 @@ async function writeSanitizedEvidence(evidence: Record<string, unknown>): Promis
   );
 }
 
+function isUnauthenticatedChallenge(url: string, html: string): boolean {
+  const challengedByLoginPage = loginChallengePattern.test(url);
+  const challengedByServerRedirectDigest =
+    html.includes("NEXT_REDIRECT") && html.includes(loginRedirectPath) && html.includes(";307;");
+
+  return challengedByLoginPage || challengedByServerRedirectDigest;
+}
+
 test.describe("Hospitality production authenticated UI smoke", () => {
   test.beforeAll(() => {
     if (getE2eBaseUrl() !== "https://bella-spa-erp.vercel.app") {
@@ -139,10 +149,15 @@ test.describe("Hospitality production authenticated UI smoke", () => {
       const unauthenticatedPage = await unauthenticatedContext.newPage();
       await unauthenticatedPage.goto(routePath, { waitUntil: "domcontentloaded" });
       await unauthenticatedPage.waitForLoadState("load", { timeout: 8_000 }).catch(() => {});
-      await expect(
-        unauthenticatedPage,
+      const unauthenticatedHtml = await unauthenticatedPage.content();
+      expect(
+        unauthenticatedHtml,
+        "Unauthenticated Hospitality route must not render the Operations Console",
+      ).not.toContain("Hotel Operations Console");
+      expect(
+        isUnauthenticatedChallenge(unauthenticatedPage.url(), unauthenticatedHtml),
         "Unauthenticated Hospitality route should be challenged by app auth",
-      ).toHaveURL(/\/login(?:\?|$)/);
+      ).toBe(true);
     } finally {
       await unauthenticatedContext.close();
     }
@@ -160,7 +175,7 @@ test.describe("Hospitality production authenticated UI smoke", () => {
 
     expect(response?.status() ?? 0, "Hospitality route must not return an HTTP error").toBeLessThan(400);
     await expect(adminPage, "Authenticated user should stay on Hospitality route").toHaveURL(/\/hospitality\/hotel-core-chain/);
-    expect(adminPage.url(), "Authenticated Hospitality route must not redirect to login").not.toMatch(/\/login(?:\?|$)/);
+    expect(adminPage.url(), "Authenticated Hospitality route must not redirect to login").not.toMatch(loginChallengePattern);
 
     await expect(adminPage.locator("header").getByText("Bella Hospitality")).toBeVisible();
     await expect(adminPage.getByRole("heading", { name: "Hotel Operations Console" })).toBeVisible();
@@ -201,7 +216,7 @@ test.describe("Hospitality production authenticated UI smoke", () => {
         "hotel-operations-housekeeping",
         "hotel-operations-maintenance",
       ],
-      authChallenge: "unauthenticated route redirected to /login",
+      authChallenge: "unauthenticated route challenged by /login redirect",
       readOnly: true,
       sameOriginMutations: mutatingRequests.length,
       sameOriginHttpErrors: failedAppResponses.length,
