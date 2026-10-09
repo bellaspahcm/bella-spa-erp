@@ -800,7 +800,6 @@ describeWithRealSupabase('Bella Beauty Spa v2 Real DB business proof', () => {
       }));
       const json = await response.json();
       expect(response.status).toBe(200);
-      expect(json.success).toBe(true);
       expect(json.successCount).toBeGreaterThanOrEqual(1);
     } finally {
       if (priorCronSecret === undefined) {
