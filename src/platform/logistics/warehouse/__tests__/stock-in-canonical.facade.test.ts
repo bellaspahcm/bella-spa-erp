@@ -3,6 +3,7 @@ import { TraceabilityEventType } from '../../contracts/traceability.contract';
 import {
   WarehouseStockInCanonicalFacade,
   type WarehouseStockInCommand,
+  type WarehouseStockInIdempotencyRecord,
   type WarehouseStockInPorts,
 } from '../stock-in-canonical.facade';
 
@@ -38,8 +39,17 @@ describe('WarehouseStockInCanonicalFacade', () => {
     };
   }
 
-  function createPorts(calls: string[]): WarehouseStockInPorts {
+  function createPorts(
+    calls: string[],
+    idempotencyRecords = new Map<string, WarehouseStockInIdempotencyRecord>()
+  ): WarehouseStockInPorts {
     return {
+      transaction: {
+        run: jest.fn(async (operation) => {
+          calls.push('transaction');
+          return operation();
+        }),
+      },
       balance: {
         applyStockIn: jest.fn(async (mutation) => {
           calls.push('balance');
@@ -114,6 +124,19 @@ describe('WarehouseStockInCanonicalFacade', () => {
       events: {
         publish: jest.fn(async () => {
           calls.push('event');
+        }),
+      },
+      idempotency: {
+        claim: jest.fn(async (params) => {
+          calls.push('idempotency:claim');
+          const existing = idempotencyRecords.get(params.idempotencyKey);
+          if (!existing) return { status: 'claimed' };
+          if (existing.payloadHash !== params.payloadHash) return { status: 'conflict' };
+          return { status: 'completed', record: existing };
+        }),
+        complete: jest.fn(async (record) => {
+          calls.push('idempotency:complete');
+          idempotencyRecords.set(record.idempotencyKey, record);
         }),
       },
       readBack: {
@@ -209,6 +232,213 @@ describe('WarehouseStockInCanonicalFacade', () => {
         reference_type: 'purchase_order',
       })
     );
+  });
+
+  it('executes production order stock in with required reference, QC disposition, and Logistics idempotency', async () => {
+    const calls: string[] = [];
+    const records = new Map<string, WarehouseStockInIdempotencyRecord>();
+    const ports = createPorts(calls, records);
+    const facade = new WarehouseStockInCanonicalFacade(ports, {
+      now: () => fixedNow,
+      idFactory: () => 'event-production-output-1',
+    });
+    const command = validCommand();
+    command.sourceDocument = {
+      id: 'finished-goods-receipt-1',
+      number: 'FGR-001',
+      type: 'production_order',
+    };
+    command.productionOutputReference = {
+      productionOrderId: 'production-order-1',
+      productionOrderLineId: 'production-order-line-1',
+      receiptLineId: 'finished-goods-receipt-line-1',
+      idempotencyKey: 'finished-goods-receipt-key-1',
+    };
+    command.lines[0].sourceLineId = 'finished-goods-receipt-line-1';
+    command.lines[0].qualityDisposition = {
+      acceptedQuantity: 12,
+      rejectedQuantity: 1,
+      pendingQuantity: 0,
+      qualityInspectionId: 'qc-1',
+    };
+
+    const first = await facade.execute(command);
+    const second = await facade.execute(command);
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) throw new Error('production order stock in failed');
+    expect(first.value.isDuplicate).toBe(false);
+    expect(second.value.isDuplicate).toBe(true);
+    expect(ports.balance.applyStockIn).toHaveBeenCalledTimes(1);
+    expect(ports.events.publish).toHaveBeenCalledTimes(1);
+    expect(ports.events.publish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reference_id: 'finished-goods-receipt-1',
+        reference_type: 'production_order',
+      })
+    );
+    expect(ports.traceability.recordEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reference_id: 'finished-goods-receipt-1',
+        reference_type: 'production_order',
+        metadata: expect.objectContaining({
+          production_order_id: 'production-order-1',
+          production_order_line_id: 'production-order-line-1',
+          production_receipt_line_id: 'finished-goods-receipt-line-1',
+          production_output_idempotency_key: 'finished-goods-receipt-key-1',
+          quality_disposition: expect.objectContaining({
+            acceptedQuantity: 12,
+            rejectedQuantity: 1,
+          }),
+        }),
+      })
+    );
+    expect(calls).toEqual([
+      'transaction',
+      'idempotency:claim',
+      'balance',
+      'movementLedger',
+      'traceability',
+      'event',
+      'readBack',
+      'idempotency:complete',
+      'transaction',
+      'idempotency:claim',
+    ]);
+  });
+
+  it('fails production order stock in before mutation without production reference', async () => {
+    const calls: string[] = [];
+    const ports = createPorts(calls);
+    const facade = new WarehouseStockInCanonicalFacade(ports);
+    const command = validCommand();
+    command.sourceDocument.type = 'production_order';
+    command.lines[0].qualityDisposition = { acceptedQuantity: 12 };
+
+    const result = await facade.execute(command);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: 'WAREHOUSE_STOCK_IN_PRODUCTION_REFERENCE_REQUIRED',
+        message: 'production order stock in requires production order, production order line, and idempotency key',
+      },
+    });
+    expect(calls).toEqual([]);
+    expect(ports.balance.applyStockIn).not.toHaveBeenCalled();
+  });
+
+  it('fails production order stock in before mutation without QC disposition', async () => {
+    const calls: string[] = [];
+    const ports = createPorts(calls);
+    const facade = new WarehouseStockInCanonicalFacade(ports);
+    const command = validCommand();
+    command.sourceDocument.type = 'production_order';
+    command.productionOutputReference = {
+      productionOrderId: 'production-order-1',
+      productionOrderLineId: 'production-order-line-1',
+      idempotencyKey: 'finished-goods-receipt-key-1',
+    };
+
+    const result = await facade.execute(command);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: 'WAREHOUSE_STOCK_IN_QC_DISPOSITION_REQUIRED',
+        message: 'production order stock in requires QC disposition',
+        lineIndex: 0,
+      },
+    });
+    expect(calls).toEqual([]);
+    expect(ports.balance.applyStockIn).not.toHaveBeenCalled();
+  });
+
+  it('fails production order stock in before mutation without Logistics idempotency port', async () => {
+    const calls: string[] = [];
+    const ports = createPorts(calls);
+    ports.idempotency = undefined;
+    const facade = new WarehouseStockInCanonicalFacade(ports);
+    const command = validCommand();
+    command.sourceDocument.type = 'production_order';
+    command.productionOutputReference = {
+      productionOrderId: 'production-order-1',
+      productionOrderLineId: 'production-order-line-1',
+      idempotencyKey: 'finished-goods-receipt-key-1',
+    };
+    command.lines[0].qualityDisposition = { acceptedQuantity: 12 };
+
+    const result = await facade.execute(command);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: 'WAREHOUSE_STOCK_IN_IDEMPOTENCY_REQUIRED',
+        message: 'production order stock in requires Logistics idempotency',
+      },
+    });
+    expect(calls).toEqual([]);
+    expect(ports.balance.applyStockIn).not.toHaveBeenCalled();
+  });
+
+  it('fails production order stock in before mutation without transactional persistence', async () => {
+    const calls: string[] = [];
+    const ports = createPorts(calls);
+    ports.transaction = undefined;
+    const facade = new WarehouseStockInCanonicalFacade(ports);
+    const command = validCommand();
+    command.sourceDocument.type = 'production_order';
+    command.productionOutputReference = {
+      productionOrderId: 'production-order-1',
+      productionOrderLineId: 'production-order-line-1',
+      idempotencyKey: 'finished-goods-receipt-key-1',
+    };
+    command.lines[0].qualityDisposition = { acceptedQuantity: 12 };
+
+    const result = await facade.execute(command);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: 'WAREHOUSE_STOCK_IN_TRANSACTION_REQUIRED',
+        message: 'production order stock in requires transactional Logistics persistence',
+      },
+    });
+    expect(calls).toEqual([]);
+    expect(ports.balance.applyStockIn).not.toHaveBeenCalled();
+  });
+
+  it('rejects production order stock in retry with conflicting payload before mutation', async () => {
+    const calls: string[] = [];
+    const records = new Map<string, WarehouseStockInIdempotencyRecord>();
+    const ports = createPorts(calls, records);
+    const facade = new WarehouseStockInCanonicalFacade(ports);
+    const command = validCommand();
+    command.sourceDocument.type = 'production_order';
+    command.productionOutputReference = {
+      productionOrderId: 'production-order-1',
+      productionOrderLineId: 'production-order-line-1',
+      idempotencyKey: 'finished-goods-receipt-key-1',
+    };
+    command.lines[0].qualityDisposition = { acceptedQuantity: 12 };
+    await facade.execute(command);
+
+    const changed = validCommand();
+    changed.sourceDocument.type = 'production_order';
+    changed.productionOutputReference = command.productionOutputReference;
+    changed.lines[0].quantity = 10;
+    changed.lines[0].qualityDisposition = { acceptedQuantity: 10 };
+    const result = await facade.execute(changed);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: 'WAREHOUSE_STOCK_IN_IDEMPOTENCY_CONFLICT',
+        message: 'idempotency key was already claimed with a different payload',
+      },
+    });
+    expect(ports.balance.applyStockIn).toHaveBeenCalledTimes(1);
   });
 
   it('fails before mutation when canonical SKU mapping is missing', async () => {

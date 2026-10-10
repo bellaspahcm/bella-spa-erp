@@ -1,4 +1,5 @@
 import type { IInventoryBalanceQuery, LocationId, Quantity } from '../logistics/contracts/inventory.contract';
+import type { WarehouseStockInCommand, WarehouseStockInResult } from '../logistics/warehouse/stock-in-canonical.facade';
 import type { WarehouseStockOutCommand, WarehouseStockOutResult } from '../logistics/warehouse/stock-out-canonical.facade';
 import type {
   BOMRevision,
@@ -91,6 +92,39 @@ export interface LogisticsStockOutContract {
   execute(command: WarehouseStockOutCommand): Promise<WarehouseStockOutResult>;
 }
 
+export interface FinishedGoodsReceiptRequest {
+  tenantId: TenantId;
+  actorId: string;
+  correlationId?: string;
+  productionOrderId: ManufacturingId;
+  productionOrderLineId: ManufacturingId;
+  idempotencyKey: string;
+  receiptDocumentId: string;
+  receiptDocumentNumber?: string;
+  receiptLineId?: ManufacturingId;
+  warehouseSkuId: string;
+  warehouseBinId: string;
+  itemId: string;
+  locationId: LocationId;
+  acceptedQuantity: Quantity;
+  rejectedQuantity?: Quantity;
+  pendingQuantity?: Quantity;
+  qualityInspectionId?: string;
+  unitOfMeasure: string;
+  lotNumber?: string;
+  serialNumbers?: string[];
+  unitCost?: number;
+  currency?: string;
+}
+
+export interface FinishedGoodsReceiptPort {
+  receive(request: FinishedGoodsReceiptRequest): Promise<WarehouseStockInResult>;
+}
+
+export interface LogisticsStockInContract {
+  execute(command: WarehouseStockInCommand): Promise<WarehouseStockInResult>;
+}
+
 export class LogisticsMaterialAvailabilityAdapter implements MaterialAvailabilityPort {
   constructor(private readonly inventory: IInventoryBalanceQuery) {}
 
@@ -142,5 +176,56 @@ export class LogisticsProductionConsumptionIssueAdapter implements ProductionCon
       ],
     };
     return this.stockOut.execute(command);
+  }
+}
+
+export class LogisticsFinishedGoodsReceiptAdapter implements FinishedGoodsReceiptPort {
+  constructor(private readonly stockIn: LogisticsStockInContract) {}
+
+  receive(request: FinishedGoodsReceiptRequest): Promise<WarehouseStockInResult> {
+    const command: WarehouseStockInCommand = {
+      tenantId: request.tenantId,
+      actorId: request.actorId,
+      correlationId: request.correlationId,
+      sourceDocument: {
+        id: request.receiptDocumentId,
+        number: request.receiptDocumentNumber,
+        type: 'production_order',
+      },
+      productionOutputReference: {
+        productionOrderId: request.productionOrderId,
+        productionOrderLineId: request.productionOrderLineId,
+        receiptLineId: request.receiptLineId,
+        idempotencyKey: request.idempotencyKey,
+      },
+      lines: [
+        {
+          warehouseSkuId: request.warehouseSkuId,
+          warehouseBinId: request.warehouseBinId,
+          itemId: request.itemId,
+          locationId: request.locationId,
+          quantity: request.acceptedQuantity,
+          unitOfMeasure: request.unitOfMeasure,
+          lotNumber: request.lotNumber,
+          serialNumbers: request.serialNumbers,
+          sourceLineId: request.receiptLineId,
+          unitCost: request.unitCost,
+          currency: request.currency,
+          qualityDisposition: {
+            acceptedQuantity: request.acceptedQuantity,
+            rejectedQuantity: request.rejectedQuantity,
+            pendingQuantity: request.pendingQuantity,
+            qualityInspectionId: request.qualityInspectionId,
+          },
+          metadata: {
+            production_order_id: request.productionOrderId,
+            production_order_line_id: request.productionOrderLineId,
+            production_receipt_line_id: request.receiptLineId,
+            quality_inspection_id: request.qualityInspectionId,
+          },
+        },
+      ],
+    };
+    return this.stockIn.execute(command);
   }
 }
