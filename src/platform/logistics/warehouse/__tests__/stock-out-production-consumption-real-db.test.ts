@@ -284,7 +284,7 @@ describeWithRealDb('Logistics production consumption stock-out real DB idempoten
     await admin.query(
       `
         INSERT INTO public.users (id, tenant_id, email, full_name, role, status)
-        VALUES ($1::uuid, $2::uuid, $3, $4, 'operator', 'active')
+        VALUES ($1::uuid, $2::uuid, $3, $4, 'ktv', 'active')
         ON CONFLICT (id) DO UPDATE
         SET tenant_id = EXCLUDED.tenant_id,
             email = EXCLUDED.email,
