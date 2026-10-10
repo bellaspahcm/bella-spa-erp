@@ -27,8 +27,8 @@ import type {
   PerformanceDataPointViewModel,
   InventorySummaryViewModel,
   DashboardAlert,
-  CustomerRatingDistributionViewModel,
 } from '@/core/services/analytics/dashboard-actions';
+import type { CustomerRatingDistributionViewModel } from '@/services/beauty-dashboard-rating-actions';
 
 interface BeautySpaV2DashboardViewProps {
   stats: DashboardStatsViewModel[];

@@ -24,8 +24,12 @@ import { completeSession, saveSessionNote } from '@/core/services/order';
 import {
 getDashboardPrimaryData,
 getMonthlyPerformance,
-getTopTechnicians
 } from '@/core/services/analytics/dashboard-actions';
+import {
+  getBeautyDashboardCustomerRatingDistribution,
+  getBeautyDashboardTopTechnicians,
+  type CustomerRatingDistributionViewModel,
+} from '@/services/beauty-dashboard-rating-actions';
 import { getDashboardWidgetAlerts } from '@/components/common/dashboard-widget-actions';
 import type {
   DashboardStatsViewModel,
@@ -34,7 +38,6 @@ import type {
   PerformanceDataPointViewModel,
   InventorySummaryViewModel,
   DashboardAlert,
-  CustomerRatingDistributionViewModel
 } from '@/core/services/analytics/dashboard-actions';
 import { markNotificationAsRead } from '@/core/services/notification/notification-actions';
 import AdminNotificationBell from '@/components/common/AdminNotificationBell';
@@ -198,8 +201,13 @@ function StandardDashboardPage() {
       const now = new Date();
       const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      const { statsData, sessionsData, inventorySummary: nextInventorySummary, customerRatingDistribution: nextRatingDistribution } =
-        await getDashboardPrimaryData(startDate, endDate, localToday);
+      const [
+        { statsData, sessionsData, inventorySummary: nextInventorySummary },
+        nextRatingDistribution,
+      ] = await Promise.all([
+        getDashboardPrimaryData(startDate, endDate, localToday),
+        getBeautyDashboardCustomerRatingDistribution(startDate, endDate),
+      ]);
 
       setStats(buildDashboardStats(statsData));
       setSessions(sessionsData || []);
@@ -223,7 +231,7 @@ function StandardDashboardPage() {
     setIsSecondaryLoading(true);
     try {
       const [ktvsData, perfData, alertsData] = await Promise.all([
-        getTopTechnicians(),
+        getBeautyDashboardTopTechnicians(),
         getMonthlyPerformance(),
         getDashboardWidgetAlerts(),
       ]);
