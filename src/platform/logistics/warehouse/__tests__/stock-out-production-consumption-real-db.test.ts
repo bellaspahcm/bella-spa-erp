@@ -86,6 +86,7 @@ describeWithRealDb('Logistics production consumption stock-out real DB idempoten
     await admin.query(idempotencyMigrationSql);
     await assertLogisticsTablesExist();
     await seedTenant();
+    await seedLogisticsItem();
     await seedLogisticsLocation();
     await seedInventory(10);
   });
@@ -271,6 +272,26 @@ describeWithRealDb('Logistics production consumption stock-out real DB idempoten
     await insertRow('logistics.locations', row, 'id');
   }
 
+  async function seedLogisticsItem(): Promise<void> {
+    const columns = await tableColumns('logistics', 'items');
+    const row = buildInsertRow(columns, {
+      id: ids.item,
+      tenant_id: ids.tenant,
+      sku_code: `${marker}-SKU`,
+      name: `${marker} Item`,
+      type: 'GOODS',
+      category: 'RAW_MATERIAL',
+      base_uom: 'EA',
+      lot_tracked: true,
+      serial_tracked: false,
+      expiry_tracked: false,
+      status: 'ACTIVE',
+      created_by: ids.user,
+      updated_by: ids.user,
+    });
+    await insertRow('logistics.items', row, 'id');
+  }
+
   async function seedInventory(quantity: number): Promise<void> {
     const columns = await tableColumns('logistics', 'inventory');
     const row = buildInsertRow(columns, {
@@ -403,6 +424,10 @@ describeWithRealDb('Logistics production consumption stock-out real DB idempoten
     await admin.query('DELETE FROM logistics.locations WHERE tenant_id = $1::uuid AND id = $2', [
       ids.tenant,
       ids.location,
+    ]);
+    await admin.query('DELETE FROM logistics.items WHERE tenant_id = $1::uuid AND id = $2', [
+      ids.tenant,
+      ids.item,
     ]);
     await admin
       .query('DELETE FROM public.tenants WHERE id = $1::uuid', [ids.tenant])
