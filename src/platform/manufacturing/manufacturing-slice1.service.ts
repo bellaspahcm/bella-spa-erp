@@ -8,12 +8,16 @@ import type {
   ApproveBOMRevisionCommand,
   BOMRevision,
   CalculateMaterialRequirementsCommand,
+  CompleteProductionOrderCommand,
   CreateBOMRevisionCommand,
   CreateProductionOrderCommand,
   IdempotentCommandResult,
   ManufacturingActor,
   MaterialRequirement,
+  ProductionCompletion,
+  ProductionExecution,
   ReleaseProductionOrderCommand,
+  RecordProductionExecutionCommand,
   ProductionOrder,
 } from './domain/types';
 import type {
@@ -70,9 +74,18 @@ export class ManufacturingSlice1Service {
           targetQuantity: command.targetQuantity,
           uom: command.uom,
           status: 'draft',
+          lines: [{
+            id: this.ids.next('mfg_po_line'),
+            tenantId: actor.tenantId,
+            productionOrderId: '',
+            finishedGoodItemId: command.finishedGoodItemId,
+            targetQuantity: command.targetQuantity,
+            uom: command.uom,
+          }],
           createdBy: actor.userId,
           createdAt: this.clock.now(),
         };
+        order.lines = order.lines.map((line) => ({ ...line, productionOrderId: order.id }));
         await repository.saveProductionOrder(order);
         return order;
       },
@@ -297,6 +310,160 @@ export class ManufacturingSlice1Service {
     });
   }
 
+  async recordProductionExecution(
+    actor: ManufacturingActor,
+    command: RecordProductionExecutionCommand
+  ): Promise<IdempotentCommandResult<ProductionExecution>> {
+    this.assertPositiveQuantity(command.actualQuantity, 'actualQuantity');
+    this.assertNonNegativeQuantity(command.acceptedQuantity, 'acceptedQuantity');
+    this.assertNonNegativeQuantity(command.rejectedQuantity ?? 0, 'rejectedQuantity');
+    this.assertNonNegativeQuantity(command.scrapQuantity ?? 0, 'scrapQuantity');
+    if (!command.materialIssueDocumentId.trim() || !command.materialIssueMovementId.trim()) {
+      throw new ManufacturingValidationError('Production execution requires material issue evidence');
+    }
+    const rejectedQuantity = command.rejectedQuantity ?? 0;
+    const scrapQuantity = command.scrapQuantity ?? 0;
+    if (
+      this.roundQuantity(command.acceptedQuantity + rejectedQuantity + scrapQuantity) !==
+      this.roundQuantity(command.actualQuantity)
+    ) {
+      throw new ManufacturingValidationError(
+        'Production execution quantities must reconcile actual, accepted, rejected, and scrap'
+      );
+    }
+
+    return this.runIdempotent({
+      actor,
+      operation: 'manufacturing.production_execution.record',
+      businessKey: command.idempotencyKey,
+      payload: command,
+      execute: async (repository) => {
+        await this.authorization.ensureAllowed({
+          actor,
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: actor.factoryOrgUnitId,
+          permission: 'manufacturing:execution:record',
+        });
+
+        const order = await this.requireProductionOrder(repository, actor.tenantId, command.productionOrderId);
+        this.assertSameFactory(actor, order.factoryOrgUnitId);
+        if (order.status !== 'released' && order.status !== 'in_progress') {
+          throw new ManufacturingStateError('Production execution can only be recorded for released orders');
+        }
+
+        const line = await repository.getProductionOrderLine({
+          tenantId: actor.tenantId,
+          productionOrderId: order.id,
+          productionOrderLineId: command.productionOrderLineId,
+        });
+        if (!line) {
+          throw new ManufacturingNotFoundError('ProductionOrderLine', command.productionOrderLineId);
+        }
+        if (line.uom !== command.uom) {
+          throw new ManufacturingValidationError('Production execution UOM must match production order line UOM');
+        }
+        await this.assertMaterialRequirementEvidence(repository, order, command);
+
+        const execution: ProductionExecution = {
+          id: this.ids.next('mfg_exec'),
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: order.factoryOrgUnitId,
+          productionOrderId: order.id,
+          productionOrderLineId: line.id,
+          materialIssueDocumentId: command.materialIssueDocumentId,
+          materialIssueMovementId: command.materialIssueMovementId,
+          materialRequirementId: command.materialRequirementId,
+          actualQuantity: this.roundQuantity(command.actualQuantity),
+          acceptedQuantity: this.roundQuantity(command.acceptedQuantity),
+          rejectedQuantity: this.roundQuantity(rejectedQuantity),
+          scrapQuantity: this.roundQuantity(scrapQuantity),
+          uom: command.uom,
+          recordedBy: actor.userId,
+          recordedAt: this.clock.now(),
+        };
+        await repository.saveProductionExecution(execution);
+        if (order.status === 'released') {
+          await repository.saveProductionOrder({ ...order, status: 'in_progress' });
+        }
+        return execution;
+      },
+    });
+  }
+
+  async completeProductionOrder(
+    actor: ManufacturingActor,
+    command: CompleteProductionOrderCommand
+  ): Promise<IdempotentCommandResult<ProductionCompletion>> {
+    if (command.receiptEvidence.length === 0) {
+      throw new ManufacturingValidationError('Production completion requires finished goods receipt evidence');
+    }
+    for (const receipt of command.receiptEvidence) {
+      this.assertPositiveQuantity(receipt.acceptedQuantity, 'receipt.acceptedQuantity');
+      this.assertNonNegativeQuantity(receipt.rejectedQuantity ?? 0, 'receipt.rejectedQuantity');
+      this.assertNonNegativeQuantity(receipt.pendingQuantity ?? 0, 'receipt.pendingQuantity');
+      if (!receipt.receiptDocumentId.trim() || !receipt.receiptLineId.trim()) {
+        throw new ManufacturingValidationError('Finished goods receipt evidence requires document and line references');
+      }
+    }
+
+    return this.runIdempotent({
+      actor,
+      operation: 'manufacturing.production_order.complete',
+      businessKey: command.idempotencyKey,
+      payload: command,
+      execute: async (repository) => {
+        await this.authorization.ensureAllowed({
+          actor,
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: actor.factoryOrgUnitId,
+          permission: 'manufacturing:production_order:complete',
+        });
+
+        const order = await this.requireProductionOrder(repository, actor.tenantId, command.productionOrderId);
+        this.assertSameFactory(actor, order.factoryOrgUnitId);
+        if (order.status !== 'in_progress') {
+          throw new ManufacturingStateError('Production order completion requires in-progress execution');
+        }
+        const existingCompletion = await repository.getProductionCompletion(actor.tenantId, order.id);
+        if (existingCompletion) {
+          throw new ManufacturingStateError('Production order is already completed');
+        }
+
+        const executions = await repository.getProductionExecutions({
+          tenantId: actor.tenantId,
+          productionOrderId: order.id,
+        });
+        if (executions.length === 0) {
+          throw new ManufacturingStateError('Production order completion requires recorded execution');
+        }
+
+        const reconciliation = this.reconcileCompletion(order, executions, command.receiptEvidence);
+        const completedAt = this.clock.now();
+        const completion: ProductionCompletion = {
+          id: this.ids.next('mfg_completion'),
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: order.factoryOrgUnitId,
+          productionOrderId: order.id,
+          completedQuantity: reconciliation.acceptedQuantity,
+          rejectedQuantity: reconciliation.rejectedQuantity,
+          scrapQuantity: reconciliation.scrapQuantity,
+          uom: order.uom,
+          receiptEvidence: command.receiptEvidence.map((receipt) => ({ ...receipt })),
+          completedBy: actor.userId,
+          completedAt,
+        };
+        await repository.saveProductionCompletion(completion);
+        await repository.saveProductionOrder({
+          ...order,
+          status: 'completed',
+          completedBy: actor.userId,
+          completedAt,
+        });
+        return completion;
+      },
+    });
+  }
+
   private async runIdempotent<T>(params: {
     actor: ManufacturingActor;
     operation: string;
@@ -376,6 +543,88 @@ export class ManufacturingSlice1Service {
     if (!Number.isFinite(quantity) || quantity <= 0) {
       throw new ManufacturingValidationError(`${field} must be a positive finite quantity`);
     }
+  }
+
+  private assertNonNegativeQuantity(quantity: number, field: string): void {
+    if (!Number.isFinite(quantity) || quantity < 0) {
+      throw new ManufacturingValidationError(`${field} must be a non-negative finite quantity`);
+    }
+  }
+
+  private async assertMaterialRequirementEvidence(
+    repository: ManufacturingRepository,
+    order: ProductionOrder,
+    command: RecordProductionExecutionCommand
+  ): Promise<void> {
+    if (!command.materialRequirementId) return;
+    if (!order.bomRevisionId) {
+      throw new ManufacturingStateError('Production execution material evidence requires released BOM');
+    }
+    const requirements = await repository.getMaterialRequirements({
+      tenantId: order.tenantId,
+      productionOrderId: order.id,
+      bomRevisionId: order.bomRevisionId,
+    });
+    if (!requirements.some((requirement) => requirement.id === command.materialRequirementId)) {
+      throw new ManufacturingStateError('Material issue evidence must reference a requirement from the order');
+    }
+  }
+
+  private reconcileCompletion(
+    order: ProductionOrder,
+    executions: ProductionExecution[],
+    receipts: CompleteProductionOrderCommand['receiptEvidence']
+  ): { acceptedQuantity: number; rejectedQuantity: number; scrapQuantity: number } {
+    let acceptedQuantity = 0;
+    let rejectedQuantity = 0;
+    let scrapQuantity = 0;
+    const receiptLineKeys = new Set<string>();
+
+    for (const line of order.lines) {
+      const lineExecutions = executions.filter((execution) => execution.productionOrderLineId === line.id);
+      if (lineExecutions.length === 0) {
+        throw new ManufacturingStateError('Every production order line requires recorded execution');
+      }
+
+      const actual = this.sumQuantities(lineExecutions.map((execution) => execution.actualQuantity));
+      const accepted = this.sumQuantities(lineExecutions.map((execution) => execution.acceptedQuantity));
+      const rejected = this.sumQuantities(lineExecutions.map((execution) => execution.rejectedQuantity));
+      const scrap = this.sumQuantities(lineExecutions.map((execution) => execution.scrapQuantity));
+      if (actual !== this.roundQuantity(line.targetQuantity)) {
+        throw new ManufacturingStateError('Production execution must explain the full target quantity before completion');
+      }
+      if (this.roundQuantity(accepted + rejected + scrap) !== actual) {
+        throw new ManufacturingStateError('Production execution quantities are not reconciled');
+      }
+
+      const lineReceipts = receipts.filter((receipt) => receipt.productionOrderLineId === line.id);
+      const receiptAccepted = this.sumQuantities(lineReceipts.map((receipt) => receipt.acceptedQuantity));
+      const receiptRejected = this.sumQuantities(lineReceipts.map((receipt) => receipt.rejectedQuantity ?? 0));
+      const receiptPending = this.sumQuantities(lineReceipts.map((receipt) => receipt.pendingQuantity ?? 0));
+      for (const receipt of lineReceipts) {
+        const key = `${receipt.receiptDocumentId}:${receipt.receiptLineId}`;
+        if (receiptLineKeys.has(key)) {
+          throw new ManufacturingValidationError('Finished goods receipt evidence must not contain duplicate lines');
+        }
+        receiptLineKeys.add(key);
+      }
+      if (receiptPending !== 0) {
+        throw new ManufacturingStateError('Production order completion requires no pending finished goods quantity');
+      }
+      if (receiptAccepted !== accepted || receiptRejected !== rejected) {
+        throw new ManufacturingStateError('Finished goods receipt evidence must reconcile with production execution');
+      }
+
+      acceptedQuantity = this.roundQuantity(acceptedQuantity + accepted);
+      rejectedQuantity = this.roundQuantity(rejectedQuantity + rejected);
+      scrapQuantity = this.roundQuantity(scrapQuantity + scrap);
+    }
+
+    return { acceptedQuantity, rejectedQuantity, scrapQuantity };
+  }
+
+  private sumQuantities(values: number[]): number {
+    return this.roundQuantity(values.reduce((total, value) => total + value, 0));
   }
 
   private roundQuantity(quantity: number): number {

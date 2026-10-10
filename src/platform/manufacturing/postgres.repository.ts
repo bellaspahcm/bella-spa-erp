@@ -4,9 +4,13 @@ import type {
   BOMComponent,
   BOMRevision,
   CommandLogEntry,
+  FinishedGoodsReceiptEvidence,
   ManufacturingId,
   MaterialRequirement,
+  ProductionCompletion,
+  ProductionExecution,
   ProductionOrder,
+  ProductionOrderLine,
   TenantId,
 } from './domain/types';
 import type { ManufacturingRepository } from './ports';
@@ -32,6 +36,17 @@ type ProductionOrderRow = QueryResultRow & {
   created_at: string | Date;
   released_by: string | null;
   released_at: string | Date | null;
+  completed_by: string | null;
+  completed_at: string | Date | null;
+};
+
+type ProductionOrderLineRow = QueryResultRow & {
+  id: string;
+  tenant_id: string;
+  production_order_id: string;
+  finished_good_item_id: string;
+  target_quantity: string | number;
+  uom: string;
 };
 
 type BOMRevisionRow = QueryResultRow & {
@@ -65,6 +80,38 @@ type MaterialRequirementRow = QueryResultRow & {
   available_quantity: string | number | null;
   status: MaterialRequirement['status'];
   checked_at: string | Date | null;
+};
+
+type ProductionExecutionRow = QueryResultRow & {
+  id: string;
+  tenant_id: string;
+  factory_org_unit_id: string;
+  production_order_id: string;
+  production_order_line_id: string;
+  material_issue_document_id: string;
+  material_issue_movement_id: string;
+  material_requirement_id: string | null;
+  actual_quantity: string | number;
+  accepted_quantity: string | number;
+  rejected_quantity: string | number;
+  scrap_quantity: string | number;
+  uom: string;
+  recorded_by: string;
+  recorded_at: string | Date;
+};
+
+type ProductionCompletionRow = QueryResultRow & {
+  id: string;
+  tenant_id: string;
+  factory_org_unit_id: string;
+  production_order_id: string;
+  completed_quantity: string | number;
+  rejected_quantity: string | number;
+  scrap_quantity: string | number;
+  uom: string;
+  receipt_evidence: FinishedGoodsReceiptEvidence[];
+  completed_by: string;
+  completed_at: string | Date;
 };
 
 type CommandLogRow<T> = QueryResultRow & {
@@ -102,15 +149,17 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
         INSERT INTO public.manufacturing_production_orders (
           id, tenant_id, factory_org_unit_id, order_number, finished_good_item_id,
           target_quantity, uom, status, bom_revision_id, created_by, created_at,
-          released_by, released_at, updated_at
+          released_by, released_at, completed_by, completed_at, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
         ON CONFLICT (tenant_id, id)
         DO UPDATE SET
           status = EXCLUDED.status,
           bom_revision_id = EXCLUDED.bom_revision_id,
           released_by = EXCLUDED.released_by,
           released_at = EXCLUDED.released_at,
+          completed_by = EXCLUDED.completed_by,
+          completed_at = EXCLUDED.completed_at,
           updated_at = NOW()
       `,
       [
@@ -127,22 +176,33 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
         order.createdAt,
         order.releasedBy ?? null,
         order.releasedAt ?? null,
+        order.completedBy ?? null,
+        order.completedAt ?? null,
       ]
     );
 
-    await this.db.query(
-      `
-        INSERT INTO public.manufacturing_production_order_lines (
-          tenant_id, production_order_id, finished_good_item_id, target_quantity, uom
-        )
-        VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (tenant_id, production_order_id, finished_good_item_id)
-        DO UPDATE SET
-          target_quantity = EXCLUDED.target_quantity,
-          uom = EXCLUDED.uom
-      `,
-      [order.tenantId, order.id, order.finishedGoodItemId, order.targetQuantity, order.uom]
-    );
+    for (const line of order.lines) {
+      await this.db.query(
+        `
+          INSERT INTO public.manufacturing_production_order_lines (
+            id, tenant_id, production_order_id, finished_good_item_id, target_quantity, uom
+          )
+          VALUES ($1, $2, $3, $4, $5, $6)
+          ON CONFLICT (tenant_id, production_order_id, finished_good_item_id)
+          DO UPDATE SET
+            target_quantity = EXCLUDED.target_quantity,
+            uom = EXCLUDED.uom
+        `,
+        [
+          line.id,
+          line.tenantId,
+          line.productionOrderId,
+          line.finishedGoodItemId,
+          line.targetQuantity,
+          line.uom,
+        ]
+      );
+    }
   }
 
   async getProductionOrder(tenantId: TenantId, id: ManufacturingId): Promise<ProductionOrder | null> {
@@ -150,7 +210,9 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
       'SELECT * FROM public.manufacturing_production_orders WHERE tenant_id = $1 AND id = $2',
       [tenantId, id]
     );
-    return result.rows[0] ? this.mapProductionOrder(result.rows[0]) : null;
+    return result.rows[0]
+      ? this.mapProductionOrder(result.rows[0], await this.getProductionOrderLines(tenantId, id))
+      : null;
   }
 
   async findProductionOrderByNumber(tenantId: TenantId, orderNumber: string): Promise<ProductionOrder | null> {
@@ -158,7 +220,28 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
       'SELECT * FROM public.manufacturing_production_orders WHERE tenant_id = $1 AND order_number = $2',
       [tenantId, orderNumber]
     );
-    return result.rows[0] ? this.mapProductionOrder(result.rows[0]) : null;
+    return result.rows[0]
+      ? this.mapProductionOrder(
+          result.rows[0],
+          await this.getProductionOrderLines(tenantId, result.rows[0].id)
+        )
+      : null;
+  }
+
+  async getProductionOrderLine(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+    productionOrderLineId: ManufacturingId;
+  }): Promise<ProductionOrderLine | null> {
+    const result = await this.db.query<ProductionOrderLineRow>(
+      `
+        SELECT id, tenant_id, production_order_id, finished_good_item_id, target_quantity, uom
+        FROM public.manufacturing_production_order_lines
+        WHERE tenant_id = $1 AND production_order_id = $2 AND id = $3
+      `,
+      [params.tenantId, params.productionOrderId, params.productionOrderLineId]
+    );
+    return result.rows[0] ? this.mapProductionOrderLine(result.rows[0]) : null;
   }
 
   async saveBOMRevision(revision: BOMRevision): Promise<void> {
@@ -290,6 +373,100 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
     return result.rows.map((row) => this.mapMaterialRequirement(row));
   }
 
+  async saveProductionExecution(execution: ProductionExecution): Promise<void> {
+    await this.db.query(
+      `
+        INSERT INTO public.manufacturing_production_executions (
+          id, tenant_id, factory_org_unit_id, production_order_id, production_order_line_id,
+          material_issue_document_id, material_issue_movement_id, material_requirement_id,
+          actual_quantity, accepted_quantity, rejected_quantity, scrap_quantity,
+          uom, recorded_by, recorded_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        ON CONFLICT (tenant_id, id)
+        DO UPDATE SET
+          actual_quantity = EXCLUDED.actual_quantity,
+          accepted_quantity = EXCLUDED.accepted_quantity,
+          rejected_quantity = EXCLUDED.rejected_quantity,
+          scrap_quantity = EXCLUDED.scrap_quantity
+      `,
+      [
+        execution.id,
+        execution.tenantId,
+        execution.factoryOrgUnitId,
+        execution.productionOrderId,
+        execution.productionOrderLineId,
+        execution.materialIssueDocumentId,
+        execution.materialIssueMovementId,
+        execution.materialRequirementId ?? null,
+        execution.actualQuantity,
+        execution.acceptedQuantity,
+        execution.rejectedQuantity,
+        execution.scrapQuantity,
+        execution.uom,
+        execution.recordedBy,
+        execution.recordedAt,
+      ]
+    );
+  }
+
+  async getProductionExecutions(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+  }): Promise<ProductionExecution[]> {
+    const result = await this.db.query<ProductionExecutionRow>(
+      `
+        SELECT *
+        FROM public.manufacturing_production_executions
+        WHERE tenant_id = $1 AND production_order_id = $2
+        ORDER BY recorded_at, id
+      `,
+      [params.tenantId, params.productionOrderId]
+    );
+    return result.rows.map((row) => this.mapProductionExecution(row));
+  }
+
+  async saveProductionCompletion(completion: ProductionCompletion): Promise<void> {
+    await this.db.query(
+      `
+        INSERT INTO public.manufacturing_production_order_completions (
+          id, tenant_id, factory_org_unit_id, production_order_id,
+          completed_quantity, rejected_quantity, scrap_quantity, uom,
+          receipt_evidence, completed_by, completed_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11)
+      `,
+      [
+        completion.id,
+        completion.tenantId,
+        completion.factoryOrgUnitId,
+        completion.productionOrderId,
+        completion.completedQuantity,
+        completion.rejectedQuantity,
+        completion.scrapQuantity,
+        completion.uom,
+        JSON.stringify(completion.receiptEvidence),
+        completion.completedBy,
+        completion.completedAt,
+      ]
+    );
+  }
+
+  async getProductionCompletion(
+    tenantId: TenantId,
+    productionOrderId: ManufacturingId
+  ): Promise<ProductionCompletion | null> {
+    const result = await this.db.query<ProductionCompletionRow>(
+      `
+        SELECT *
+        FROM public.manufacturing_production_order_completions
+        WHERE tenant_id = $1 AND production_order_id = $2
+      `,
+      [tenantId, productionOrderId]
+    );
+    return result.rows[0] ? this.mapProductionCompletion(result.rows[0]) : null;
+  }
+
   async getCommandLog<T = unknown>(params: {
     tenantId: TenantId;
     operation: string;
@@ -357,7 +534,23 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
     }));
   }
 
-  private mapProductionOrder(row: ProductionOrderRow): ProductionOrder {
+  private async getProductionOrderLines(
+    tenantId: TenantId,
+    productionOrderId: ManufacturingId
+  ): Promise<ProductionOrderLine[]> {
+    const result = await this.db.query<ProductionOrderLineRow>(
+      `
+        SELECT id, tenant_id, production_order_id, finished_good_item_id, target_quantity, uom
+        FROM public.manufacturing_production_order_lines
+        WHERE tenant_id = $1 AND production_order_id = $2
+        ORDER BY finished_good_item_id, id
+      `,
+      [tenantId, productionOrderId]
+    );
+    return result.rows.map((row) => this.mapProductionOrderLine(row));
+  }
+
+  private mapProductionOrder(row: ProductionOrderRow, lines: ProductionOrderLine[]): ProductionOrder {
     return {
       id: row.id,
       tenantId: row.tenant_id,
@@ -367,11 +560,25 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
       targetQuantity: toNumber(row.target_quantity),
       uom: row.uom,
       status: row.status,
+      lines,
       bomRevisionId: row.bom_revision_id ?? undefined,
       createdBy: row.created_by,
       createdAt: toTimestamp(row.created_at),
       releasedBy: row.released_by ?? undefined,
       releasedAt: row.released_at ? toTimestamp(row.released_at) : undefined,
+      completedBy: row.completed_by ?? undefined,
+      completedAt: row.completed_at ? toTimestamp(row.completed_at) : undefined,
+    };
+  }
+
+  private mapProductionOrderLine(row: ProductionOrderLineRow): ProductionOrderLine {
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      productionOrderId: row.production_order_id,
+      finishedGoodItemId: row.finished_good_item_id,
+      targetQuantity: toNumber(row.target_quantity),
+      uom: row.uom,
     };
   }
 
@@ -402,6 +609,42 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
       availableQuantity: row.available_quantity === null ? undefined : toNumber(row.available_quantity),
       status: row.status,
       checkedAt: row.checked_at ? toTimestamp(row.checked_at) : undefined,
+    };
+  }
+
+  private mapProductionExecution(row: ProductionExecutionRow): ProductionExecution {
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      factoryOrgUnitId: row.factory_org_unit_id,
+      productionOrderId: row.production_order_id,
+      productionOrderLineId: row.production_order_line_id,
+      materialIssueDocumentId: row.material_issue_document_id,
+      materialIssueMovementId: row.material_issue_movement_id,
+      materialRequirementId: row.material_requirement_id ?? undefined,
+      actualQuantity: toNumber(row.actual_quantity),
+      acceptedQuantity: toNumber(row.accepted_quantity),
+      rejectedQuantity: toNumber(row.rejected_quantity),
+      scrapQuantity: toNumber(row.scrap_quantity),
+      uom: row.uom,
+      recordedBy: row.recorded_by,
+      recordedAt: toTimestamp(row.recorded_at),
+    };
+  }
+
+  private mapProductionCompletion(row: ProductionCompletionRow): ProductionCompletion {
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      factoryOrgUnitId: row.factory_org_unit_id,
+      productionOrderId: row.production_order_id,
+      completedQuantity: toNumber(row.completed_quantity),
+      rejectedQuantity: toNumber(row.rejected_quantity),
+      scrapQuantity: toNumber(row.scrap_quantity),
+      uom: row.uom,
+      receiptEvidence: row.receipt_evidence.map((receipt) => ({ ...receipt })),
+      completedBy: row.completed_by,
+      completedAt: toTimestamp(row.completed_at),
     };
   }
 }

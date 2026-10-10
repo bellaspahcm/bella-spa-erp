@@ -9,7 +9,10 @@ import type {
   ManufacturingId,
   ManufacturingPermission,
   MaterialRequirement,
+  ProductionCompletion,
+  ProductionExecution,
   ProductionOrder,
+  ProductionOrderLine,
   TenantId,
 } from './domain/types';
 
@@ -27,6 +30,11 @@ export interface ManufacturingRepository {
   saveProductionOrder(order: ProductionOrder): Promise<void>;
   getProductionOrder(tenantId: TenantId, id: ManufacturingId): Promise<ProductionOrder | null>;
   findProductionOrderByNumber(tenantId: TenantId, orderNumber: string): Promise<ProductionOrder | null>;
+  getProductionOrderLine(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+    productionOrderLineId: ManufacturingId;
+  }): Promise<ProductionOrderLine | null>;
   saveBOMRevision(revision: BOMRevision): Promise<void>;
   getBOMRevision(tenantId: TenantId, id: ManufacturingId): Promise<BOMRevision | null>;
   findBOMRevisionByCode(params: {
@@ -40,6 +48,13 @@ export interface ManufacturingRepository {
     productionOrderId: ManufacturingId;
     bomRevisionId: ManufacturingId;
   }): Promise<MaterialRequirement[]>;
+  saveProductionExecution(execution: ProductionExecution): Promise<void>;
+  getProductionExecutions(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+  }): Promise<ProductionExecution[]>;
+  saveProductionCompletion(completion: ProductionCompletion): Promise<void>;
+  getProductionCompletion(tenantId: TenantId, productionOrderId: ManufacturingId): Promise<ProductionCompletion | null>;
   getCommandLog<T = unknown>(params: {
     tenantId: TenantId;
     operation: string;

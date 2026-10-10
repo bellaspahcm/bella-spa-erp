@@ -33,6 +33,13 @@ const migrationSql = readFileSync(
   path.resolve(__dirname, '../../../../supabase/migrations/20261010010000_create_manufacturing_slice1_foundation.sql'),
   'utf8'
 );
+const executionCompletionMigrationSql = readFileSync(
+  path.resolve(
+    __dirname,
+    '../../../../supabase/migrations/20261010040000_create_manufacturing_execution_completion.sql'
+  ),
+  'utf8'
+);
 
 const describeWithRealDb =
   isRunnableDbUrl(dbUrl) && isAllowedE2eProject() && isAllowedE2eDbUrl(dbUrl) ? describe : describe.skip;
@@ -100,6 +107,7 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
     admin = new Client({ connectionString: dbUrl, ssl: sslConfig() });
     await admin.connect();
     await admin.query(migrationSql);
+    await admin.query(executionCompletionMigrationSql);
     await seedTenant(ids.tenantA, `${marker} Tenant A`);
     await seedTenant(ids.tenantB, `${marker} Tenant B`);
     await seedUser(ids.tenantA, ids.userA, ids.personA, ids.factoryA, ids.factoryADenied, 'a');
@@ -123,6 +131,8 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
       'manufacturing_bom_revisions',
       'manufacturing_bom_components',
       'manufacturing_material_requirements',
+      'manufacturing_production_executions',
+      'manufacturing_production_order_completions',
       'manufacturing_command_idempotency',
     ];
 
@@ -155,6 +165,8 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
     expect(policies.rows.map((row) => row.policyname)).toEqual(
       expect.arrayContaining([
         'manufacturing_production_orders_factory_access',
+        'manufacturing_production_executions_order_access',
+        'manufacturing_production_completions_order_access',
         'manufacturing_command_idempotency_factory_access',
       ])
     );
@@ -336,6 +348,107 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
     }
   });
 
+  it('persists production execution and completion reconciliation through authenticated RLS', async () => {
+    const { service, client } = await createRealDbService(ids.userA, ids.tenantA);
+    const actor = createActor(ids.tenantA, ids.userA, ids.factoryA);
+
+    try {
+      const order = await service.createProductionOrder(actor, {
+        idempotencyKey: `${marker}-execution-order`,
+        orderNumber: `${marker}-PO-EXECUTION`,
+        finishedGoodItemId: 'finished_good_execution',
+        targetQuantity: 10,
+        uom: 'EA',
+      });
+      const bom = await service.createBOMRevision(actor, {
+        idempotencyKey: `${marker}-execution-bom`,
+        finishedGoodItemId: 'finished_good_execution',
+        revisionCode: 'REV-EXECUTION',
+        components: [{ componentItemId: 'component_execution', quantityPerUnit: 1, uom: 'EA' }],
+      });
+      const approvedBom = await service.approveBOMRevision(actor, {
+        idempotencyKey: `${marker}-execution-approve-bom`,
+        bomRevisionId: bom.value.id,
+      });
+      await service.calculateMaterialRequirements(actor, {
+        idempotencyKey: `${marker}-execution-calc-req`,
+        productionOrderId: order.value.id,
+        bomRevisionId: approvedBom.value.id,
+        sourceLocationId: 'warehouse-execution',
+      });
+      const released = await service.releaseProductionOrder(actor, {
+        idempotencyKey: `${marker}-execution-release`,
+        productionOrderId: order.value.id,
+        bomRevisionId: approvedBom.value.id,
+      });
+      const line = released.value.lines[0];
+      if (!line) throw new Error('Expected production order line');
+
+      const execution = await service.recordProductionExecution(actor, {
+        idempotencyKey: `${marker}-execution-record`,
+        productionOrderId: order.value.id,
+        productionOrderLineId: line.id,
+        materialIssueDocumentId: `${marker}-issue-doc`,
+        materialIssueMovementId: `${marker}-issue-movement`,
+        actualQuantity: 10,
+        acceptedQuantity: 8,
+        rejectedQuantity: 1,
+        scrapQuantity: 1,
+        uom: 'EA',
+      });
+      const duplicateExecution = await service.recordProductionExecution(actor, {
+        idempotencyKey: `${marker}-execution-record`,
+        productionOrderId: order.value.id,
+        productionOrderLineId: line.id,
+        materialIssueDocumentId: `${marker}-issue-doc`,
+        materialIssueMovementId: `${marker}-issue-movement`,
+        actualQuantity: 10,
+        acceptedQuantity: 8,
+        rejectedQuantity: 1,
+        scrapQuantity: 1,
+        uom: 'EA',
+      });
+
+      expect(execution.isDuplicate).toBe(false);
+      expect(duplicateExecution.isDuplicate).toBe(true);
+      expect(duplicateExecution.value.id).toBe(execution.value.id);
+
+      const completion = await service.completeProductionOrder(actor, {
+        idempotencyKey: `${marker}-execution-complete`,
+        productionOrderId: order.value.id,
+        receiptEvidence: [{
+          productionOrderLineId: line.id,
+          receiptDocumentId: `${marker}-fgr`,
+          receiptLineId: `${marker}-fgr-line`,
+          acceptedQuantity: 8,
+          rejectedQuantity: 1,
+          pendingQuantity: 0,
+        }],
+      });
+
+      expect(completion.value).toMatchObject({
+        productionOrderId: order.value.id,
+        completedQuantity: 8,
+        rejectedQuantity: 1,
+        scrapQuantity: 1,
+      });
+      await expectCountWhere(
+        'manufacturing_production_executions',
+        'tenant_id = $1::uuid AND production_order_id = $2::uuid',
+        [ids.tenantA, order.value.id],
+        1
+      );
+      await expectCountWhere(
+        'manufacturing_production_order_completions',
+        'tenant_id = $1::uuid AND production_order_id = $2::uuid',
+        [ids.tenantA, order.value.id],
+        1
+      );
+    } finally {
+      await client.end();
+    }
+  });
+
   async function createRealDbService(userId: string, tenantId: string) {
     const client = new Client({ connectionString: dbUrl, ssl: sslConfig() });
     await client.connect();
@@ -348,10 +461,12 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         [ids.userA]: [
           'manufacturing:production_order:write',
           'manufacturing:production_order:release',
+          'manufacturing:production_order:complete',
           'manufacturing:bom:write',
           'manufacturing:bom:approve',
           'manufacturing:material_requirement:calculate',
           'manufacturing:availability:read',
+          'manufacturing:execution:record',
         ],
         [ids.userB]: ['manufacturing:production_order:write'],
       }
@@ -491,6 +606,12 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
 
   async function cleanupFixtures(): Promise<void> {
     await admin.query('SET row_security = off');
+    await admin.query('DELETE FROM public.manufacturing_production_order_completions WHERE tenant_id = ANY($1::uuid[])', [
+      [ids.tenantA, ids.tenantB],
+    ]);
+    await admin.query('DELETE FROM public.manufacturing_production_executions WHERE tenant_id = ANY($1::uuid[])', [
+      [ids.tenantA, ids.tenantB],
+    ]);
     await admin.query('DELETE FROM public.manufacturing_command_idempotency WHERE tenant_id = ANY($1::uuid[])', [
       [ids.tenantA, ids.tenantB],
     ]);

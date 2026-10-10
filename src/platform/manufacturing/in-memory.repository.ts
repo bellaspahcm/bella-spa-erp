@@ -10,7 +10,10 @@ import type {
   ManufacturingId,
   ManufacturingPermission,
   MaterialRequirement,
+  ProductionCompletion,
+  ProductionExecution,
   ProductionOrder,
+  ProductionOrderLine,
   TenantId,
 } from './domain/types';
 import type {
@@ -42,6 +45,8 @@ export class InMemoryManufacturingRepository implements ManufacturingRepository 
   private readonly productionOrders = new Map<string, ProductionOrder>();
   private readonly bomRevisions = new Map<string, BOMRevision>();
   private readonly materialRequirements = new Map<string, MaterialRequirement>();
+  private readonly productionExecutions = new Map<string, ProductionExecution>();
+  private readonly productionCompletions = new Map<string, ProductionCompletion>();
   private readonly commandLogs = new Map<string, CommandLogEntry<unknown>>();
 
   async withTransaction<T>(callback: (repository: ManufacturingRepository) => Promise<T>): Promise<T> {
@@ -49,21 +54,31 @@ export class InMemoryManufacturingRepository implements ManufacturingRepository 
   }
 
   async saveProductionOrder(order: ProductionOrder): Promise<void> {
-    this.productionOrders.set(this.key(order.tenantId, order.id), { ...order });
+    this.productionOrders.set(this.key(order.tenantId, order.id), cloneProductionOrder(order));
   }
 
   async getProductionOrder(tenantId: TenantId, id: ManufacturingId): Promise<ProductionOrder | null> {
     const order = this.productionOrders.get(this.key(tenantId, id));
-    return order ? { ...order } : null;
+    return order ? cloneProductionOrder(order) : null;
   }
 
   async findProductionOrderByNumber(tenantId: TenantId, orderNumber: string): Promise<ProductionOrder | null> {
     for (const order of this.productionOrders.values()) {
       if (order.tenantId === tenantId && order.orderNumber === orderNumber) {
-        return { ...order };
+        return cloneProductionOrder(order);
       }
     }
     return null;
+  }
+
+  async getProductionOrderLine(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+    productionOrderLineId: ManufacturingId;
+  }): Promise<ProductionOrderLine | null> {
+    const order = this.productionOrders.get(this.key(params.tenantId, params.productionOrderId));
+    const line = order?.lines.find((candidate) => candidate.id === params.productionOrderLineId);
+    return line ? { ...line } : null;
   }
 
   async saveBOMRevision(revision: BOMRevision): Promise<void> {
@@ -118,6 +133,40 @@ export class InMemoryManufacturingRepository implements ManufacturingRepository 
       .map((requirement) => ({ ...requirement }));
   }
 
+  async saveProductionExecution(execution: ProductionExecution): Promise<void> {
+    this.productionExecutions.set(this.key(execution.tenantId, execution.id), { ...execution });
+  }
+
+  async getProductionExecutions(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+  }): Promise<ProductionExecution[]> {
+    return Array.from(this.productionExecutions.values())
+      .filter(
+        (execution) =>
+          execution.tenantId === params.tenantId &&
+          execution.productionOrderId === params.productionOrderId
+      )
+      .map((execution) => ({ ...execution }));
+  }
+
+  async saveProductionCompletion(completion: ProductionCompletion): Promise<void> {
+    this.productionCompletions.set(this.key(completion.tenantId, completion.productionOrderId), {
+      ...completion,
+      receiptEvidence: completion.receiptEvidence.map((receipt) => ({ ...receipt })),
+    });
+  }
+
+  async getProductionCompletion(
+    tenantId: TenantId,
+    productionOrderId: ManufacturingId
+  ): Promise<ProductionCompletion | null> {
+    const completion = this.productionCompletions.get(this.key(tenantId, productionOrderId));
+    return completion
+      ? { ...completion, receiptEvidence: completion.receiptEvidence.map((receipt) => ({ ...receipt })) }
+      : null;
+  }
+
   async getCommandLog<T = unknown>(params: {
     tenantId: TenantId;
     operation: string;
@@ -143,6 +192,13 @@ export class InMemoryManufacturingRepository implements ManufacturingRepository 
   private commandKey(tenantId: TenantId, operation: string, businessKey: string): string {
     return `${tenantId}:${operation}:${businessKey}`;
   }
+}
+
+function cloneProductionOrder(order: ProductionOrder): ProductionOrder {
+  return {
+    ...order,
+    lines: order.lines.map((line) => ({ ...line })),
+  };
 }
 
 export class StaticManufacturingAuthorization implements ManufacturingAuthorizationPort {
