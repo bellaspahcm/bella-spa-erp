@@ -17,7 +17,11 @@ import {
 import type {
   CanonicalBalanceMutation,
   CanonicalMovementRecord,
+  ProductionOutputReference,
+  WarehouseStockInIdempotencyClaim,
+  WarehouseStockInLineEvidence,
   WarehouseStockInPorts,
+  WarehouseStockInSuccess,
 } from './stock-in-canonical.facade';
 
 export interface WarehousePostgresExecutor {
@@ -67,6 +71,17 @@ interface TraceabilityRow extends QueryResultRow {
   updated_at: Date | string;
 }
 
+interface StockInIdempotencyRow extends QueryResultRow {
+  tenant_id: string;
+  operation: string;
+  idempotency_key: string;
+  payload_hash: string;
+  status: string;
+  result: unknown | null;
+}
+
+const STOCK_IN_IDEMPOTENCY_OPERATION = 'warehouse_stock_in.production_order';
+
 export function createWarehousePostgresStockInPorts(
   db: WarehousePostgresExecutor,
   options: WarehousePostgresStockInPortsOptions = {}
@@ -74,6 +89,9 @@ export function createWarehousePostgresStockInPorts(
   const idFactory = options.idFactory ?? randomUUID;
 
   return {
+    transaction: {
+      run: (operation) => runInTransaction(db, operation),
+    },
     balance: {
       applyStockIn: async (mutation) => {
         const lotNumber = readOptionalText(mutation.metadata.lot_number);
@@ -320,6 +338,14 @@ export function createWarehousePostgresStockInPorts(
         return;
       },
     },
+    idempotency: {
+      claim: (params) => claimStockInIdempotency(db, {
+        tenantId: params.tenantId,
+        idempotencyKey: params.idempotencyKey,
+        payloadHash: params.payloadHash,
+      }),
+      complete: (record) => completeStockInIdempotency(db, record),
+    },
     readBack: {
       getStockInEvidence: async (params) => {
         const balance = await db.query<InventoryRow>(
@@ -398,6 +424,109 @@ export function createWarehousePostgresStockInPorts(
       },
     },
   };
+}
+
+async function runInTransaction<TResult>(
+  db: WarehousePostgresExecutor,
+  operation: () => Promise<TResult>
+): Promise<TResult> {
+  await db.query('BEGIN');
+  try {
+    const result = await operation();
+    await db.query('COMMIT');
+    return result;
+  } catch (error) {
+    await db.query('ROLLBACK').catch(() => undefined);
+    throw error;
+  }
+}
+
+async function claimStockInIdempotency(
+  db: WarehousePostgresExecutor,
+  params: { tenantId: string; idempotencyKey: string; payloadHash: string }
+): Promise<WarehouseStockInIdempotencyClaim> {
+  const inserted = await db.query<StockInIdempotencyRow>(
+    `
+    INSERT INTO logistics.stock_in_idempotency (
+      tenant_id,
+      operation,
+      idempotency_key,
+      payload_hash,
+      status
+    )
+    VALUES ($1::uuid, $2, $3, $4, 'in_progress')
+    ON CONFLICT (tenant_id, operation, idempotency_key) DO NOTHING
+    RETURNING tenant_id, operation, idempotency_key, payload_hash, status, result
+    `,
+    [
+      params.tenantId,
+      STOCK_IN_IDEMPOTENCY_OPERATION,
+      params.idempotencyKey,
+      params.payloadHash,
+    ]
+  );
+
+  if (inserted.rows[0]) return { status: 'claimed' };
+
+  const existing = await db.query<StockInIdempotencyRow>(
+    `
+    SELECT tenant_id, operation, idempotency_key, payload_hash, status, result
+    FROM logistics.stock_in_idempotency
+    WHERE tenant_id = $1::uuid
+      AND operation = $2
+      AND idempotency_key = $3
+    FOR UPDATE
+    `,
+    [params.tenantId, STOCK_IN_IDEMPOTENCY_OPERATION, params.idempotencyKey]
+  );
+  const row = requireRow(existing.rows[0], 'stock-in idempotency row not found after conflict');
+
+  if (row.payload_hash !== params.payloadHash) return { status: 'conflict' };
+  if (row.status === 'completed') {
+    if (row.result === null) return { status: 'in_progress' };
+    return {
+      status: 'completed',
+      record: {
+        tenantId: row.tenant_id,
+        idempotencyKey: row.idempotency_key,
+        payloadHash: row.payload_hash,
+        result: toWarehouseStockInSuccess(row.result),
+      },
+    };
+  }
+  return { status: 'in_progress' };
+}
+
+async function completeStockInIdempotency(
+  db: WarehousePostgresExecutor,
+  record: {
+    tenantId: string;
+    idempotencyKey: string;
+    payloadHash: string;
+    result: WarehouseStockInSuccess;
+  }
+): Promise<void> {
+  const completed = await db.query<StockInIdempotencyRow>(
+    `
+    UPDATE logistics.stock_in_idempotency
+    SET status = 'completed',
+        result = $4::jsonb,
+        updated_at = NOW()
+    WHERE tenant_id = $1::uuid
+      AND operation = $2
+      AND idempotency_key = $3
+      AND payload_hash = $5
+    RETURNING tenant_id, operation, idempotency_key, payload_hash, status, result
+    `,
+    [
+      record.tenantId,
+      STOCK_IN_IDEMPOTENCY_OPERATION,
+      record.idempotencyKey,
+      JSON.stringify(record.result),
+      record.payloadHash,
+    ]
+  );
+  requireRow(completed.rows[0], 'stock-in idempotency completion did not update a row');
 }
 
 async function getLocationType(
@@ -610,4 +739,169 @@ function readUuid(value: string | undefined): string | null {
   return value && uuidPattern.test(value)
     ? value
     : null;
+}
+
+function toWarehouseStockInSuccess(value: unknown): WarehouseStockInSuccess {
+  if (!isRecord(value)) throw new Error('stored stock-in idempotency result is malformed');
+  const tenantId = readRequiredString(value.tenantId, 'tenantId');
+  const sourceDocumentId = readRequiredString(value.sourceDocumentId, 'sourceDocumentId');
+  const linesValue = value.lines;
+  if (!Array.isArray(linesValue)) {
+    throw new Error('stored stock-in idempotency result lines are malformed');
+  }
+
+  return {
+    tenantId,
+    sourceDocumentId,
+    productionOutputReference: readProductionOutputReference(value.productionOutputReference),
+    isDuplicate: value.isDuplicate === true,
+    lines: linesValue.map(toWarehouseStockInLineEvidence),
+  };
+}
+
+function toWarehouseStockInLineEvidence(value: unknown): WarehouseStockInLineEvidence {
+  if (!isRecord(value)) throw new Error('stored stock-in idempotency line is malformed');
+  return {
+    itemId: readRequiredString(value.itemId, 'itemId'),
+    locationId: readRequiredString(value.locationId, 'locationId'),
+    quantity: readRequiredNumber(value.quantity, 'quantity'),
+    balance: readStoredInventoryBalance(value.balance),
+    movement: readStoredMovement(value.movement),
+    ledgerEntry: readStoredLedgerEntry(value.ledgerEntry),
+    traceabilityEvent: readStoredTraceabilityEvent(value.traceabilityEvent),
+    readBack: readStoredReadBack(value.readBack),
+  };
+}
+
+function readProductionOutputReference(value: unknown): ProductionOutputReference | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!isRecord(value)) throw new Error('stored production output reference is malformed');
+  return {
+    productionOrderId: readRequiredString(value.productionOrderId, 'productionOrderId'),
+    productionOrderLineId: readRequiredString(value.productionOrderLineId, 'productionOrderLineId'),
+    idempotencyKey: readRequiredString(value.idempotencyKey, 'idempotencyKey'),
+    receiptLineId: readOptionalString(value.receiptLineId),
+  };
+}
+
+function readStoredInventoryBalance(value: unknown): InventoryBalance {
+  if (!isRecord(value)) throw new Error('stored stock-in balance is malformed');
+  return {
+    tenant_id: readRequiredString(value.tenant_id, 'tenant_id'),
+    item_id: readRequiredString(value.item_id, 'item_id'),
+    location_id: readRequiredString(value.location_id, 'location_id'),
+    on_hand: readRequiredNumber(value.on_hand, 'on_hand'),
+    allocated: readRequiredNumber(value.allocated, 'allocated'),
+    available: readRequiredNumber(value.available, 'available'),
+    updated_at: readRequiredDate(value.updated_at, 'updated_at'),
+  };
+}
+
+function readStoredMovement(value: unknown): CanonicalMovementRecord {
+  if (!isRecord(value)) throw new Error('stored stock-in movement is malformed');
+  return {
+    id: readRequiredString(value.id, 'movement.id'),
+    tenant_id: readRequiredString(value.tenant_id, 'movement.tenant_id'),
+    item_id: readRequiredString(value.item_id, 'movement.item_id'),
+    location_id: readRequiredString(value.location_id, 'movement.location_id'),
+    quantity: readRequiredNumber(value.quantity, 'movement.quantity'),
+    reason: MovementReason.RECEIPT,
+    status: TransactionStatus.COMPLETED,
+    actor_id: readRequiredString(value.actor_id, 'movement.actor_id'),
+    created_at: readRequiredDate(value.created_at, 'movement.created_at'),
+  };
+}
+
+function readStoredLedgerEntry(value: unknown) {
+  if (!isRecord(value)) throw new Error('stored stock-in ledger entry is malformed');
+  return {
+    id: readRequiredString(value.id, 'ledgerEntry.id'),
+    tenant_id: readRequiredString(value.tenant_id, 'ledgerEntry.tenant_id'),
+    item_id: readRequiredString(value.item_id, 'ledgerEntry.item_id'),
+    location_id: readRequiredString(value.location_id, 'ledgerEntry.location_id'),
+    entry_type: LedgerEntryType.MOVEMENT,
+    quantity_delta: readRequiredNumber(value.quantity_delta, 'ledgerEntry.quantity_delta'),
+    balance_after: readRequiredNumber(value.balance_after, 'ledgerEntry.balance_after'),
+    transaction_id: readRequiredString(value.transaction_id, 'ledgerEntry.transaction_id'),
+    actor_id: readRequiredString(value.actor_id, 'ledgerEntry.actor_id'),
+    reason: MovementReason.RECEIPT,
+    created_at: readRequiredDate(value.created_at, 'ledgerEntry.created_at'),
+    metadata: isRecord(value.metadata) ? value.metadata : undefined,
+  };
+}
+
+function readStoredTraceabilityEvent(value: unknown): TraceabilityEvent {
+  if (!isRecord(value)) throw new Error('stored stock-in traceability event is malformed');
+  return {
+    id: readRequiredString(value.id, 'traceabilityEvent.id'),
+    tenant_id: readRequiredString(value.tenant_id, 'traceabilityEvent.tenant_id'),
+    event_type: TraceabilityEventType.RECEIVED,
+    item_id: readRequiredString(value.item_id, 'traceabilityEvent.item_id'),
+    lot_number: readOptionalString(value.lot_number),
+    serial_numbers: readOptionalStringArray(value.serial_numbers),
+    quantity: readRequiredNumber(value.quantity, 'traceabilityEvent.quantity'),
+    from_location_id: readOptionalString(value.from_location_id),
+    to_location_id: readOptionalString(value.to_location_id),
+    current_location_id: readOptionalString(value.current_location_id),
+    actor_id: readRequiredString(value.actor_id, 'traceabilityEvent.actor_id'),
+    actor_type: ActorType.USER,
+    transaction_id: readOptionalString(value.transaction_id),
+    transaction_type: readOptionalString(value.transaction_type),
+    reference_id: readOptionalString(value.reference_id),
+    reference_type: readOptionalString(value.reference_type),
+    occurred_at: readRequiredDate(value.occurred_at, 'traceabilityEvent.occurred_at'),
+    recorded_at: readRequiredDate(value.recorded_at, 'traceabilityEvent.recorded_at'),
+    notes: readOptionalString(value.notes),
+    reason: readOptionalString(value.reason),
+    metadata: isRecord(value.metadata) ? value.metadata : undefined,
+  };
+}
+
+function readStoredReadBack(value: unknown) {
+  if (!isRecord(value)) throw new Error('stored stock-in read-back is malformed');
+  return {
+    balance: readStoredInventoryBalance(value.balance),
+    ledgerEntry: readStoredLedgerEntry(value.ledgerEntry),
+    movement: readStoredMovement(value.movement),
+    traceability: readStoredTraceabilityEvent(value.traceability),
+  };
+}
+
+function readOptionalString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+}
+
+function readOptionalStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.filter((entry): entry is string => typeof entry === 'string');
+}
+
+function readRequiredString(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`stored stock-in idempotency ${field} is malformed`);
+  }
+  return value;
+}
+
+function readRequiredNumber(value: unknown, field: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`stored stock-in idempotency ${field} is malformed`);
+  }
+  return value;
+}
+
+function readRequiredDate(value: unknown, field: string): Date {
+  if (value instanceof Date) return value;
+  if (typeof value !== 'string') {
+    throw new Error(`stored stock-in idempotency ${field} is malformed`);
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`stored stock-in idempotency ${field} is malformed`);
+  }
+  return date;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

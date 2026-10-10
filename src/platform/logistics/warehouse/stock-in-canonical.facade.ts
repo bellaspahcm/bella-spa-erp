@@ -37,7 +37,22 @@ export interface WarehouseStockInCommand {
     number?: string;
     type: WarehouseStockInSourceType;
   };
+  productionOutputReference?: ProductionOutputReference;
   lines: WarehouseStockInLineCommand[];
+}
+
+export interface ProductionOutputReference {
+  productionOrderId: string;
+  productionOrderLineId: string;
+  idempotencyKey: string;
+  receiptLineId?: string;
+}
+
+export interface FinishedGoodsQualityDisposition {
+  acceptedQuantity: Quantity;
+  rejectedQuantity?: Quantity;
+  pendingQuantity?: Quantity;
+  qualityInspectionId?: string;
 }
 
 export interface WarehouseStockInLineCommand {
@@ -54,6 +69,7 @@ export interface WarehouseStockInLineCommand {
   valuationMethod?: ValuationMethod;
   supplierId?: string;
   sourceLineId?: string;
+  qualityDisposition?: FinishedGoodsQualityDisposition;
   metadata?: Record<string, unknown>;
 }
 
@@ -87,7 +103,23 @@ export interface WarehouseStockInReadBackEvidence {
   traceability: TraceabilityEvent;
 }
 
+export interface WarehouseStockInIdempotencyRecord {
+  tenantId: string;
+  idempotencyKey: string;
+  payloadHash: string;
+  result: WarehouseStockInSuccess;
+}
+
+export type WarehouseStockInIdempotencyClaim =
+  | { status: 'claimed' }
+  | { status: 'completed'; record: WarehouseStockInIdempotencyRecord }
+  | { status: 'in_progress' }
+  | { status: 'conflict' };
+
 export interface WarehouseStockInPorts {
+  transaction?: {
+    run<T>(operation: () => Promise<T>): Promise<T>;
+  };
   balance: {
     applyStockIn(mutation: CanonicalBalanceMutation): Promise<InventoryBalance>;
   };
@@ -103,6 +135,14 @@ export interface WarehouseStockInPorts {
   };
   traceability: Pick<ITraceabilityService, 'recordEvent'>;
   events: Pick<IEventBus, 'publish'>;
+  idempotency?: {
+    claim(params: {
+      tenantId: string;
+      idempotencyKey: string;
+      payloadHash: string;
+    }): Promise<WarehouseStockInIdempotencyClaim>;
+    complete(record: WarehouseStockInIdempotencyRecord): Promise<void>;
+  };
   readBack: {
     getStockInEvidence(params: {
       tenant_id: string;
@@ -120,16 +160,26 @@ export type WarehouseStockInErrorCode =
   | 'WAREHOUSE_STOCK_IN_CANONICAL_LOCATION_MISSING'
   | 'WAREHOUSE_STOCK_IN_INVALID_QUANTITY'
   | 'WAREHOUSE_STOCK_IN_SERIAL_REQUIRES_LOT'
+  | 'WAREHOUSE_STOCK_IN_PRODUCTION_REFERENCE_REQUIRED'
+  | 'WAREHOUSE_STOCK_IN_QC_DISPOSITION_REQUIRED'
+  | 'WAREHOUSE_STOCK_IN_IDEMPOTENCY_REQUIRED'
+  | 'WAREHOUSE_STOCK_IN_TRANSACTION_REQUIRED'
+  | 'WAREHOUSE_STOCK_IN_IDEMPOTENCY_CONFLICT'
+  | 'WAREHOUSE_STOCK_IN_IDEMPOTENCY_IN_PROGRESS'
   | 'WAREHOUSE_STOCK_IN_RUNTIME_FAILED';
+
+export interface WarehouseStockInSuccess {
+  tenantId: string;
+  sourceDocumentId: string;
+  productionOutputReference?: ProductionOutputReference;
+  isDuplicate?: boolean;
+  lines: WarehouseStockInLineEvidence[];
+}
 
 export type WarehouseStockInResult =
   | {
       ok: true;
-      value: {
-        tenantId: string;
-        sourceDocumentId: string;
-        lines: WarehouseStockInLineEvidence[];
-      };
+      value: WarehouseStockInSuccess;
     }
   | {
       ok: false;
@@ -172,84 +222,181 @@ export class WarehouseStockInCanonicalFacade {
     const commandError = this.validateCommand(command);
     if (commandError) return commandError;
 
+    for (let lineIndex = 0; lineIndex < command.lines.length; lineIndex += 1) {
+      const lineError = this.validateLine(command.lines[lineIndex], lineIndex, command);
+      if (lineError) return lineError;
+    }
+
+    const idempotencyKey = command.productionOutputReference?.idempotencyKey;
+    if (idempotencyKey && !this.ports.idempotency) {
+      return failure(
+        'WAREHOUSE_STOCK_IN_IDEMPOTENCY_REQUIRED',
+        'production order stock in requires Logistics idempotency'
+      );
+    }
+    if (idempotencyKey && !this.ports.transaction) {
+      return failure(
+        'WAREHOUSE_STOCK_IN_TRANSACTION_REQUIRED',
+        'production order stock in requires transactional Logistics persistence'
+      );
+    }
+
+    if (idempotencyKey && this.ports.transaction) {
+      return this.executeWithRuntimeBoundary(async () => {
+        return this.ports.transaction!.run(async () => {
+          const result = await this.executeValidated(command);
+          if (!result.ok) throw new WarehouseStockInKnownFailure(result);
+          return result;
+        });
+      });
+    }
+
+    return this.executeWithRuntimeBoundary(() => this.executeValidated(command));
+  }
+
+  private async executeValidated(command: WarehouseStockInCommand): Promise<WarehouseStockInResult> {
+    const payloadHash = stablePayloadHash(command);
+    const idempotencyKey = command.productionOutputReference?.idempotencyKey;
+    if (idempotencyKey) {
+      if (!this.ports.idempotency) {
+        return failure(
+          'WAREHOUSE_STOCK_IN_IDEMPOTENCY_REQUIRED',
+          'production order stock in requires Logistics idempotency'
+        );
+      }
+      const claim = await this.ports.idempotency.claim({
+        tenantId: command.tenantId,
+        idempotencyKey,
+        payloadHash,
+      });
+      if (claim.status === 'completed') {
+        if (claim.record.payloadHash !== payloadHash) {
+          return failure(
+            'WAREHOUSE_STOCK_IN_IDEMPOTENCY_CONFLICT',
+            'idempotency key was already completed with a different payload'
+          );
+        }
+        return {
+          ok: true,
+          value: {
+            ...claim.record.result,
+            isDuplicate: true,
+          },
+        };
+      }
+      if (claim.status === 'conflict') {
+        return failure(
+          'WAREHOUSE_STOCK_IN_IDEMPOTENCY_CONFLICT',
+          'idempotency key was already claimed with a different payload'
+        );
+      }
+      if (claim.status === 'in_progress') {
+        return failure(
+          'WAREHOUSE_STOCK_IN_IDEMPOTENCY_IN_PROGRESS',
+          'idempotent stock in is already in progress'
+        );
+      }
+    }
+
     const lines: WarehouseStockInLineEvidence[] = [];
 
-    try {
-      for (let lineIndex = 0; lineIndex < command.lines.length; lineIndex += 1) {
-        const line = command.lines[lineIndex];
-        const lineError = this.validateLine(line, lineIndex);
-        if (lineError) return lineError;
-
-        const occurredAt = this.now();
-        const mutation = this.toBalanceMutation(command, line);
-        const balance = await this.ports.balance.applyStockIn(mutation);
-        const { movement, ledgerEntry } = await this.ports.movementLedger.recordStockIn({
-          mutation,
-          balanceAfter: balance,
-          occurredAt,
-        });
-        const traceabilityEvent = await this.ports.traceability.recordEvent({
-          tenant_id: command.tenantId,
-          event_type: TraceabilityEventType.RECEIVED,
-          item_id: line.itemId,
-          quantity: line.quantity,
-          lot_number: line.lotNumber,
-          serial_numbers: line.serialNumbers,
-          to_location_id: line.locationId,
-          current_location_id: line.locationId,
-          actor_id: command.actorId,
-          actor_type: ActorType.USER,
-          transaction_id: movement.id,
-          transaction_type: 'warehouse_stock_in',
-          reference_id: command.sourceDocument.id,
-          reference_type: command.sourceDocument.type,
-          occurred_at: occurredAt,
-          reason: MovementReason.RECEIPT,
-          metadata: {
-            warehouse_sku_id: line.warehouseSkuId,
-            warehouse_bin_id: line.warehouseBinId,
-            source_line_id: line.sourceLineId,
-            source_document_number: command.sourceDocument.number,
-            ...line.metadata,
-          },
-        });
-
-        await this.ports.events.publish(this.toInventoryReceivedEvent({
-          command,
-          line,
-          occurredAt,
-          movementId: movement.id,
-        }));
-
-        const readBack = await this.ports.readBack.getStockInEvidence({
-          tenant_id: command.tenantId,
-          item_id: line.itemId,
-          location_id: line.locationId,
-          movement_id: movement.id,
-          traceability_event_id: traceabilityEvent.id,
-        });
-
-        lines.push({
-          itemId: line.itemId,
-          locationId: line.locationId,
-          quantity: line.quantity,
-          balance,
-          movement,
-          ledgerEntry,
-          traceabilityEvent,
-          readBack,
-        });
-      }
-
-      return {
-        ok: true,
-        value: {
-          tenantId: command.tenantId,
-          sourceDocumentId: command.sourceDocument.id,
-          lines,
+    for (let lineIndex = 0; lineIndex < command.lines.length; lineIndex += 1) {
+      const line = command.lines[lineIndex];
+      const occurredAt = this.now();
+      const mutation = this.toBalanceMutation(command, line);
+      const balance = await this.ports.balance.applyStockIn(mutation);
+      const { movement, ledgerEntry } = await this.ports.movementLedger.recordStockIn({
+        mutation,
+        balanceAfter: balance,
+        occurredAt,
+      });
+      const traceabilityEvent = await this.ports.traceability.recordEvent({
+        tenant_id: command.tenantId,
+        event_type: TraceabilityEventType.RECEIVED,
+        item_id: line.itemId,
+        quantity: line.quantity,
+        lot_number: line.lotNumber,
+        serial_numbers: line.serialNumbers,
+        to_location_id: line.locationId,
+        current_location_id: line.locationId,
+        actor_id: command.actorId,
+        actor_type: ActorType.USER,
+        transaction_id: movement.id,
+        transaction_type: 'warehouse_stock_in',
+        reference_id: command.sourceDocument.id,
+        reference_type: command.sourceDocument.type,
+        occurred_at: occurredAt,
+        reason: MovementReason.RECEIPT,
+        metadata: {
+          warehouse_sku_id: line.warehouseSkuId,
+          warehouse_bin_id: line.warehouseBinId,
+          source_line_id: line.sourceLineId,
+          source_document_number: command.sourceDocument.number,
+          production_order_id: command.productionOutputReference?.productionOrderId,
+          production_order_line_id: command.productionOutputReference?.productionOrderLineId,
+          production_receipt_line_id: command.productionOutputReference?.receiptLineId,
+          production_output_idempotency_key: command.productionOutputReference?.idempotencyKey,
+          quality_disposition: line.qualityDisposition,
+          ...line.metadata,
         },
-      };
+      });
+
+      await this.ports.events.publish(this.toInventoryReceivedEvent({
+        command,
+        line,
+        occurredAt,
+        movementId: movement.id,
+      }));
+
+      const readBack = await this.ports.readBack.getStockInEvidence({
+        tenant_id: command.tenantId,
+        item_id: line.itemId,
+        location_id: line.locationId,
+        movement_id: movement.id,
+        traceability_event_id: traceabilityEvent.id,
+      });
+
+      lines.push({
+        itemId: line.itemId,
+        locationId: line.locationId,
+        quantity: line.quantity,
+        balance,
+        movement,
+        ledgerEntry,
+        traceabilityEvent,
+        readBack,
+      });
+    }
+
+    const value: WarehouseStockInSuccess = {
+      tenantId: command.tenantId,
+      sourceDocumentId: command.sourceDocument.id,
+      productionOutputReference: command.productionOutputReference,
+      isDuplicate: false,
+      lines,
+    };
+    if (idempotencyKey && this.ports.idempotency) {
+      await this.ports.idempotency.complete({
+        tenantId: command.tenantId,
+        idempotencyKey,
+        payloadHash,
+        result: value,
+      });
+    }
+
+    return {
+      ok: true,
+      value,
+    };
+  }
+
+  private async executeWithRuntimeBoundary(
+    operation: () => Promise<WarehouseStockInResult>
+  ): Promise<WarehouseStockInResult> {
+    try {
+      return await operation();
     } catch (error) {
+      if (error instanceof WarehouseStockInKnownFailure) return error.result;
       return {
         ok: false,
         error: {
@@ -277,12 +424,33 @@ export class WarehouseStockInCanonicalFacade {
       return failure('WAREHOUSE_STOCK_IN_INVALID_COMMAND', 'at least one stock in line is required');
     }
 
+    if (command.sourceDocument.type === 'production_order') {
+      const reference = command.productionOutputReference;
+      if (
+        !reference ||
+        !hasText(reference.productionOrderId) ||
+        !hasText(reference.productionOrderLineId) ||
+        !hasText(reference.idempotencyKey)
+      ) {
+        return failure(
+          'WAREHOUSE_STOCK_IN_PRODUCTION_REFERENCE_REQUIRED',
+          'production order stock in requires production order, production order line, and idempotency key'
+        );
+      }
+    } else if (command.productionOutputReference) {
+      return failure(
+        'WAREHOUSE_STOCK_IN_PRODUCTION_REFERENCE_REQUIRED',
+        'production output reference requires production_order source document'
+      );
+    }
+
     return null;
   }
 
   private validateLine(
     line: WarehouseStockInLineCommand,
-    lineIndex: number
+    lineIndex: number,
+    command: WarehouseStockInCommand
   ): WarehouseStockInResult | null {
     if (!hasText(line.warehouseSkuId)) {
       return failure('WAREHOUSE_STOCK_IN_INVALID_COMMAND', 'warehouseSkuId is required', lineIndex);
@@ -324,6 +492,32 @@ export class WarehouseStockInCanonicalFacade {
       );
     }
 
+    if (command.sourceDocument.type === 'production_order') {
+      const disposition = line.qualityDisposition;
+      if (!disposition) {
+        return failure(
+          'WAREHOUSE_STOCK_IN_QC_DISPOSITION_REQUIRED',
+          'production order stock in requires QC disposition',
+          lineIndex
+        );
+      }
+      if (!Number.isFinite(disposition.acceptedQuantity) || disposition.acceptedQuantity !== line.quantity) {
+        return failure(
+          'WAREHOUSE_STOCK_IN_QC_DISPOSITION_REQUIRED',
+          'accepted QC quantity must equal the stock-in quantity',
+          lineIndex
+        );
+      }
+      if (!isNonNegativeOptional(disposition.rejectedQuantity) ||
+          !isNonNegativeOptional(disposition.pendingQuantity)) {
+        return failure(
+          'WAREHOUSE_STOCK_IN_QC_DISPOSITION_REQUIRED',
+          'rejected and pending QC quantities must be non-negative when provided',
+          lineIndex
+        );
+      }
+    }
+
     return null;
   }
 
@@ -345,6 +539,11 @@ export class WarehouseStockInCanonicalFacade {
         source_line_id: line.sourceLineId,
         source_document_type: command.sourceDocument.type,
         source_document_number: command.sourceDocument.number,
+        production_order_id: command.productionOutputReference?.productionOrderId,
+        production_order_line_id: command.productionOutputReference?.productionOrderLineId,
+        production_receipt_line_id: command.productionOutputReference?.receiptLineId,
+        production_output_idempotency_key: command.productionOutputReference?.idempotencyKey,
+        quality_disposition: line.qualityDisposition,
         unit_of_measure: line.unitOfMeasure,
         lot_number: line.lotNumber,
         serial_numbers: line.serialNumbers,
@@ -395,13 +594,25 @@ export class WarehouseStockInCanonicalFacade {
       metadata: {
         finance_os_posting_required: true,
         source: 'warehouse_stock_in',
+        quality_disposition: line.qualityDisposition,
       },
     };
   }
 }
 
+class WarehouseStockInKnownFailure extends Error {
+  constructor(readonly result: WarehouseStockInResult) {
+    super(result.ok ? 'Unexpected successful stock-in result' : result.error.message);
+    this.name = 'WarehouseStockInKnownFailure';
+  }
+}
+
 function hasText(value: string | undefined): value is string {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isNonNegativeOptional(value: number | undefined): boolean {
+  return value === undefined || (Number.isFinite(value) && value >= 0);
 }
 
 function failure(
@@ -417,4 +628,24 @@ function failure(
       lineIndex,
     },
   };
+}
+
+function stablePayloadHash(payload: unknown): string {
+  return JSON.stringify(sortValue(payload));
+}
+
+function sortValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => sortValue(item));
+  }
+  if (value && typeof value === 'object') {
+    const input = value as Record<string, unknown>;
+    return Object.keys(input)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = sortValue(input[key]);
+        return acc;
+      }, {});
+  }
+  return value;
 }

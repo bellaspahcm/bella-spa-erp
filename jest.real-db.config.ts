@@ -26,6 +26,7 @@ const config: Config = {
     '<rootDir>/src/__tests__/beauty-v2-finance-branch-real-db.test.ts',
     '<rootDir>/src/__tests__/beauty-v2-go-live-payroll-commission-real-db.test.ts',
     '<rootDir>/src/platform/beauty/application/__tests__/beauty-history-real-db.test.ts',
+    '<rootDir>/src/platform/logistics/warehouse/__tests__/stock-in-production-order-real-db.test.ts',
     '<rootDir>/src/platform/logistics/warehouse/__tests__/stock-out-production-consumption-real-db.test.ts',
     '<rootDir>/src/platform/manufacturing/__tests__/manufacturing-slice1-real-db.test.ts',
     '<rootDir>/src/products/beauty-spa-v2/__tests__/beauty-spa-v2-real-db.test.ts',
