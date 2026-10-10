@@ -26,9 +26,14 @@ export type WarehouseStockOutSourceType =
   | 'warehouse_issue'
   | 'disposal'
   | 'damage'
-  | 'loss';
+  | 'loss'
+  | 'production_consumption';
 
-export type WarehouseStockOutReason = 'disposal' | 'damage' | 'loss';
+export type WarehouseStockOutReason =
+  | 'disposal'
+  | 'damage'
+  | 'loss'
+  | 'production_consumption';
 
 const traceabilityEventTypeByStockOutReason: Record<
   WarehouseStockOutReason,
@@ -37,7 +42,14 @@ const traceabilityEventTypeByStockOutReason: Record<
   disposal: TraceabilityEventType.SHIPPED,
   damage: TraceabilityEventType.DAMAGED,
   loss: TraceabilityEventType.SHIPPED,
+  production_consumption: TraceabilityEventType.PICKED,
 };
+
+export interface ProductionConsumptionReference {
+  productionOrderId: string;
+  productionOrderLineId: string;
+  idempotencyKey: string;
+}
 
 export interface WarehouseStockOutCommand {
   tenantId: string;
@@ -48,6 +60,7 @@ export interface WarehouseStockOutCommand {
     number?: string;
     type: WarehouseStockOutSourceType;
   };
+  productionConsumptionReference?: ProductionConsumptionReference;
   lines: WarehouseStockOutLineCommand[];
 }
 
@@ -80,6 +93,19 @@ export interface CanonicalStockOutMutation {
   metadata: Record<string, unknown>;
 }
 
+export interface WarehouseStockOutIdempotencyRecord {
+  tenantId: string;
+  idempotencyKey: string;
+  payloadHash: string;
+  result: WarehouseStockOutSuccess;
+}
+
+export type WarehouseStockOutIdempotencyClaim =
+  | { status: 'claimed' }
+  | { status: 'completed'; record: WarehouseStockOutIdempotencyRecord }
+  | { status: 'in_progress' }
+  | { status: 'conflict' };
+
 export interface CanonicalStockOutMovementRecord {
   id: string;
   tenant_id: string;
@@ -100,6 +126,9 @@ export interface WarehouseStockOutReadBackEvidence {
 }
 
 export interface WarehouseStockOutPorts {
+  transaction?: {
+    run<T>(operation: () => Promise<T>): Promise<T>;
+  };
   balance: {
     getSourceBalance(params: {
       tenant_id: string;
@@ -121,6 +150,14 @@ export interface WarehouseStockOutPorts {
   };
   traceability: Pick<ITraceabilityService, 'recordEvent'>;
   events: Pick<IEventBus, 'publish'>;
+  idempotency?: {
+    claim(params: {
+      tenantId: string;
+      idempotencyKey: string;
+      payloadHash: string;
+    }): Promise<WarehouseStockOutIdempotencyClaim>;
+    complete(record: WarehouseStockOutIdempotencyRecord): Promise<void>;
+  };
   readBack: {
     getStockOutEvidence(params: {
       tenant_id: string;
@@ -139,17 +176,26 @@ export type WarehouseStockOutErrorCode =
   | 'WAREHOUSE_STOCK_OUT_INVALID_QUANTITY'
   | 'WAREHOUSE_STOCK_OUT_INVALID_REASON'
   | 'WAREHOUSE_STOCK_OUT_SERIAL_REQUIRES_LOT'
+  | 'WAREHOUSE_STOCK_OUT_PRODUCTION_REFERENCE_REQUIRED'
+  | 'WAREHOUSE_STOCK_OUT_IDEMPOTENCY_REQUIRED'
+  | 'WAREHOUSE_STOCK_OUT_TRANSACTION_REQUIRED'
+  | 'WAREHOUSE_STOCK_OUT_IDEMPOTENCY_CONFLICT'
+  | 'WAREHOUSE_STOCK_OUT_IDEMPOTENCY_IN_PROGRESS'
   | 'WAREHOUSE_STOCK_OUT_INSUFFICIENT_SOURCE_BALANCE'
   | 'WAREHOUSE_STOCK_OUT_RUNTIME_FAILED';
+
+export interface WarehouseStockOutSuccess {
+  tenantId: string;
+  issueDocumentId: string;
+  productionConsumptionReference?: ProductionConsumptionReference;
+  isDuplicate?: boolean;
+  lines: WarehouseStockOutLineEvidence[];
+}
 
 export type WarehouseStockOutResult =
   | {
       ok: true;
-      value: {
-        tenantId: string;
-        issueDocumentId: string;
-        lines: WarehouseStockOutLineEvidence[];
-      };
+      value: WarehouseStockOutSuccess;
     }
   | {
       ok: false;
@@ -193,102 +239,194 @@ export class WarehouseStockOutCanonicalFacade {
     const commandError = this.validateCommand(command);
     if (commandError) return commandError;
 
-    const lines: WarehouseStockOutLineEvidence[] = [];
+    for (let lineIndex = 0; lineIndex < command.lines.length; lineIndex += 1) {
+      const lineError = this.validateLine(command.lines[lineIndex], lineIndex);
+      if (lineError) return lineError;
+    }
 
-    try {
-      for (let lineIndex = 0; lineIndex < command.lines.length; lineIndex += 1) {
-        const line = command.lines[lineIndex];
-        const lineError = this.validateLine(line, lineIndex);
-        if (lineError) return lineError;
+    const idempotencyKey = command.productionConsumptionReference?.idempotencyKey;
+    if (idempotencyKey && !this.ports.idempotency) {
+      return failure(
+        'WAREHOUSE_STOCK_OUT_IDEMPOTENCY_REQUIRED',
+        'production consumption stock out requires Logistics idempotency'
+      );
+    }
+    if (idempotencyKey && !this.ports.transaction) {
+      return failure(
+        'WAREHOUSE_STOCK_OUT_TRANSACTION_REQUIRED',
+        'production consumption stock out requires transactional Logistics persistence'
+      );
+    }
 
-        const balanceBefore = await this.ports.balance.getSourceBalance({
-          tenant_id: command.tenantId,
-          item_id: line.itemId,
-          location_id: line.locationId,
+    if (idempotencyKey && this.ports.transaction) {
+      return this.executeWithRuntimeBoundary(async () => {
+        return this.ports.transaction!.run(async () => {
+          const result = await this.executeValidated(command);
+          if (!result.ok) throw new WarehouseStockOutKnownFailure(result);
+          return result;
         });
+      });
+    }
 
-        if (balanceBefore.on_hand < line.quantity) {
+    return this.executeWithRuntimeBoundary(() => this.executeValidated(command));
+  }
+
+  private async executeValidated(command: WarehouseStockOutCommand): Promise<WarehouseStockOutResult> {
+    const payloadHash = stablePayloadHash(command);
+    const idempotencyKey = command.productionConsumptionReference?.idempotencyKey;
+    if (idempotencyKey) {
+      if (!this.ports.idempotency) {
+        return failure(
+          'WAREHOUSE_STOCK_OUT_IDEMPOTENCY_REQUIRED',
+          'production consumption stock out requires Logistics idempotency'
+        );
+      }
+      const claim = await this.ports.idempotency.claim({
+        tenantId: command.tenantId,
+        idempotencyKey,
+        payloadHash,
+      });
+      if (claim.status === 'completed') {
+        if (claim.record.payloadHash !== payloadHash) {
           return failure(
-            'WAREHOUSE_STOCK_OUT_INSUFFICIENT_SOURCE_BALANCE',
-            'source balance is insufficient for stock out',
-            lineIndex
+            'WAREHOUSE_STOCK_OUT_IDEMPOTENCY_CONFLICT',
+            'idempotency key was already completed with a different payload'
           );
         }
-
-        const occurredAt = this.now();
-        const mutation = this.toStockOutMutation(command, line);
-        const balanceAfter = await this.ports.balance.applyStockOut(mutation);
-        const { movement, ledgerEntry } = await this.ports.movementLedger.recordStockOut({
-          mutation,
-          balanceBefore,
-          balanceAfter,
-          occurredAt,
-        });
-        const traceabilityEvent = await this.ports.traceability.recordEvent({
-          tenant_id: command.tenantId,
-          event_type: traceabilityEventTypeByStockOutReason[line.reason],
-          item_id: line.itemId,
-          quantity: line.quantity,
-          lot_number: line.lotNumber,
-          serial_numbers: line.serialNumbers,
-          from_location_id: line.locationId,
-          actor_id: command.actorId,
-          actor_type: ActorType.USER,
-          transaction_id: movement.id,
-          transaction_type: 'warehouse_stock_out',
-          reference_id: command.issueDocument.id,
-          reference_type: command.issueDocument.type,
-          occurred_at: occurredAt,
-          reason: line.reason,
-          notes: line.notes,
-          metadata: {
-            warehouse_sku_id: line.warehouseSkuId,
-            warehouse_bin_id: line.warehouseBinId,
-            source_line_id: line.sourceLineId,
-            issue_document_number: command.issueDocument.number,
-            ...line.metadata,
+        return {
+          ok: true,
+          value: {
+            ...claim.record.result,
+            isDuplicate: true,
           },
-        });
+        };
+      }
+      if (claim.status === 'conflict') {
+        return failure(
+          'WAREHOUSE_STOCK_OUT_IDEMPOTENCY_CONFLICT',
+          'idempotency key was already claimed with a different payload'
+        );
+      }
+      if (claim.status === 'in_progress') {
+        return failure(
+          'WAREHOUSE_STOCK_OUT_IDEMPOTENCY_IN_PROGRESS',
+          'idempotent stock out is already in progress'
+        );
+      }
+    }
 
-        await this.ports.events.publish(this.toInventoryIssuedEvent({
-          command,
-          line,
-          balanceBefore,
-          balanceAfter,
-          occurredAt,
-          movementId: movement.id,
-        }));
+    const lines: WarehouseStockOutLineEvidence[] = [];
 
-        const readBack = await this.ports.readBack.getStockOutEvidence({
-          tenant_id: command.tenantId,
-          item_id: line.itemId,
-          location_id: line.locationId,
-          movement_id: movement.id,
-          traceability_event_id: traceabilityEvent.id,
-        });
+    for (let lineIndex = 0; lineIndex < command.lines.length; lineIndex += 1) {
+      const line = command.lines[lineIndex];
+      const balanceBefore = await this.ports.balance.getSourceBalance({
+        tenant_id: command.tenantId,
+        item_id: line.itemId,
+        location_id: line.locationId,
+      });
 
-        lines.push({
-          itemId: line.itemId,
-          locationId: line.locationId,
-          quantity: line.quantity,
-          balanceBefore,
-          balanceAfter,
-          movement,
-          ledgerEntry,
-          traceabilityEvent,
-          readBack,
-        });
+      if (balanceBefore.on_hand < line.quantity) {
+        return failure(
+          'WAREHOUSE_STOCK_OUT_INSUFFICIENT_SOURCE_BALANCE',
+          'source balance is insufficient for stock out',
+          lineIndex
+        );
       }
 
-      return {
-        ok: true,
-        value: {
-          tenantId: command.tenantId,
-          issueDocumentId: command.issueDocument.id,
-          lines,
+      const occurredAt = this.now();
+      const mutation = this.toStockOutMutation(command, line);
+      const balanceAfter = await this.ports.balance.applyStockOut(mutation);
+      const { movement, ledgerEntry } = await this.ports.movementLedger.recordStockOut({
+        mutation,
+        balanceBefore,
+        balanceAfter,
+        occurredAt,
+      });
+      const traceabilityEvent = await this.ports.traceability.recordEvent({
+        tenant_id: command.tenantId,
+        event_type: traceabilityEventTypeByStockOutReason[line.reason],
+        item_id: line.itemId,
+        quantity: line.quantity,
+        lot_number: line.lotNumber,
+        serial_numbers: line.serialNumbers,
+        from_location_id: line.locationId,
+        actor_id: command.actorId,
+        actor_type: ActorType.USER,
+        transaction_id: movement.id,
+        transaction_type: 'warehouse_stock_out',
+        reference_id: command.issueDocument.id,
+        reference_type: command.issueDocument.type,
+        occurred_at: occurredAt,
+        reason: line.reason,
+        notes: line.notes,
+        metadata: {
+          warehouse_sku_id: line.warehouseSkuId,
+          warehouse_bin_id: line.warehouseBinId,
+          source_line_id: line.sourceLineId,
+          issue_document_number: command.issueDocument.number,
+          ...line.metadata,
         },
-      };
+      });
+
+      await this.ports.events.publish(this.toInventoryIssuedEvent({
+        command,
+        line,
+        balanceBefore,
+        balanceAfter,
+        occurredAt,
+        movementId: movement.id,
+      }));
+
+      const readBack = await this.ports.readBack.getStockOutEvidence({
+        tenant_id: command.tenantId,
+        item_id: line.itemId,
+        location_id: line.locationId,
+        movement_id: movement.id,
+        traceability_event_id: traceabilityEvent.id,
+      });
+
+      lines.push({
+        itemId: line.itemId,
+        locationId: line.locationId,
+        quantity: line.quantity,
+        balanceBefore,
+        balanceAfter,
+        movement,
+        ledgerEntry,
+        traceabilityEvent,
+        readBack,
+      });
+    }
+
+    const value: WarehouseStockOutSuccess = {
+      tenantId: command.tenantId,
+      issueDocumentId: command.issueDocument.id,
+      productionConsumptionReference: command.productionConsumptionReference,
+      isDuplicate: false,
+      lines,
+    };
+    if (idempotencyKey && this.ports.idempotency) {
+      await this.ports.idempotency.complete({
+        tenantId: command.tenantId,
+        idempotencyKey,
+        payloadHash,
+        result: value,
+      });
+    }
+
+    return {
+      ok: true,
+      value,
+    };
+  }
+
+  private async executeWithRuntimeBoundary(
+    operation: () => Promise<WarehouseStockOutResult>
+  ): Promise<WarehouseStockOutResult> {
+    try {
+      return await operation();
     } catch (error) {
+      if (error instanceof WarehouseStockOutKnownFailure) return error.result;
       return {
         ok: false,
         error: {
@@ -316,6 +454,32 @@ export class WarehouseStockOutCanonicalFacade {
       return failure(
         'WAREHOUSE_STOCK_OUT_INVALID_COMMAND',
         'at least one stock out line is required'
+      );
+    }
+
+    if (command.issueDocument.type === 'production_consumption') {
+      const reference = command.productionConsumptionReference;
+      if (
+        !reference ||
+        !hasText(reference.productionOrderId) ||
+        !hasText(reference.productionOrderLineId) ||
+        !hasText(reference.idempotencyKey)
+      ) {
+        return failure(
+          'WAREHOUSE_STOCK_OUT_PRODUCTION_REFERENCE_REQUIRED',
+          'production consumption requires production order, production order line, and idempotency key'
+        );
+      }
+      if (command.lines.some((line) => line.reason !== 'production_consumption')) {
+        return failure(
+          'WAREHOUSE_STOCK_OUT_INVALID_REASON',
+          'production consumption stock out requires production_consumption reason'
+        );
+      }
+    } else if (command.lines.some((line) => line.reason === 'production_consumption')) {
+      return failure(
+        'WAREHOUSE_STOCK_OUT_PRODUCTION_REFERENCE_REQUIRED',
+        'production_consumption reason requires production_consumption issue document'
       );
     }
 
@@ -395,6 +559,9 @@ export class WarehouseStockOutCanonicalFacade {
         source_line_id: line.sourceLineId,
         issue_document_type: command.issueDocument.type,
         issue_document_number: command.issueDocument.number,
+        production_order_id: command.productionConsumptionReference?.productionOrderId,
+        production_order_line_id: command.productionConsumptionReference?.productionOrderLineId,
+        production_consumption_idempotency_key: command.productionConsumptionReference?.idempotencyKey,
         unit_of_measure: line.unitOfMeasure,
         lot_number: line.lotNumber,
         serial_numbers: line.serialNumbers,
@@ -430,12 +597,16 @@ export class WarehouseStockOutCanonicalFacade {
       reason: line.reason,
       lot_number: line.lotNumber,
       serial_numbers: line.serialNumbers,
-      reference_id: command.issueDocument.id,
-      financial: this.toFinancialContext(line, balanceBefore, balanceAfter),
+      reference_id: command.productionConsumptionReference?.productionOrderId ?? command.issueDocument.id,
+      reference_type: command.issueDocument.type === 'production_consumption'
+        ? 'work_order'
+        : undefined,
+      financial: this.toFinancialContext(command, line, balanceBefore, balanceAfter),
     };
   }
 
   private toFinancialContext(
+    command: WarehouseStockOutCommand,
     line: WarehouseStockOutLineCommand,
     balanceBefore: InventoryBalance,
     balanceAfter: InventoryBalance
@@ -453,8 +624,17 @@ export class WarehouseStockOutCanonicalFacade {
         balance_after: balanceAfter.on_hand,
         finance_os_posting_required: true,
         source: 'warehouse_stock_out',
+        production_order_id: command.productionConsumptionReference?.productionOrderId,
+        production_order_line_id: command.productionConsumptionReference?.productionOrderLineId,
       },
     };
+  }
+}
+
+class WarehouseStockOutKnownFailure extends Error {
+  constructor(readonly result: WarehouseStockOutResult) {
+    super(result.ok ? 'Unexpected successful stock-out result' : result.error.message);
+    this.name = 'WarehouseStockOutKnownFailure';
   }
 }
 
@@ -463,7 +643,12 @@ function hasText(value: string | undefined): value is string {
 }
 
 function isWarehouseStockOutReason(value: string): value is WarehouseStockOutReason {
-  return value === 'disposal' || value === 'damage' || value === 'loss';
+  return (
+    value === 'disposal' ||
+    value === 'damage' ||
+    value === 'loss' ||
+    value === 'production_consumption'
+  );
 }
 
 function failure(
@@ -479,4 +664,24 @@ function failure(
       lineIndex,
     },
   };
+}
+
+function stablePayloadHash(payload: unknown): string {
+  return JSON.stringify(sortValue(payload));
+}
+
+function sortValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => sortValue(item));
+  }
+  if (value && typeof value === 'object') {
+    const input = value as Record<string, unknown>;
+    return Object.keys(input)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = sortValue(input[key]);
+        return acc;
+      }, {});
+  }
+  return value;
 }

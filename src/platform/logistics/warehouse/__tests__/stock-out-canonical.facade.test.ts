@@ -6,6 +6,7 @@ import { TraceabilityEventType } from '../../contracts/traceability.contract';
 import {
   WarehouseStockOutCanonicalFacade,
   type WarehouseStockOutCommand,
+  type WarehouseStockOutIdempotencyRecord,
   type WarehouseStockOutPorts,
 } from '../stock-out-canonical.facade';
 
@@ -41,8 +42,17 @@ describe('WarehouseStockOutCanonicalFacade', () => {
     };
   }
 
-  function createPorts(calls: string[]): WarehouseStockOutPorts {
+  function createPorts(
+    calls: string[],
+    idempotencyRecords = new Map<string, WarehouseStockOutIdempotencyRecord>()
+  ): WarehouseStockOutPorts {
     return {
+      transaction: {
+        run: jest.fn(async (operation) => {
+          calls.push('transaction');
+          return operation();
+        }),
+      },
       balance: {
         getSourceBalance: jest.fn(async (params) => {
           calls.push('sourceBalance');
@@ -130,6 +140,19 @@ describe('WarehouseStockOutCanonicalFacade', () => {
       events: {
         publish: jest.fn(async () => {
           calls.push('event');
+        }),
+      },
+      idempotency: {
+        claim: jest.fn(async (params) => {
+          calls.push('idempotency:claim');
+          const existing = idempotencyRecords.get(params.idempotencyKey);
+          if (!existing) return { status: 'claimed' };
+          if (existing.payloadHash !== params.payloadHash) return { status: 'conflict' };
+          return { status: 'completed', record: existing };
+        }),
+        complete: jest.fn(async (record) => {
+          calls.push('idempotency:complete');
+          idempotencyRecords.set(record.idempotencyKey, record);
         }),
       },
       readBack: {
@@ -250,6 +273,173 @@ describe('WarehouseStockOutCanonicalFacade', () => {
         reason: 'damage',
       })
     );
+  });
+
+  it('executes production consumption with required work-order reference and Logistics idempotency', async () => {
+    const calls: string[] = [];
+    const idempotencyRecords = new Map<string, WarehouseStockOutIdempotencyRecord>();
+    const ports = createPorts(calls, idempotencyRecords);
+    const facade = new WarehouseStockOutCanonicalFacade(ports, {
+      now: () => fixedNow,
+      idFactory: () => 'event-production-consumption-1',
+    });
+    const command = validCommand();
+    command.issueDocument = {
+      id: 'issue-production-1',
+      number: 'PC-001',
+      type: 'production_consumption',
+    };
+    command.productionConsumptionReference = {
+      productionOrderId: 'production-order-1',
+      productionOrderLineId: 'production-order-line-1',
+      idempotencyKey: 'production-consumption-key-1',
+    };
+    command.lines[0].reason = 'production_consumption';
+    command.lines[0].sourceLineId = 'material-requirement-1';
+
+    const first = await facade.execute(command);
+    const second = await facade.execute(command);
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) throw new Error('production consumption failed');
+    expect(first.value.isDuplicate).toBe(false);
+    expect(second.value.isDuplicate).toBe(true);
+    expect(ports.balance.applyStockOut).toHaveBeenCalledTimes(1);
+    expect(ports.events.publish).toHaveBeenCalledTimes(1);
+    expect(ports.events.publish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: 'production_consumption',
+        reference_id: 'production-order-1',
+        reference_type: 'work_order',
+      })
+    );
+    expect(ports.traceability.recordEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event_type: TraceabilityEventType.PICKED,
+        reference_id: 'issue-production-1',
+        reference_type: 'production_consumption',
+      })
+    );
+    expect(calls).toEqual([
+      'transaction',
+      'idempotency:claim',
+      'sourceBalance',
+      'balance',
+      'movementLedger',
+      'traceability',
+      'event',
+      'readBack',
+      'idempotency:complete',
+      'transaction',
+      'idempotency:claim',
+    ]);
+  });
+
+  it('fails production consumption before mutation without production reference', async () => {
+    const calls: string[] = [];
+    const ports = createPorts(calls);
+    const facade = new WarehouseStockOutCanonicalFacade(ports);
+    const command = validCommand();
+    command.issueDocument.type = 'production_consumption';
+    command.lines[0].reason = 'production_consumption';
+
+    const result = await facade.execute(command);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: 'WAREHOUSE_STOCK_OUT_PRODUCTION_REFERENCE_REQUIRED',
+        message: 'production consumption requires production order, production order line, and idempotency key',
+      },
+    });
+    expect(calls).toEqual([]);
+    expect(ports.balance.applyStockOut).not.toHaveBeenCalled();
+  });
+
+  it('fails production consumption before mutation without Logistics idempotency port', async () => {
+    const calls: string[] = [];
+    const ports = createPorts(calls);
+    ports.idempotency = undefined;
+    const facade = new WarehouseStockOutCanonicalFacade(ports);
+    const command = validCommand();
+    command.issueDocument.type = 'production_consumption';
+    command.productionConsumptionReference = {
+      productionOrderId: 'production-order-1',
+      productionOrderLineId: 'production-order-line-1',
+      idempotencyKey: 'production-consumption-key-1',
+    };
+    command.lines[0].reason = 'production_consumption';
+
+    const result = await facade.execute(command);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: 'WAREHOUSE_STOCK_OUT_IDEMPOTENCY_REQUIRED',
+        message: 'production consumption stock out requires Logistics idempotency',
+      },
+    });
+    expect(calls).toEqual([]);
+    expect(ports.balance.applyStockOut).not.toHaveBeenCalled();
+  });
+
+  it('fails production consumption before mutation without transactional persistence', async () => {
+    const calls: string[] = [];
+    const ports = createPorts(calls);
+    ports.transaction = undefined;
+    const facade = new WarehouseStockOutCanonicalFacade(ports);
+    const command = validCommand();
+    command.issueDocument.type = 'production_consumption';
+    command.productionConsumptionReference = {
+      productionOrderId: 'production-order-1',
+      productionOrderLineId: 'production-order-line-1',
+      idempotencyKey: 'production-consumption-key-1',
+    };
+    command.lines[0].reason = 'production_consumption';
+
+    const result = await facade.execute(command);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: 'WAREHOUSE_STOCK_OUT_TRANSACTION_REQUIRED',
+        message: 'production consumption stock out requires transactional Logistics persistence',
+      },
+    });
+    expect(calls).toEqual([]);
+    expect(ports.balance.applyStockOut).not.toHaveBeenCalled();
+  });
+
+  it('rejects production consumption retry with conflicting payload before mutation', async () => {
+    const calls: string[] = [];
+    const records = new Map<string, WarehouseStockOutIdempotencyRecord>();
+    const ports = createPorts(calls, records);
+    const facade = new WarehouseStockOutCanonicalFacade(ports);
+    const command = validCommand();
+    command.issueDocument.type = 'production_consumption';
+    command.productionConsumptionReference = {
+      productionOrderId: 'production-order-1',
+      productionOrderLineId: 'production-order-line-1',
+      idempotencyKey: 'production-consumption-key-1',
+    };
+    command.lines[0].reason = 'production_consumption';
+    await facade.execute(command);
+
+    const changed = validCommand(5);
+    changed.issueDocument.type = 'production_consumption';
+    changed.productionConsumptionReference = command.productionConsumptionReference;
+    changed.lines[0].reason = 'production_consumption';
+    const result = await facade.execute(changed);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: 'WAREHOUSE_STOCK_OUT_IDEMPOTENCY_CONFLICT',
+        message: 'idempotency key was already claimed with a different payload',
+      },
+    });
+    expect(ports.balance.applyStockOut).toHaveBeenCalledTimes(1);
   });
 
   it('fails before mutation when canonical SKU mapping is missing', async () => {

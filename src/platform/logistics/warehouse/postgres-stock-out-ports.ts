@@ -14,7 +14,11 @@ import {
 } from '../contracts/traceability.contract';
 import type {
   CanonicalStockOutMovementRecord,
+  ProductionConsumptionReference,
+  WarehouseStockOutIdempotencyClaim,
+  WarehouseStockOutLineEvidence,
   WarehouseStockOutPorts,
+  WarehouseStockOutSuccess,
 } from './stock-out-canonical.facade';
 
 export interface WarehousePostgresStockOutExecutor {
@@ -48,6 +52,7 @@ interface MovementRow extends QueryResultRow {
   item_id: string;
   location_id: string;
   quantity: string | number;
+  reason: string;
   status: string;
   created_by: string | null;
   created_at: Date | string;
@@ -64,6 +69,17 @@ interface TraceabilityRow extends QueryResultRow {
   updated_at: Date | string;
 }
 
+interface StockOutIdempotencyRow extends QueryResultRow {
+  tenant_id: string;
+  operation: string;
+  idempotency_key: string;
+  payload_hash: string;
+  status: string;
+  result: unknown | null;
+}
+
+const STOCK_OUT_IDEMPOTENCY_OPERATION = 'warehouse_stock_out.production_consumption';
+
 export function createWarehousePostgresStockOutPorts(
   db: WarehousePostgresStockOutExecutor,
   options: WarehousePostgresStockOutPortsOptions = {}
@@ -71,6 +87,9 @@ export function createWarehousePostgresStockOutPorts(
   const idFactory = options.idFactory ?? randomUUID;
 
   return {
+    transaction: {
+      run: (operation) => runInTransaction(db, operation),
+    },
     balance: {
       getSourceBalance: (params) => readLocationBalance(db, params),
       applyStockOut: async (mutation) => {
@@ -172,7 +191,7 @@ export function createWarehousePostgresStockOutPorts(
             $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, 'COMPLETED', $4
           )
           RETURNING id, tenant_id, item_id, from_location_id AS location_id,
-                    quantity, status, created_by, created_at
+                    quantity, reason, status, created_by, created_at
           `,
           [
             movementId,
@@ -281,6 +300,14 @@ export function createWarehousePostgresStockOutPorts(
         return;
       },
     },
+    idempotency: {
+      claim: (params) => claimStockOutIdempotency(db, {
+        tenantId: params.tenantId,
+        idempotencyKey: params.idempotencyKey,
+        payloadHash: params.payloadHash,
+      }),
+      complete: (record) => completeStockOutIdempotency(db, record),
+    },
     readBack: {
       getStockOutEvidence: async (params) => {
         const balance = await readLocationBalance(db, {
@@ -292,7 +319,7 @@ export function createWarehousePostgresStockOutPorts(
         const movement = await db.query<MovementRow>(
           `
           SELECT id, tenant_id, item_id, from_location_id AS location_id,
-                 quantity, status, created_by, created_at
+                 quantity, reason, status, created_by, created_at
           FROM logistics.inventory_movements
           WHERE tenant_id = $1 AND id = $2
           `,
@@ -313,7 +340,7 @@ export function createWarehousePostgresStockOutPorts(
 
         const movementRecord = toMovementRecord(
           requireRow(movement.rows[0], 'stock-out read-back movement not found'),
-          'disposal',
+          readStockOutReason(movement.rows[0].reason),
           ''
         );
 
@@ -341,6 +368,109 @@ export function createWarehousePostgresStockOutPorts(
       },
     },
   };
+}
+
+async function runInTransaction<TResult>(
+  db: WarehousePostgresStockOutExecutor,
+  operation: () => Promise<TResult>
+): Promise<TResult> {
+  await db.query('BEGIN');
+  try {
+    const result = await operation();
+    await db.query('COMMIT');
+    return result;
+  } catch (error) {
+    await db.query('ROLLBACK').catch(() => undefined);
+    throw error;
+  }
+}
+
+async function claimStockOutIdempotency(
+  db: WarehousePostgresStockOutExecutor,
+  params: { tenantId: string; idempotencyKey: string; payloadHash: string }
+): Promise<WarehouseStockOutIdempotencyClaim> {
+  const inserted = await db.query<StockOutIdempotencyRow>(
+    `
+    INSERT INTO logistics.stock_out_idempotency (
+      tenant_id,
+      operation,
+      idempotency_key,
+      payload_hash,
+      status
+    )
+    VALUES ($1::uuid, $2, $3, $4, 'in_progress')
+    ON CONFLICT (tenant_id, operation, idempotency_key) DO NOTHING
+    RETURNING tenant_id, operation, idempotency_key, payload_hash, status, result
+    `,
+    [
+      params.tenantId,
+      STOCK_OUT_IDEMPOTENCY_OPERATION,
+      params.idempotencyKey,
+      params.payloadHash,
+    ]
+  );
+
+  if (inserted.rows[0]) return { status: 'claimed' };
+
+  const existing = await db.query<StockOutIdempotencyRow>(
+    `
+    SELECT tenant_id, operation, idempotency_key, payload_hash, status, result
+    FROM logistics.stock_out_idempotency
+    WHERE tenant_id = $1::uuid
+      AND operation = $2
+      AND idempotency_key = $3
+    FOR UPDATE
+    `,
+    [params.tenantId, STOCK_OUT_IDEMPOTENCY_OPERATION, params.idempotencyKey]
+  );
+  const row = requireRow(existing.rows[0], 'stock-out idempotency row not found after conflict');
+
+  if (row.payload_hash !== params.payloadHash) return { status: 'conflict' };
+  if (row.status === 'completed') {
+    if (row.result === null) return { status: 'in_progress' };
+    return {
+      status: 'completed',
+      record: {
+        tenantId: row.tenant_id,
+        idempotencyKey: row.idempotency_key,
+        payloadHash: row.payload_hash,
+        result: toWarehouseStockOutSuccess(row.result),
+      },
+    };
+  }
+  return { status: 'in_progress' };
+}
+
+async function completeStockOutIdempotency(
+  db: WarehousePostgresStockOutExecutor,
+  record: {
+    tenantId: string;
+    idempotencyKey: string;
+    payloadHash: string;
+    result: WarehouseStockOutSuccess;
+  }
+): Promise<void> {
+  const completed = await db.query<StockOutIdempotencyRow>(
+    `
+    UPDATE logistics.stock_out_idempotency
+    SET status = 'completed',
+        result = $4::jsonb,
+        updated_at = NOW()
+    WHERE tenant_id = $1::uuid
+      AND operation = $2
+      AND idempotency_key = $3
+      AND payload_hash = $5
+    RETURNING tenant_id, operation, idempotency_key, payload_hash, status, result
+    `,
+    [
+      record.tenantId,
+      STOCK_OUT_IDEMPOTENCY_OPERATION,
+      record.idempotencyKey,
+      JSON.stringify(record.result),
+      record.payloadHash,
+    ]
+  );
+  requireRow(completed.rows[0], 'stock-out idempotency completion did not update a row');
 }
 
 async function readLocationBalance(
@@ -474,7 +604,7 @@ function toInventoryBalance(row: InventoryRow): InventoryBalance {
 
 function toMovementRecord(
   row: MovementRow,
-  reason: 'disposal' | 'damage' | 'loss',
+  reason: 'disposal' | 'damage' | 'loss' | 'production_consumption',
   fallbackActorId: string
 ): CanonicalStockOutMovementRecord {
   return {
@@ -488,6 +618,14 @@ function toMovementRecord(
     actor_id: row.created_by ?? fallbackActorId,
     created_at: new Date(row.created_at),
   };
+}
+
+function readStockOutReason(value: string): 'disposal' | 'damage' | 'loss' | 'production_consumption' {
+  return value === 'damage' ||
+    value === 'loss' ||
+    value === 'production_consumption'
+    ? value
+    : 'disposal';
 }
 
 function toTraceabilityEvent(
@@ -599,4 +737,178 @@ function readUuid(value: string | undefined): string | null {
   return value && uuidPattern.test(value)
     ? value
     : null;
+}
+
+function toWarehouseStockOutSuccess(value: unknown): WarehouseStockOutSuccess {
+  if (!isRecord(value)) throw new Error('stored stock-out idempotency result is malformed');
+  const tenantId = readRequiredString(value.tenantId, 'tenantId');
+  const issueDocumentId = readRequiredString(value.issueDocumentId, 'issueDocumentId');
+  const linesValue = value.lines;
+  if (!Array.isArray(linesValue)) {
+    throw new Error('stored stock-out idempotency result lines are malformed');
+  }
+
+  return {
+    tenantId,
+    issueDocumentId,
+    productionConsumptionReference: readProductionConsumptionReference(
+      value.productionConsumptionReference
+    ),
+    isDuplicate: value.isDuplicate === true,
+    lines: linesValue.map(toWarehouseStockOutLineEvidence),
+  };
+}
+
+function toWarehouseStockOutLineEvidence(value: unknown): WarehouseStockOutLineEvidence {
+  if (!isRecord(value)) throw new Error('stored stock-out idempotency line is malformed');
+  return {
+    itemId: readRequiredString(value.itemId, 'itemId'),
+    locationId: readRequiredString(value.locationId, 'locationId'),
+    quantity: readRequiredNumber(value.quantity, 'quantity'),
+    balanceBefore: readStoredInventoryBalance(value.balanceBefore),
+    balanceAfter: readStoredInventoryBalance(value.balanceAfter),
+    movement: readStoredMovement(value.movement),
+    ledgerEntry: readStoredLedgerEntry(value.ledgerEntry),
+    traceabilityEvent: readStoredTraceabilityEvent(value.traceabilityEvent),
+    readBack: readStoredReadBack(value.readBack),
+  };
+}
+
+function readProductionConsumptionReference(value: unknown): ProductionConsumptionReference | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!isRecord(value)) throw new Error('stored production consumption reference is malformed');
+  return {
+    productionOrderId: readRequiredString(value.productionOrderId, 'productionOrderId'),
+    productionOrderLineId: readRequiredString(value.productionOrderLineId, 'productionOrderLineId'),
+    idempotencyKey: readRequiredString(value.idempotencyKey, 'idempotencyKey'),
+  };
+}
+
+function readStoredInventoryBalance(value: unknown): InventoryBalance {
+  if (!isRecord(value)) throw new Error('stored stock-out balance is malformed');
+  return {
+    tenant_id: readRequiredString(value.tenant_id, 'tenant_id'),
+    item_id: readRequiredString(value.item_id, 'item_id'),
+    location_id: readRequiredString(value.location_id, 'location_id'),
+    on_hand: readRequiredNumber(value.on_hand, 'on_hand'),
+    allocated: readRequiredNumber(value.allocated, 'allocated'),
+    available: readRequiredNumber(value.available, 'available'),
+    updated_at: readRequiredDate(value.updated_at, 'updated_at'),
+  };
+}
+
+function readStoredMovement(value: unknown): CanonicalStockOutMovementRecord {
+  if (!isRecord(value)) throw new Error('stored stock-out movement is malformed');
+  return {
+    id: readRequiredString(value.id, 'movement.id'),
+    tenant_id: readRequiredString(value.tenant_id, 'movement.tenant_id'),
+    item_id: readRequiredString(value.item_id, 'movement.item_id'),
+    location_id: readRequiredString(value.location_id, 'movement.location_id'),
+    quantity: readRequiredNumber(value.quantity, 'movement.quantity'),
+    reason: readStockOutReason(readRequiredString(value.reason, 'movement.reason')),
+    status: TransactionStatus.COMPLETED,
+    actor_id: readRequiredString(value.actor_id, 'movement.actor_id'),
+    created_at: readRequiredDate(value.created_at, 'movement.created_at'),
+  };
+}
+
+function readStoredLedgerEntry(value: unknown) {
+  if (!isRecord(value)) throw new Error('stored stock-out ledger entry is malformed');
+  return {
+    id: readRequiredString(value.id, 'ledgerEntry.id'),
+    tenant_id: readRequiredString(value.tenant_id, 'ledgerEntry.tenant_id'),
+    item_id: readRequiredString(value.item_id, 'ledgerEntry.item_id'),
+    location_id: readRequiredString(value.location_id, 'ledgerEntry.location_id'),
+    entry_type: LedgerEntryType.MOVEMENT,
+    quantity_delta: readRequiredNumber(value.quantity_delta, 'ledgerEntry.quantity_delta'),
+    balance_after: readRequiredNumber(value.balance_after, 'ledgerEntry.balance_after'),
+    transaction_id: readRequiredString(value.transaction_id, 'ledgerEntry.transaction_id'),
+    actor_id: readRequiredString(value.actor_id, 'ledgerEntry.actor_id'),
+    reason: readRequiredString(value.reason, 'ledgerEntry.reason'),
+    created_at: readRequiredDate(value.created_at, 'ledgerEntry.created_at'),
+    metadata: isRecord(value.metadata) ? value.metadata : undefined,
+  };
+}
+
+function readStoredTraceabilityEvent(value: unknown): TraceabilityEvent {
+  if (!isRecord(value)) throw new Error('stored stock-out traceability event is malformed');
+  return {
+    id: readRequiredString(value.id, 'traceabilityEvent.id'),
+    tenant_id: readRequiredString(value.tenant_id, 'traceabilityEvent.tenant_id'),
+    event_type: readTraceabilityEventType(value.event_type),
+    item_id: readRequiredString(value.item_id, 'traceabilityEvent.item_id'),
+    lot_number: readOptionalString(value.lot_number),
+    serial_numbers: readOptionalStringArray(value.serial_numbers),
+    quantity: readRequiredNumber(value.quantity, 'traceabilityEvent.quantity'),
+    from_location_id: readOptionalString(value.from_location_id),
+    to_location_id: readOptionalString(value.to_location_id),
+    current_location_id: readOptionalString(value.current_location_id),
+    actor_id: readRequiredString(value.actor_id, 'traceabilityEvent.actor_id'),
+    actor_type: ActorType.USER,
+    transaction_id: readOptionalString(value.transaction_id),
+    transaction_type: readOptionalString(value.transaction_type),
+    reference_id: readOptionalString(value.reference_id),
+    reference_type: readOptionalString(value.reference_type),
+    occurred_at: readRequiredDate(value.occurred_at, 'traceabilityEvent.occurred_at'),
+    recorded_at: readRequiredDate(value.recorded_at, 'traceabilityEvent.recorded_at'),
+    notes: readOptionalString(value.notes),
+    reason: readOptionalString(value.reason),
+    metadata: isRecord(value.metadata) ? value.metadata : undefined,
+  };
+}
+
+function readStoredReadBack(value: unknown) {
+  if (!isRecord(value)) throw new Error('stored stock-out read-back is malformed');
+  return {
+    balance: readStoredInventoryBalance(value.balance),
+    ledgerEntry: readStoredLedgerEntry(value.ledgerEntry),
+    movement: readStoredMovement(value.movement),
+    traceability: readStoredTraceabilityEvent(value.traceability),
+  };
+}
+
+function readTraceabilityEventType(value: unknown): TraceabilityEventType {
+  if (value === TraceabilityEventType.PICKED) return TraceabilityEventType.PICKED;
+  if (value === TraceabilityEventType.SHIPPED) return TraceabilityEventType.SHIPPED;
+  if (value === TraceabilityEventType.DAMAGED) return TraceabilityEventType.DAMAGED;
+  throw new Error('stored stock-out traceability event type is malformed');
+}
+
+function readRequiredString(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`stored stock-out idempotency ${field} is malformed`);
+  }
+  return value;
+}
+
+function readOptionalString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+}
+
+function readOptionalStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.filter((entry): entry is string => typeof entry === 'string');
+}
+
+function readRequiredNumber(value: unknown, field: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`stored stock-out idempotency ${field} is malformed`);
+  }
+  return value;
+}
+
+function readRequiredDate(value: unknown, field: string): Date {
+  if (value instanceof Date) return value;
+  if (typeof value !== 'string') {
+    throw new Error(`stored stock-out idempotency ${field} is malformed`);
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`stored stock-out idempotency ${field} is malformed`);
+  }
+  return date;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
