@@ -3,7 +3,7 @@
 import type { KtvPerformanceViewModel } from '@/core/services/analytics/dashboard-actions';
 import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
-import { getCurrentUser } from './user-actions';
+import { getCurrentUser } from '@/services/user-actions';
 
 type KtvLeaderboardRow = Database['public']['Functions']['get_ktv_leaderboard']['Returns'][number];
 type RatingStar = 1 | 2 | 3 | 4 | 5;

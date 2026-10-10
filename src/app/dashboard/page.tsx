@@ -29,7 +29,7 @@ import {
   getBeautyDashboardCustomerRatingDistribution,
   getBeautyDashboardTopTechnicians,
   type CustomerRatingDistributionViewModel,
-} from '@/services/beauty-dashboard-rating-actions';
+} from '@/app/dashboard/beauty-dashboard-rating-actions';
 import { getDashboardWidgetAlerts } from '@/components/common/dashboard-widget-actions';
 import type {
   DashboardStatsViewModel,

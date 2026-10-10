@@ -1,7 +1,7 @@
 import {
   getBeautyDashboardCustomerRatingDistribution,
   getBeautyDashboardTopTechnicians,
-} from '../services/beauty-dashboard-rating-actions';
+} from '../app/dashboard/beauty-dashboard-rating-actions';
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
