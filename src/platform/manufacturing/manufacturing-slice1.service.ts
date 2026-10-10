@@ -27,6 +27,7 @@ import type {
   ManufacturingClock,
   ManufacturingIdFactory,
   ManufacturingRepository,
+  LogisticsEvidenceBindingPort,
   MaterialAvailabilityPort,
 } from './ports';
 
@@ -37,6 +38,7 @@ export class ManufacturingSlice1Service {
     private readonly repository: ManufacturingRepository,
     private readonly authorization: ManufacturingAuthorizationPort,
     private readonly availability: MaterialAvailabilityPort,
+    private readonly logisticsEvidence: LogisticsEvidenceBindingPort,
     private readonly ids: ManufacturingIdFactory,
     private readonly clock: ManufacturingClock
   ) {}
@@ -365,6 +367,7 @@ export class ManufacturingSlice1Service {
           throw new ManufacturingValidationError('Production execution UOM must match production order line UOM');
         }
         await this.assertMaterialRequirementEvidence(repository, order, command);
+        await this.assertMaterialIssueEvidenceBinding(order, line.id, command);
 
         const execution: ProductionExecution = {
           id: this.ids.next('mfg_exec'),
@@ -524,6 +527,7 @@ export class ManufacturingSlice1Service {
           tenantId: actor.tenantId,
           productionOrderId: order.id,
         });
+        await this.assertFinishedGoodsReceiptEvidenceBinding(order, command.receiptEvidence);
         const reconciliation = this.reconcileCompletion(
           order,
           executions,
@@ -660,6 +664,65 @@ export class ManufacturingSlice1Service {
     });
     if (!requirements.some((requirement) => requirement.id === command.materialRequirementId)) {
       throw new ManufacturingStateError('Material issue evidence must reference a requirement from the order');
+    }
+  }
+
+  private async assertMaterialIssueEvidenceBinding(
+    order: ProductionOrder,
+    productionOrderLineId: string,
+    command: RecordProductionExecutionCommand
+  ): Promise<void> {
+    const evidence = command.materialIssueEvidence;
+    if (
+      evidence.issueDocumentId !== command.materialIssueDocumentId ||
+      evidence.movementId !== command.materialIssueMovementId
+    ) {
+      throw new ManufacturingValidationError('Material issue evidence does not match execution references');
+    }
+    if (
+      evidence.productionOrderId !== order.id ||
+      evidence.productionOrderLineId !== productionOrderLineId
+    ) {
+      throw new ManufacturingValidationError('Material issue evidence must reference the production order line');
+    }
+    if (
+      command.materialRequirementId !== undefined &&
+      evidence.materialRequirementId !== command.materialRequirementId
+    ) {
+      throw new ManufacturingValidationError('Material issue evidence must reference the material requirement');
+    }
+    await this.logisticsEvidence.verifyMaterialIssueEvidence({
+      tenantId: order.tenantId,
+      productionOrderId: order.id,
+      productionOrderLineId,
+      materialRequirementId: command.materialRequirementId,
+      evidence,
+    });
+  }
+
+  private async assertFinishedGoodsReceiptEvidenceBinding(
+    order: ProductionOrder,
+    receipts: CompleteProductionOrderCommand['receiptEvidence']
+  ): Promise<void> {
+    const orderLineIds = new Set(order.lines.map((line) => line.id));
+    for (const receipt of receipts) {
+      const evidence = receipt.logisticsEvidence;
+      if (!orderLineIds.has(receipt.productionOrderLineId)) {
+        throw new ManufacturingValidationError('Finished goods receipt evidence references an unknown order line');
+      }
+      if (
+        evidence.receiptDocumentId !== receipt.receiptDocumentId ||
+        evidence.receiptLineId !== receipt.receiptLineId ||
+        evidence.productionOrderId !== order.id ||
+        evidence.productionOrderLineId !== receipt.productionOrderLineId
+      ) {
+        throw new ManufacturingValidationError('Finished goods receipt evidence does not match completion references');
+      }
+      await this.logisticsEvidence.verifyFinishedGoodsReceiptEvidence({
+        tenantId: order.tenantId,
+        productionOrderId: order.id,
+        receipt,
+      });
     }
   }
 

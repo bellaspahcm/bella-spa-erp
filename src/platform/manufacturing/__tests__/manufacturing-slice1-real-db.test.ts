@@ -11,9 +11,12 @@ import {
   ManufacturingSlice1Service,
   PostgresManufacturingRepository,
   StaticManufacturingAuthorization,
+  type FinishedGoodsReceiptEvidence,
+  type LogisticsEvidenceBindingPort,
   type ManufacturingActor,
   type ManufacturingIdFactory,
   type ManufacturingSqlClient,
+  type MaterialIssueLogisticsEvidence,
   type MaterialAvailabilityPort,
 } from '..';
 
@@ -400,6 +403,12 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         productionOrderLineId: line.id,
         materialIssueDocumentId: `${marker}-issue-doc`,
         materialIssueMovementId: `${marker}-issue-movement`,
+        materialIssueEvidence: materialIssueEvidence({
+          productionOrderId: order.value.id,
+          productionOrderLineId: line.id,
+          issueDocumentId: `${marker}-issue-doc`,
+          movementId: `${marker}-issue-movement`,
+        }),
         actualQuantity: 10,
         acceptedQuantity: 8,
         rejectedQuantity: 1,
@@ -412,6 +421,12 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         productionOrderLineId: line.id,
         materialIssueDocumentId: `${marker}-issue-doc`,
         materialIssueMovementId: `${marker}-issue-movement`,
+        materialIssueEvidence: materialIssueEvidence({
+          productionOrderId: order.value.id,
+          productionOrderLineId: line.id,
+          issueDocumentId: `${marker}-issue-doc`,
+          movementId: `${marker}-issue-movement`,
+        }),
         actualQuantity: 10,
         acceptedQuantity: 8,
         rejectedQuantity: 1,
@@ -484,14 +499,15 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
       const completion = await service.completeProductionOrder(actor, {
         idempotencyKey: `${marker}-execution-complete`,
         productionOrderId: order.value.id,
-        receiptEvidence: [{
+        receiptEvidence: [receiptEvidence({
+          productionOrderId: order.value.id,
           productionOrderLineId: line.id,
           receiptDocumentId: `${marker}-fgr`,
           receiptLineId: `${marker}-fgr-line`,
           acceptedQuantity: 8,
           rejectedQuantity: 1,
           pendingQuantity: 0,
-        }],
+        })],
       });
 
       expect(completion.value).toMatchObject({
@@ -556,14 +572,15 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         service.completeProductionOrder(actor, {
           idempotencyKey: `${marker}-complete-quality-rework`,
           productionOrderId: order.id,
-          receiptEvidence: [{
+          receiptEvidence: [receiptEvidence({
+            productionOrderId: order.id,
             productionOrderLineId: line.id,
             receiptDocumentId: `${marker}-fgr-quality-rework`,
             receiptLineId: `${marker}-fgr-line-quality-rework`,
             acceptedQuantity: 9,
             rejectedQuantity: 1,
             pendingQuantity: 0,
-          }],
+          })],
         })
       ).rejects.toThrow();
 
@@ -615,14 +632,15 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         service.completeProductionOrder(actor, {
           idempotencyKey: `${marker}-complete-quality-pending`,
           productionOrderId: order.id,
-          receiptEvidence: [{
+          receiptEvidence: [receiptEvidence({
+            productionOrderId: order.id,
             productionOrderLineId: line.id,
             receiptDocumentId: `${marker}-fgr-quality-pending`,
             receiptLineId: `${marker}-fgr-line-quality-pending`,
             acceptedQuantity: 10,
             rejectedQuantity: 0,
             pendingQuantity: 1,
-          }],
+          })],
         })
       ).rejects.toThrow();
 
@@ -677,9 +695,88 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         repository,
         authorization,
         availability,
+        createEvidenceBindingPort(),
         new RandomUuidManufacturingIdFactory(),
         new FixedManufacturingClock()
       ),
+    };
+  }
+
+  function createEvidenceBindingPort(): LogisticsEvidenceBindingPort {
+    return {
+      async verifyMaterialIssueEvidence(params) {
+        if (
+          params.evidence.productionOrderId !== params.productionOrderId ||
+          params.evidence.productionOrderLineId !== params.productionOrderLineId
+        ) {
+          throw new Error('Material issue evidence mismatch');
+        }
+      },
+      async verifyFinishedGoodsReceiptEvidence(params) {
+        const evidence = params.receipt.logisticsEvidence;
+        if (
+          evidence.productionOrderId !== params.productionOrderId ||
+          evidence.productionOrderLineId !== params.receipt.productionOrderLineId ||
+          evidence.receiptDocumentId !== params.receipt.receiptDocumentId ||
+          evidence.receiptLineId !== params.receipt.receiptLineId
+        ) {
+          throw new Error('Finished goods receipt evidence mismatch');
+        }
+      },
+    };
+  }
+
+  function materialIssueEvidence(params: {
+    productionOrderId: string;
+    productionOrderLineId: string;
+    issueDocumentId: string;
+    movementId: string;
+    materialRequirementId?: string;
+    quantity?: number;
+  }): MaterialIssueLogisticsEvidence {
+    return {
+      issueDocumentId: params.issueDocumentId,
+      movementId: params.movementId,
+      traceabilityEventId: `${params.movementId}-trace`,
+      itemId: 'component_a',
+      locationId: 'warehouse-bin-a',
+      quantity: params.quantity ?? 20,
+      productionOrderId: params.productionOrderId,
+      productionOrderLineId: params.productionOrderLineId,
+      materialRequirementId: params.materialRequirementId,
+    };
+  }
+
+  function receiptEvidence(params: {
+    productionOrderId: string;
+    productionOrderLineId: string;
+    receiptDocumentId: string;
+    receiptLineId: string;
+    acceptedQuantity: number;
+    rejectedQuantity?: number;
+    pendingQuantity?: number;
+  }): FinishedGoodsReceiptEvidence {
+    return {
+      productionOrderLineId: params.productionOrderLineId,
+      receiptDocumentId: params.receiptDocumentId,
+      receiptLineId: params.receiptLineId,
+      acceptedQuantity: params.acceptedQuantity,
+      rejectedQuantity: params.rejectedQuantity,
+      pendingQuantity: params.pendingQuantity,
+      logisticsEvidence: {
+        receiptDocumentId: params.receiptDocumentId,
+        receiptLineId: params.receiptLineId,
+        movementId: `${params.receiptLineId}-movement`,
+        traceabilityEventId: `${params.receiptLineId}-trace`,
+        itemId: 'finished_good_a',
+        locationId: 'finished-goods-warehouse',
+        quantity: params.acceptedQuantity,
+        productionOrderId: params.productionOrderId,
+        productionOrderLineId: params.productionOrderLineId,
+        acceptedQuantity: params.acceptedQuantity,
+        rejectedQuantity: params.rejectedQuantity,
+        pendingQuantity: params.pendingQuantity,
+      },
     };
   }
 
@@ -728,6 +825,12 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
       productionOrderLineId: line.id,
       materialIssueDocumentId: `${marker}-issue-doc-${params.suffix}`,
       materialIssueMovementId: `${marker}-issue-movement-${params.suffix}`,
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.value.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: `${marker}-issue-doc-${params.suffix}`,
+        movementId: `${marker}-issue-movement-${params.suffix}`,
+      }),
       actualQuantity: targetQuantity,
       acceptedQuantity: params.acceptedQuantity,
       rejectedQuantity: params.rejectedQuantity,

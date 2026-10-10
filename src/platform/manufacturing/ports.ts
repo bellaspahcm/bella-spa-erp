@@ -1,13 +1,24 @@
 import type { IInventoryBalanceQuery, LocationId, Quantity } from '../logistics/contracts/inventory.contract';
-import type { WarehouseStockInCommand, WarehouseStockInResult } from '../logistics/warehouse/stock-in-canonical.facade';
-import type { WarehouseStockOutCommand, WarehouseStockOutResult } from '../logistics/warehouse/stock-out-canonical.facade';
+import type {
+  WarehouseStockInCommand,
+  WarehouseStockInPorts,
+  WarehouseStockInResult,
+} from '../logistics/warehouse/stock-in-canonical.facade';
+import type {
+  WarehouseStockOutCommand,
+  WarehouseStockOutPorts,
+  WarehouseStockOutResult,
+} from '../logistics/warehouse/stock-out-canonical.facade';
 import type {
   BOMRevision,
   CommandLogEntry,
   FactoryOrgUnitId,
+  FinishedGoodsReceiptEvidence,
+  FinishedGoodsReceiptLogisticsEvidence,
   ManufacturingActor,
   ManufacturingId,
   ManufacturingPermission,
+  MaterialIssueLogisticsEvidence,
   MaterialRequirement,
   ProductionCompletion,
   ProductionExecution,
@@ -83,6 +94,21 @@ export interface MaterialAvailabilityPort {
     itemId: string;
     locationId: LocationId;
   }): Promise<Quantity>;
+}
+
+export interface LogisticsEvidenceBindingPort {
+  verifyMaterialIssueEvidence(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+    productionOrderLineId: ManufacturingId;
+    materialRequirementId?: ManufacturingId;
+    evidence: MaterialIssueLogisticsEvidence;
+  }): Promise<void>;
+  verifyFinishedGoodsReceiptEvidence(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+    receipt: FinishedGoodsReceiptEvidence;
+  }): Promise<void>;
 }
 
 export interface ProductionConsumptionIssueRequest {
@@ -249,4 +275,193 @@ export class LogisticsFinishedGoodsReceiptAdapter implements FinishedGoodsReceip
     };
     return this.stockIn.execute(command);
   }
+}
+
+export class LogisticsEvidenceBindingAdapter implements LogisticsEvidenceBindingPort {
+  constructor(
+    private readonly stockOut: Pick<WarehouseStockOutPorts, 'readBack' | 'transaction'>,
+    private readonly stockIn: Pick<WarehouseStockInPorts, 'readBack' | 'transaction'>
+  ) {}
+
+  async verifyMaterialIssueEvidence(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+    productionOrderLineId: ManufacturingId;
+    materialRequirementId?: ManufacturingId;
+    evidence: MaterialIssueLogisticsEvidence;
+  }): Promise<void> {
+    const evidence = params.evidence;
+    const readBack = await this.runStockOutReadBack({
+      tenant_id: params.tenantId,
+      item_id: evidence.itemId,
+      location_id: evidence.locationId,
+      movement_id: evidence.movementId,
+      traceability_event_id: evidence.traceabilityEventId,
+    });
+
+    const custodyEvent = readCustodyEvents(readBack.traceability.metadata).find((event) => {
+      const metadata = readRecord(event.metadata);
+      return event.transaction_id === evidence.movementId &&
+        metadata.production_order_id === params.productionOrderId &&
+        metadata.production_order_line_id === params.productionOrderLineId;
+    });
+    assertEvidence(
+      readBack.movement.tenant_id === params.tenantId &&
+        readBack.traceability.tenant_id === params.tenantId,
+      'Material issue evidence tenant does not match Manufacturing tenant'
+    );
+    assertEvidence(
+      readBack.movement.id === evidence.movementId &&
+        readBack.traceability.transaction_id === evidence.movementId,
+      'Material issue evidence movement does not match Logistics read-back'
+    );
+    assertEvidence(
+      readBack.movement.reason === 'production_consumption' &&
+        readBack.traceability.reason === 'production_consumption',
+      'Material issue evidence movement is not a production consumption stock-out'
+    );
+    assertEvidence(
+      readBack.movement.item_id === evidence.itemId &&
+        readBack.traceability.item_id === evidence.itemId &&
+        readBack.movement.location_id === evidence.locationId &&
+        readBack.traceability.from_location_id === evidence.locationId,
+      'Material issue evidence item or location does not match Logistics read-back'
+    );
+    assertEvidence(
+      sameQuantity(readBack.movement.quantity, evidence.quantity) &&
+        sameQuantity(readBack.traceability.quantity, evidence.quantity),
+      'Material issue evidence quantity does not match Logistics read-back'
+    );
+    assertEvidence(Boolean(custodyEvent), 'Material issue evidence document is not a production consumption stock-out');
+    const metadata = readRecord(custodyEvent?.metadata);
+    assertEvidence(
+      metadata.production_order_id === params.productionOrderId &&
+        metadata.production_order_line_id === params.productionOrderLineId,
+      'Material issue evidence production reference does not match Manufacturing order'
+    );
+    if (params.materialRequirementId !== undefined) {
+      assertEvidence(
+        metadata.material_requirement_id === params.materialRequirementId,
+        'Material issue evidence material requirement does not match Manufacturing requirement'
+      );
+    }
+  }
+
+  async verifyFinishedGoodsReceiptEvidence(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+    receipt: FinishedGoodsReceiptEvidence;
+  }): Promise<void> {
+    const evidence: FinishedGoodsReceiptLogisticsEvidence = params.receipt.logisticsEvidence;
+    const readBack = await this.runStockInReadBack({
+      tenant_id: params.tenantId,
+      item_id: evidence.itemId,
+      location_id: evidence.locationId,
+      movement_id: evidence.movementId,
+      traceability_event_id: evidence.traceabilityEventId,
+    });
+
+    const custodyEvent = readCustodyEvents(readBack.traceability.metadata).find((event) => {
+      const metadata = readRecord(event.metadata);
+      return event.transaction_id === evidence.movementId &&
+        metadata.production_order_id === params.productionOrderId &&
+        metadata.production_order_line_id === params.receipt.productionOrderLineId &&
+        metadata.production_receipt_line_id === params.receipt.receiptLineId;
+    });
+    const metadata = readRecord(custodyEvent?.metadata);
+    const qualityDisposition = readRecord(metadata.quality_disposition);
+    assertEvidence(
+      readBack.movement.tenant_id === params.tenantId &&
+        readBack.traceability.tenant_id === params.tenantId,
+      'Finished goods receipt evidence tenant does not match Manufacturing tenant'
+    );
+    assertEvidence(
+      readBack.movement.id === evidence.movementId &&
+        readBack.traceability.transaction_id === evidence.movementId,
+      'Finished goods receipt evidence movement does not match Logistics read-back'
+    );
+    assertEvidence(
+      readBack.movement.reason === 'receipt' &&
+        readBack.traceability.reason === 'receipt',
+      'Finished goods receipt evidence movement is not a stock-in receipt'
+    );
+    assertEvidence(
+      readBack.movement.item_id === evidence.itemId &&
+        readBack.traceability.item_id === evidence.itemId &&
+        readBack.movement.location_id === evidence.locationId &&
+        readBack.traceability.to_location_id === evidence.locationId,
+      'Finished goods receipt evidence item or location does not match Logistics read-back'
+    );
+    assertEvidence(
+      sameQuantity(readBack.movement.quantity, evidence.quantity) &&
+        sameQuantity(readBack.traceability.quantity, evidence.quantity),
+      'Finished goods receipt evidence quantity does not match Logistics read-back'
+    );
+    assertEvidence(Boolean(custodyEvent), 'Finished goods receipt evidence document is not a production order stock-in');
+    assertEvidence(
+      metadata.production_order_id === params.productionOrderId &&
+        metadata.production_order_line_id === params.receipt.productionOrderLineId &&
+        metadata.production_receipt_line_id === params.receipt.receiptLineId,
+      'Finished goods receipt evidence production reference does not match Manufacturing order'
+    );
+    assertEvidence(
+      sameQuantity(evidence.quantity, params.receipt.acceptedQuantity) &&
+        sameQuantity(evidence.acceptedQuantity, params.receipt.acceptedQuantity) &&
+        sameQuantity(evidence.rejectedQuantity ?? 0, params.receipt.rejectedQuantity ?? 0) &&
+        sameQuantity(evidence.pendingQuantity ?? 0, params.receipt.pendingQuantity ?? 0),
+      'Finished goods receipt evidence quantities do not match Manufacturing receipt evidence'
+    );
+    assertEvidence(
+      sameQuantity(readNumber(qualityDisposition.acceptedQuantity), params.receipt.acceptedQuantity) &&
+        sameQuantity(readNumber(qualityDisposition.rejectedQuantity), params.receipt.rejectedQuantity ?? 0) &&
+        sameQuantity(readNumber(qualityDisposition.pendingQuantity), params.receipt.pendingQuantity ?? 0),
+      'Finished goods receipt QC disposition does not match Logistics read-back'
+    );
+  }
+
+  private runStockOutReadBack(
+    params: Parameters<WarehouseStockOutPorts['readBack']['getStockOutEvidence']>[0]
+  ): ReturnType<WarehouseStockOutPorts['readBack']['getStockOutEvidence']> {
+    if (!this.stockOut.transaction) {
+      return this.stockOut.readBack.getStockOutEvidence(params);
+    }
+    return this.stockOut.transaction.run(() => this.stockOut.readBack.getStockOutEvidence(params));
+  }
+
+  private runStockInReadBack(
+    params: Parameters<WarehouseStockInPorts['readBack']['getStockInEvidence']>[0]
+  ): ReturnType<WarehouseStockInPorts['readBack']['getStockInEvidence']> {
+    if (!this.stockIn.transaction) {
+      return this.stockIn.readBack.getStockInEvidence(params);
+    }
+    return this.stockIn.transaction.run(() => this.stockIn.readBack.getStockInEvidence(params));
+  }
+}
+
+function assertEvidence(condition: boolean, message: string): void {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
+function sameQuantity(left: number, right: number): boolean {
+  return Math.round(left * 1_000_000) / 1_000_000 === Math.round(right * 1_000_000) / 1_000_000;
+}
+
+function readRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function readCustodyEvents(metadata: Record<string, unknown> | undefined): Array<Record<string, unknown>> {
+  const events = metadata?.custody_events;
+  if (!Array.isArray(events)) return [];
+  return events.filter((event): event is Record<string, unknown> => {
+    return typeof event === 'object' && event !== null && !Array.isArray(event);
+  });
+}
+
+function readNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }

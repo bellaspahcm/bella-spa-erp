@@ -8,7 +8,10 @@ import {
   ManufacturingStateError,
   SequentialManufacturingIdFactory,
   StaticManufacturingAuthorization,
+  type FinishedGoodsReceiptEvidence,
+  type LogisticsEvidenceBindingPort,
   type ManufacturingActor,
+  type MaterialIssueLogisticsEvidence,
   type MaterialAvailabilityPort,
 } from '..';
 import type { IInventoryBalanceQuery } from '../../logistics/contracts/inventory.contract';
@@ -57,10 +60,95 @@ function createService(availability: MaterialAvailabilityPort = createAvailabili
     repository,
     authorization,
     availability,
+    createEvidenceBindingPort(),
     new SequentialManufacturingIdFactory(),
     new FixedManufacturingClock()
   );
   return { service, repository };
+}
+
+function createEvidenceBindingPort(): LogisticsEvidenceBindingPort {
+  return {
+    async verifyMaterialIssueEvidence(params) {
+      if (
+        params.evidence.productionOrderId !== params.productionOrderId ||
+        params.evidence.productionOrderLineId !== params.productionOrderLineId
+      ) {
+        throw new Error('Material issue evidence mismatch');
+      }
+      if (
+        params.materialRequirementId !== undefined &&
+        params.evidence.materialRequirementId !== params.materialRequirementId
+      ) {
+        throw new Error('Material requirement evidence mismatch');
+      }
+    },
+    async verifyFinishedGoodsReceiptEvidence(params) {
+      const evidence = params.receipt.logisticsEvidence;
+      if (
+        evidence.productionOrderId !== params.productionOrderId ||
+        evidence.productionOrderLineId !== params.receipt.productionOrderLineId ||
+        evidence.receiptDocumentId !== params.receipt.receiptDocumentId ||
+        evidence.receiptLineId !== params.receipt.receiptLineId
+      ) {
+        throw new Error('Finished goods receipt evidence mismatch');
+      }
+    },
+  };
+}
+
+function materialIssueEvidence(params: {
+  productionOrderId: string;
+  productionOrderLineId: string;
+  issueDocumentId: string;
+  movementId: string;
+  materialRequirementId?: string;
+  quantity?: number;
+}): MaterialIssueLogisticsEvidence {
+  return {
+    issueDocumentId: params.issueDocumentId,
+    movementId: params.movementId,
+    traceabilityEventId: `${params.movementId}-trace`,
+    itemId: 'component_a',
+    locationId: 'warehouse-bin-a',
+    quantity: params.quantity ?? 20,
+    productionOrderId: params.productionOrderId,
+    productionOrderLineId: params.productionOrderLineId,
+    materialRequirementId: params.materialRequirementId,
+  };
+}
+
+function receiptEvidence(params: {
+  productionOrderId: string;
+  productionOrderLineId: string;
+  receiptDocumentId: string;
+  receiptLineId: string;
+  acceptedQuantity: number;
+  rejectedQuantity?: number;
+  pendingQuantity?: number;
+}): FinishedGoodsReceiptEvidence {
+  return {
+    productionOrderLineId: params.productionOrderLineId,
+    receiptDocumentId: params.receiptDocumentId,
+    receiptLineId: params.receiptLineId,
+    acceptedQuantity: params.acceptedQuantity,
+    rejectedQuantity: params.rejectedQuantity,
+    pendingQuantity: params.pendingQuantity,
+    logisticsEvidence: {
+      receiptDocumentId: params.receiptDocumentId,
+      receiptLineId: params.receiptLineId,
+      movementId: `${params.receiptLineId}-movement`,
+      traceabilityEventId: `${params.receiptLineId}-trace`,
+      itemId: 'finished_good_a',
+      locationId: 'finished-goods-warehouse',
+      quantity: params.acceptedQuantity,
+      productionOrderId: params.productionOrderId,
+      productionOrderLineId: params.productionOrderLineId,
+      acceptedQuantity: params.acceptedQuantity,
+      rejectedQuantity: params.rejectedQuantity,
+      pendingQuantity: params.pendingQuantity,
+    },
+  };
 }
 
 async function createApprovedBomAndOrder(
@@ -310,6 +398,12 @@ describe('Manufacturing Slice 1', () => {
       productionOrderLineId: line.id,
       materialIssueDocumentId: 'issue-doc-1',
       materialIssueMovementId: 'issue-movement-1',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-1',
+        movementId: 'issue-movement-1',
+      }),
       actualQuantity: 10,
       acceptedQuantity: 8,
       rejectedQuantity: 1,
@@ -360,14 +454,15 @@ describe('Manufacturing Slice 1', () => {
     const completion = await service.completeProductionOrder(actor, {
       idempotencyKey: 'complete-po-1',
       productionOrderId: order.id,
-      receiptEvidence: [{
+      receiptEvidence: [receiptEvidence({
+        productionOrderId: order.id,
         productionOrderLineId: line.id,
         receiptDocumentId: 'fgr-1',
         receiptLineId: 'fgr-line-1',
         acceptedQuantity: 8,
         rejectedQuantity: 1,
         pendingQuantity: 0,
-      }],
+      })],
     });
 
     expect(completion.value).toMatchObject({
@@ -409,6 +504,12 @@ describe('Manufacturing Slice 1', () => {
       productionOrderLineId: line.id,
       materialIssueDocumentId: 'issue-doc-mismatch',
       materialIssueMovementId: 'issue-movement-mismatch',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-mismatch',
+        movementId: 'issue-movement-mismatch',
+      }),
       actualQuantity: 10,
       acceptedQuantity: 9,
       rejectedQuantity: 1,
@@ -432,16 +533,112 @@ describe('Manufacturing Slice 1', () => {
       service.completeProductionOrder(actor, {
         idempotencyKey: 'complete-po-mismatch',
         productionOrderId: order.id,
-        receiptEvidence: [{
+        receiptEvidence: [receiptEvidence({
+          productionOrderId: order.id,
           productionOrderLineId: line.id,
           receiptDocumentId: 'fgr-mismatch',
           receiptLineId: 'fgr-line-mismatch',
           acceptedQuantity: 8,
           rejectedQuantity: 1,
           pendingQuantity: 0,
-        }],
+        })],
       })
     ).rejects.toThrow(ManufacturingStateError);
+  });
+
+  it('rejects production execution when material issue evidence is not bound to the order line', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-fake-issue',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-fake-issue',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+
+    await expect(
+      service.recordProductionExecution(actor, {
+        idempotencyKey: 'record-fake-issue',
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        materialIssueDocumentId: 'issue-doc-fake',
+        materialIssueMovementId: 'issue-movement-fake',
+        materialIssueEvidence: materialIssueEvidence({
+          productionOrderId: 'other-production-order',
+          productionOrderLineId: line.id,
+          issueDocumentId: 'issue-doc-fake',
+          movementId: 'issue-movement-fake',
+        }),
+        actualQuantity: 10,
+        acceptedQuantity: 10,
+        uom: 'EA',
+      })
+    ).rejects.toThrow();
+  });
+
+  it('rejects completion when FGR evidence is not bound to the receipt line', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-fake-fgr',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-fake-fgr',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-fake-fgr',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-fake-fgr',
+      materialIssueMovementId: 'issue-movement-fake-fgr',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-fake-fgr',
+        movementId: 'issue-movement-fake-fgr',
+      }),
+      actualQuantity: 10,
+      acceptedQuantity: 10,
+      uom: 'EA',
+    });
+
+    const fakeReceipt = receiptEvidence({
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      receiptDocumentId: 'fgr-fake',
+      receiptLineId: 'fgr-line-fake',
+      acceptedQuantity: 10,
+    });
+
+    await expect(
+      service.completeProductionOrder(actor, {
+        idempotencyKey: 'complete-fake-fgr',
+        productionOrderId: order.id,
+        receiptEvidence: [{
+          ...fakeReceipt,
+          logisticsEvidence: {
+            ...fakeReceipt.logisticsEvidence,
+            receiptLineId: 'other-fgr-line',
+          },
+        }],
+      })
+    ).rejects.toThrow();
   });
 
   it('blocks completion until rejected and scrap quantities have terminal quality disposition', async () => {
@@ -467,6 +664,12 @@ describe('Manufacturing Slice 1', () => {
       productionOrderLineId: line.id,
       materialIssueDocumentId: 'issue-doc-quality-required',
       materialIssueMovementId: 'issue-movement-quality-required',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-quality-required',
+        movementId: 'issue-movement-quality-required',
+      }),
       actualQuantity: 10,
       acceptedQuantity: 8,
       rejectedQuantity: 1,
@@ -478,14 +681,15 @@ describe('Manufacturing Slice 1', () => {
       service.completeProductionOrder(actor, {
         idempotencyKey: 'complete-quality-required',
         productionOrderId: order.id,
-        receiptEvidence: [{
+        receiptEvidence: [receiptEvidence({
+          productionOrderId: order.id,
           productionOrderLineId: line.id,
           receiptDocumentId: 'fgr-quality-required',
           receiptLineId: 'fgr-line-quality-required',
           acceptedQuantity: 8,
           rejectedQuantity: 1,
           pendingQuantity: 0,
-        }],
+        })],
       })
     ).rejects.toThrow(ManufacturingStateError);
   });
@@ -513,6 +717,12 @@ describe('Manufacturing Slice 1', () => {
       productionOrderLineId: line.id,
       materialIssueDocumentId: 'issue-doc-quality-rework',
       materialIssueMovementId: 'issue-movement-quality-rework',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-quality-rework',
+        movementId: 'issue-movement-quality-rework',
+      }),
       actualQuantity: 10,
       acceptedQuantity: 9,
       rejectedQuantity: 1,
@@ -533,14 +743,15 @@ describe('Manufacturing Slice 1', () => {
       service.completeProductionOrder(actor, {
         idempotencyKey: 'complete-quality-rework',
         productionOrderId: order.id,
-        receiptEvidence: [{
+        receiptEvidence: [receiptEvidence({
+          productionOrderId: order.id,
           productionOrderLineId: line.id,
           receiptDocumentId: 'fgr-quality-rework',
           receiptLineId: 'fgr-line-quality-rework',
           acceptedQuantity: 9,
           rejectedQuantity: 1,
           pendingQuantity: 0,
-        }],
+        })],
       })
     ).rejects.toThrow(ManufacturingStateError);
   });
@@ -568,6 +779,12 @@ describe('Manufacturing Slice 1', () => {
       productionOrderLineId: line.id,
       materialIssueDocumentId: 'issue-doc-conditional',
       materialIssueMovementId: 'issue-movement-conditional',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-conditional',
+        movementId: 'issue-movement-conditional',
+      }),
       actualQuantity: 10,
       acceptedQuantity: 9,
       rejectedQuantity: 1,
@@ -589,14 +806,15 @@ describe('Manufacturing Slice 1', () => {
     const completion = await service.completeProductionOrder(actor, {
       idempotencyKey: 'complete-conditional',
       productionOrderId: order.id,
-      receiptEvidence: [{
+      receiptEvidence: [receiptEvidence({
+        productionOrderId: order.id,
         productionOrderLineId: line.id,
         receiptDocumentId: 'fgr-conditional',
         receiptLineId: 'fgr-line-conditional',
         acceptedQuantity: 10,
         rejectedQuantity: 0,
         pendingQuantity: 0,
-      }],
+      })],
     });
 
     expect(completion.value).toMatchObject({
@@ -629,6 +847,12 @@ describe('Manufacturing Slice 1', () => {
       productionOrderLineId: line.id,
       materialIssueDocumentId: 'issue-doc-quality-idempotent',
       materialIssueMovementId: 'issue-movement-quality-idempotent',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-quality-idempotent',
+        movementId: 'issue-movement-quality-idempotent',
+      }),
       actualQuantity: 10,
       acceptedQuantity: 9,
       rejectedQuantity: 1,
@@ -685,12 +909,13 @@ describe('Manufacturing Slice 1', () => {
       service.completeProductionOrder(actor, {
         idempotencyKey: 'complete-po-no-exec',
         productionOrderId: order.id,
-        receiptEvidence: [{
+        receiptEvidence: [receiptEvidence({
+          productionOrderId: order.id,
           productionOrderLineId: line.id,
           receiptDocumentId: 'fgr-no-exec',
           receiptLineId: 'fgr-line-no-exec',
           acceptedQuantity: 10,
-        }],
+        })],
       })
     ).rejects.toThrow(ManufacturingStateError);
   });
