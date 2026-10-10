@@ -16,4 +16,5 @@
 export * from './shared-kernel';
 export type { Dimensions, EventMetadata, Weight } from './shared-kernel';
 export * from './contracts';
+export * from './warehouse/stock-out-canonical.facade';
 export * from './engines';

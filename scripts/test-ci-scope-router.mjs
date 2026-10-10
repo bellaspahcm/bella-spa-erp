@@ -201,6 +201,18 @@ const cases = [
     },
   },
   {
+    name: 'RUN real database E2E when Logistics production consumption Real DB proof changes',
+    files: ['src/platform/logistics/warehouse/__tests__/stock-out-production-consumption-real-db.test.ts'],
+    expect(result) {
+      assert.equal(result.scope_status, 'ALLOW');
+      assert.equal(result.scope_level, 'os');
+      assert.deepEqual(result.os, ['logistics']);
+      assert.equal(result.needs_tests, true);
+      assert.equal(result.needs_real_db_e2e, true);
+      assert.equal(result.has_real_db_test_file, true);
+    },
+  },
+  {
     name: 'RUN real database E2E when Hospitality maintenance real-db test changes',
     files: ['src/products/bella-hospitality/__tests__/maintenance-real-db.test.ts'],
     expect(result) {
