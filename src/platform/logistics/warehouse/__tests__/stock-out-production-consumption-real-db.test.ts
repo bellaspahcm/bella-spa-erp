@@ -86,6 +86,7 @@ describeWithRealDb('Logistics production consumption stock-out real DB idempoten
     await admin.query(idempotencyMigrationSql);
     await assertLogisticsTablesExist();
     await seedTenant();
+    await seedRuntimeUser();
     await seedLogisticsItem();
     await seedLogisticsLocation();
     await seedInventory(10);
@@ -253,6 +254,45 @@ describeWithRealDb('Logistics production consumption stock-out real DB idempoten
             enabled_modules = EXCLUDED.enabled_modules
       `,
       [ids.tenant, `${marker} Tenant`]
+    );
+  }
+
+  async function seedRuntimeUser(): Promise<void> {
+    await admin.query(
+      `
+        INSERT INTO auth.users (
+          instance_id, id, aud, role, email, encrypted_password,
+          email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+        )
+        VALUES (
+          '00000000-0000-0000-0000-000000000000'::uuid,
+          $1::uuid,
+          'authenticated',
+          'authenticated',
+          $2,
+          '',
+          NOW(),
+          '{"provider":"email","providers":["email"]}'::jsonb,
+          '{}'::jsonb,
+          NOW(),
+          NOW()
+        )
+        ON CONFLICT (id) DO NOTHING
+      `,
+      [ids.user, `${marker}@example.com`]
+    );
+    await admin.query(
+      `
+        INSERT INTO public.users (id, tenant_id, email, full_name, role, status)
+        VALUES ($1::uuid, $2::uuid, $3, $4, 'operator', 'active')
+        ON CONFLICT (id) DO UPDATE
+        SET tenant_id = EXCLUDED.tenant_id,
+            email = EXCLUDED.email,
+            full_name = EXCLUDED.full_name,
+            role = EXCLUDED.role,
+            status = EXCLUDED.status
+      `,
+      [ids.user, ids.tenant, `${marker}@example.com`, `${marker} Operator`]
     );
   }
 
@@ -429,6 +469,7 @@ describeWithRealDb('Logistics production consumption stock-out real DB idempoten
       ids.tenant,
       ids.item,
     ]);
+    await admin.query('DELETE FROM public.users WHERE id = $1::uuid', [ids.user]);
     await admin
       .query('DELETE FROM public.tenants WHERE id = $1::uuid', [ids.tenant])
       .catch((error: unknown) => {
