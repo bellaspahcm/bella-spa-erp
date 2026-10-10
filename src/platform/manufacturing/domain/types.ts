@@ -8,6 +8,9 @@ export type FactoryOrgUnitId = string;
 export type ProductionOrderStatus = 'draft' | 'released' | 'in_progress' | 'completed' | 'cancelled';
 export type BOMRevisionStatus = 'draft' | 'approved' | 'archived';
 export type MaterialRequirementStatus = 'not_checked' | 'available' | 'shortage' | 'not_proven';
+export type WorkCenterStatus = 'active' | 'inactive';
+export type RoutingRevisionStatus = 'draft' | 'approved' | 'archived';
+export type OperationProgressStatus = 'planned' | 'ready' | 'in_progress' | 'completed' | 'blocked';
 export type QualityDisposition =
   | 'accepted'
   | 'conditional_accept'
@@ -25,7 +28,12 @@ export type ManufacturingPermission =
   | 'manufacturing:material_requirement:calculate'
   | 'manufacturing:availability:read'
   | 'manufacturing:execution:record'
-  | 'manufacturing:quality_disposition:record';
+  | 'manufacturing:quality_disposition:record'
+  | 'manufacturing:work_center:write'
+  | 'manufacturing:routing:write'
+  | 'manufacturing:routing:approve'
+  | 'manufacturing:routing:apply'
+  | 'manufacturing:operation_progress:update';
 
 export interface ManufacturingActor {
   tenantId: TenantId;
@@ -189,6 +197,60 @@ export interface ProductionCompletion {
   completedAt: string;
 }
 
+export interface WorkCenter {
+  id: ManufacturingId;
+  tenantId: TenantId;
+  factoryOrgUnitId: FactoryOrgUnitId;
+  code: string;
+  name: string;
+  status: WorkCenterStatus;
+  createdBy: UserId;
+  createdAt: string;
+}
+
+export interface RoutingRevision {
+  id: ManufacturingId;
+  tenantId: TenantId;
+  factoryOrgUnitId: FactoryOrgUnitId;
+  finishedGoodItemId: ItemId;
+  revisionCode: string;
+  status: RoutingRevisionStatus;
+  operations: RoutingOperation[];
+  createdBy: UserId;
+  createdAt: string;
+  approvedBy?: UserId;
+  approvedAt?: string;
+}
+
+export interface RoutingOperation {
+  id: ManufacturingId;
+  tenantId: TenantId;
+  routingRevisionId: ManufacturingId;
+  sequence: number;
+  operationCode: string;
+  operationName: string;
+  workCenterId: ManufacturingId;
+  required: boolean;
+}
+
+export interface ProductionOperationProgress {
+  id: ManufacturingId;
+  tenantId: TenantId;
+  factoryOrgUnitId: FactoryOrgUnitId;
+  productionOrderId: ManufacturingId;
+  productionOrderLineId: ManufacturingId;
+  routingRevisionId: ManufacturingId;
+  routingOperationId: ManufacturingId;
+  workCenterId: ManufacturingId;
+  required: boolean;
+  status: OperationProgressStatus;
+  blockedReason?: string;
+  startedAt?: string;
+  completedAt?: string;
+  updatedBy: UserId;
+  updatedAt: string;
+}
+
 export interface CommandLogEntry<T = unknown> {
   tenantId: TenantId;
   factoryOrgUnitId: FactoryOrgUnitId;
@@ -197,6 +259,44 @@ export interface CommandLogEntry<T = unknown> {
   payloadHash: string;
   result: T;
   createdAt: string;
+}
+
+export interface CreateWorkCenterCommand {
+  idempotencyKey: string;
+  code: string;
+  name: string;
+}
+
+export interface CreateRoutingRevisionCommand {
+  idempotencyKey: string;
+  finishedGoodItemId: ItemId;
+  revisionCode: string;
+  operations: Array<{
+    sequence: number;
+    operationCode: string;
+    operationName: string;
+    workCenterId: ManufacturingId;
+    required?: boolean;
+  }>;
+}
+
+export interface ApproveRoutingRevisionCommand {
+  idempotencyKey: string;
+  routingRevisionId: ManufacturingId;
+}
+
+export interface ApplyRoutingRevisionCommand {
+  idempotencyKey: string;
+  productionOrderId: ManufacturingId;
+  productionOrderLineId: ManufacturingId;
+  routingRevisionId: ManufacturingId;
+}
+
+export interface UpdateOperationProgressCommand {
+  idempotencyKey: string;
+  operationProgressId: ManufacturingId;
+  status: OperationProgressStatus;
+  blockedReason?: string;
 }
 
 export interface CreateProductionOrderCommand {

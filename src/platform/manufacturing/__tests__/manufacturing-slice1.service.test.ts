@@ -53,6 +53,11 @@ function createService(availability: MaterialAvailabilityPort = createAvailabili
         'manufacturing:availability:read',
         'manufacturing:execution:record',
         'manufacturing:quality_disposition:record',
+        'manufacturing:work_center:write',
+        'manufacturing:routing:write',
+        'manufacturing:routing:approve',
+        'manufacturing:routing:apply',
+        'manufacturing:operation_progress:update',
       ],
     }
   );
@@ -180,6 +185,37 @@ async function createApprovedBomAndOrder(
     bomRevisionId: bom.value.id,
   });
   return { order: order.value, bom: approvedBom.value };
+}
+
+async function createApprovedRouting(
+  service: ManufacturingSlice1Service,
+  actor: ManufacturingActor,
+  suffix: string,
+  finishedGoodItemId = 'finished_good_a'
+) {
+  const workCenter = await service.createWorkCenter(actor, {
+    idempotencyKey: `create-wc-${suffix}`,
+    code: `WC-${suffix}`,
+    name: `Work Center ${suffix}`,
+  });
+  const routing = await service.createRoutingRevision(actor, {
+    idempotencyKey: `create-route-${suffix}`,
+    finishedGoodItemId,
+    revisionCode: `ROUTE-${suffix}`,
+    operations: [
+      {
+        sequence: 10,
+        operationCode: `OP-${suffix}`,
+        operationName: `Operation ${suffix}`,
+        workCenterId: workCenter.value.id,
+      },
+    ],
+  });
+  const approved = await service.approveRoutingRevision(actor, {
+    idempotencyKey: `approve-route-${suffix}`,
+    routingRevisionId: routing.value.id,
+  });
+  return { workCenter: workCenter.value, routing: approved.value };
 }
 
 describe('Manufacturing Slice 1', () => {
@@ -824,6 +860,131 @@ describe('Manufacturing Slice 1', () => {
     });
   });
 
+  it('applies routing to an order line and tracks operation progress through valid transitions', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-routing',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-routing',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    const { routing, workCenter } = await createApprovedRouting(service, actor, 'A');
+
+    const applied = await service.applyRoutingRevision(actor, {
+      idempotencyKey: 'apply-routing',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      routingRevisionId: routing.id,
+    });
+    const retry = await service.applyRoutingRevision(actor, {
+      idempotencyKey: 'apply-routing',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      routingRevisionId: routing.id,
+    });
+
+    expect(applied.isDuplicate).toBe(false);
+    expect(retry.isDuplicate).toBe(true);
+    expect(applied.value).toHaveLength(1);
+    expect(applied.value[0]).toMatchObject({
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      routingRevisionId: routing.id,
+      routingOperationId: routing.operations[0].id,
+      workCenterId: workCenter.id,
+      status: 'planned',
+    });
+
+    const ready = await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-ready',
+      operationProgressId: applied.value[0].id,
+      status: 'ready',
+    });
+    const started = await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-start',
+      operationProgressId: applied.value[0].id,
+      status: 'in_progress',
+    });
+    const completed = await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-complete',
+      operationProgressId: applied.value[0].id,
+      status: 'completed',
+    });
+
+    expect(ready.value.status).toBe('ready');
+    expect(started.value.status).toBe('in_progress');
+    expect(started.value.startedAt).toBeDefined();
+    expect(completed.value.status).toBe('completed');
+    expect(completed.value.completedAt).toBeDefined();
+  });
+
+  it('rejects invalid operation progress transitions and conflicting idempotency payloads', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-routing-invalid',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-routing-invalid',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    const { routing } = await createApprovedRouting(service, actor, 'B');
+    const applied = await service.applyRoutingRevision(actor, {
+      idempotencyKey: 'apply-routing-invalid',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      routingRevisionId: routing.id,
+    });
+
+    await expect(
+      service.updateOperationProgress(actor, {
+        idempotencyKey: 'progress-invalid-complete',
+        operationProgressId: applied.value[0].id,
+        status: 'completed',
+      })
+    ).rejects.toThrow(ManufacturingStateError);
+
+    const blocked = await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-blocked',
+      operationProgressId: applied.value[0].id,
+      status: 'blocked',
+      blockedReason: 'Machine unavailable',
+    });
+    const retry = await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-blocked',
+      operationProgressId: applied.value[0].id,
+      status: 'blocked',
+      blockedReason: 'Machine unavailable',
+    });
+
+    expect(blocked.value.status).toBe('blocked');
+    expect(retry.isDuplicate).toBe(true);
+    await expect(
+      service.updateOperationProgress(actor, {
+        idempotencyKey: 'progress-blocked',
+        operationProgressId: applied.value[0].id,
+        status: 'blocked',
+        blockedReason: 'Different reason',
+      })
+    ).rejects.toThrow(ManufacturingIdempotencyConflictError);
+  });
+
   it('replays duplicate quality disposition commands and rejects conflicting payloads', async () => {
     const availability = createAvailability({ component_a: 25 });
     const { service } = createService(availability);
@@ -918,5 +1079,188 @@ describe('Manufacturing Slice 1', () => {
         })],
       })
     ).rejects.toThrow(ManufacturingStateError);
+  });
+
+  it('blocks completion for routed order lines until applied operations are completed', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-routing-complete',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-routing-complete',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    const { routing } = await createApprovedRouting(service, actor, 'C');
+    const applied = await service.applyRoutingRevision(actor, {
+      idempotencyKey: 'apply-routing-complete',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      routingRevisionId: routing.id,
+    });
+    await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-routing-complete',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-routing-complete',
+      materialIssueMovementId: 'issue-movement-routing-complete',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-routing-complete',
+        movementId: 'issue-movement-routing-complete',
+      }),
+      actualQuantity: 10,
+      acceptedQuantity: 10,
+      uom: 'EA',
+    });
+
+    const receipt = receiptEvidence({
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      receiptDocumentId: 'fgr-routing-complete',
+      receiptLineId: 'fgr-line-routing-complete',
+      acceptedQuantity: 10,
+    });
+    await expect(
+      service.completeProductionOrder(actor, {
+        idempotencyKey: 'complete-routing-incomplete',
+        productionOrderId: order.id,
+        receiptEvidence: [receipt],
+      })
+    ).rejects.toThrow(ManufacturingStateError);
+
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-routing-ready',
+      operationProgressId: applied.value[0].id,
+      status: 'ready',
+    });
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-routing-start',
+      operationProgressId: applied.value[0].id,
+      status: 'in_progress',
+    });
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-routing-completed',
+      operationProgressId: applied.value[0].id,
+      status: 'completed',
+    });
+
+    const completion = await service.completeProductionOrder(actor, {
+      idempotencyKey: 'complete-routing-finished',
+      productionOrderId: order.id,
+      receiptEvidence: [receipt],
+    });
+    expect(completion.value.completedQuantity).toBe(10);
+  });
+
+  it('requires only mandatory applied routing operations before completion', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-routing-optional',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-routing-optional',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    const workCenter = await service.createWorkCenter(actor, {
+      idempotencyKey: 'create-wc-optional',
+      code: 'WC-OPTIONAL',
+      name: 'Optional Operation Cell',
+    });
+    const routing = await service.createRoutingRevision(actor, {
+      idempotencyKey: 'create-route-optional',
+      finishedGoodItemId: 'finished_good_a',
+      revisionCode: 'ROUTE-OPTIONAL',
+      operations: [
+        {
+          sequence: 10,
+          operationCode: 'OP-OPTIONAL',
+          operationName: 'Optional polish',
+          workCenterId: workCenter.value.id,
+          required: false,
+        },
+        {
+          sequence: 20,
+          operationCode: 'OP-REQUIRED',
+          operationName: 'Required assembly',
+          workCenterId: workCenter.value.id,
+          required: true,
+        },
+      ],
+    });
+    const approved = await service.approveRoutingRevision(actor, {
+      idempotencyKey: 'approve-route-optional',
+      routingRevisionId: routing.value.id,
+    });
+    const applied = await service.applyRoutingRevision(actor, {
+      idempotencyKey: 'apply-route-optional',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      routingRevisionId: approved.value.id,
+    });
+    await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-routing-optional',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-routing-optional',
+      materialIssueMovementId: 'issue-movement-routing-optional',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-routing-optional',
+        movementId: 'issue-movement-routing-optional',
+      }),
+      actualQuantity: 10,
+      acceptedQuantity: 10,
+      uom: 'EA',
+    });
+    const requiredProgress = applied.value.find((progress) => progress.required);
+    if (!requiredProgress) {
+      throw new Error('Expected a required operation progress record');
+    }
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-optional-required-ready',
+      operationProgressId: requiredProgress.id,
+      status: 'ready',
+    });
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-optional-required-start',
+      operationProgressId: requiredProgress.id,
+      status: 'in_progress',
+    });
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-optional-required-complete',
+      operationProgressId: requiredProgress.id,
+      status: 'completed',
+    });
+
+    const completion = await service.completeProductionOrder(actor, {
+      idempotencyKey: 'complete-routing-optional',
+      productionOrderId: order.id,
+      receiptEvidence: [receiptEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        receiptDocumentId: 'fgr-routing-optional',
+        receiptLineId: 'fgr-line-routing-optional',
+        acceptedQuantity: 10,
+      })],
+    });
+    expect(completion.value.completedQuantity).toBe(10);
   });
 });

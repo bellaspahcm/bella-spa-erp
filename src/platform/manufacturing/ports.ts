@@ -20,12 +20,15 @@ import type {
   ManufacturingPermission,
   MaterialIssueLogisticsEvidence,
   MaterialRequirement,
+  ProductionOperationProgress,
   ProductionCompletion,
   ProductionExecution,
   ProductionOrder,
   ProductionOrderLine,
   QualityDispositionEvidence,
+  RoutingRevision,
   TenantId,
+  WorkCenter,
 } from './domain/types';
 
 export interface ManufacturingAuthorizationPort {
@@ -47,6 +50,27 @@ export interface ManufacturingRepository {
     productionOrderId: ManufacturingId;
     productionOrderLineId: ManufacturingId;
   }): Promise<ProductionOrderLine | null>;
+  saveWorkCenter(workCenter: WorkCenter): Promise<void>;
+  getWorkCenter(tenantId: TenantId, id: ManufacturingId): Promise<WorkCenter | null>;
+  findWorkCenterByCode(params: {
+    tenantId: TenantId;
+    factoryOrgUnitId: FactoryOrgUnitId;
+    code: string;
+  }): Promise<WorkCenter | null>;
+  saveRoutingRevision(revision: RoutingRevision): Promise<void>;
+  getRoutingRevision(tenantId: TenantId, id: ManufacturingId): Promise<RoutingRevision | null>;
+  findRoutingRevisionByCode(params: {
+    tenantId: TenantId;
+    factoryOrgUnitId: FactoryOrgUnitId;
+    finishedGoodItemId: string;
+    revisionCode: string;
+  }): Promise<RoutingRevision | null>;
+  saveOperationProgress(progress: ProductionOperationProgress): Promise<void>;
+  getOperationProgressById(tenantId: TenantId, id: ManufacturingId): Promise<ProductionOperationProgress | null>;
+  getOperationProgress(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+  }): Promise<ProductionOperationProgress[]>;
   saveBOMRevision(revision: BOMRevision): Promise<void>;
   getBOMRevision(tenantId: TenantId, id: ManufacturingId): Promise<BOMRevision | null>;
   findBOMRevisionByCode(params: {

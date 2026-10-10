@@ -10,12 +10,15 @@ import type {
   ManufacturingId,
   ManufacturingPermission,
   MaterialRequirement,
+  ProductionOperationProgress,
   ProductionCompletion,
   ProductionExecution,
   ProductionOrder,
   ProductionOrderLine,
   QualityDispositionEvidence,
+  RoutingRevision,
   TenantId,
+  WorkCenter,
 } from './domain/types';
 import type {
   ManufacturingAuthorizationPort,
@@ -44,6 +47,9 @@ export class FixedManufacturingClock implements ManufacturingClock {
 
 export class InMemoryManufacturingRepository implements ManufacturingRepository {
   private readonly productionOrders = new Map<string, ProductionOrder>();
+  private readonly workCenters = new Map<string, WorkCenter>();
+  private readonly routingRevisions = new Map<string, RoutingRevision>();
+  private readonly operationProgress = new Map<string, ProductionOperationProgress>();
   private readonly bomRevisions = new Map<string, BOMRevision>();
   private readonly materialRequirements = new Map<string, MaterialRequirement>();
   private readonly productionExecutions = new Map<string, ProductionExecution>();
@@ -81,6 +87,85 @@ export class InMemoryManufacturingRepository implements ManufacturingRepository 
     const order = this.productionOrders.get(this.key(params.tenantId, params.productionOrderId));
     const line = order?.lines.find((candidate) => candidate.id === params.productionOrderLineId);
     return line ? { ...line } : null;
+  }
+
+  async saveWorkCenter(workCenter: WorkCenter): Promise<void> {
+    this.workCenters.set(this.key(workCenter.tenantId, workCenter.id), { ...workCenter });
+  }
+
+  async getWorkCenter(tenantId: TenantId, id: ManufacturingId): Promise<WorkCenter | null> {
+    const workCenter = this.workCenters.get(this.key(tenantId, id));
+    return workCenter ? { ...workCenter } : null;
+  }
+
+  async findWorkCenterByCode(params: {
+    tenantId: TenantId;
+    factoryOrgUnitId: FactoryOrgUnitId;
+    code: string;
+  }): Promise<WorkCenter | null> {
+    for (const workCenter of this.workCenters.values()) {
+      if (
+        workCenter.tenantId === params.tenantId &&
+        workCenter.factoryOrgUnitId === params.factoryOrgUnitId &&
+        workCenter.code === params.code
+      ) {
+        return { ...workCenter };
+      }
+    }
+    return null;
+  }
+
+  async saveRoutingRevision(revision: RoutingRevision): Promise<void> {
+    this.routingRevisions.set(this.key(revision.tenantId, revision.id), cloneRoutingRevision(revision));
+  }
+
+  async getRoutingRevision(tenantId: TenantId, id: ManufacturingId): Promise<RoutingRevision | null> {
+    const revision = this.routingRevisions.get(this.key(tenantId, id));
+    return revision ? cloneRoutingRevision(revision) : null;
+  }
+
+  async findRoutingRevisionByCode(params: {
+    tenantId: TenantId;
+    factoryOrgUnitId: FactoryOrgUnitId;
+    finishedGoodItemId: string;
+    revisionCode: string;
+  }): Promise<RoutingRevision | null> {
+    for (const revision of this.routingRevisions.values()) {
+      if (
+        revision.tenantId === params.tenantId &&
+        revision.factoryOrgUnitId === params.factoryOrgUnitId &&
+        revision.finishedGoodItemId === params.finishedGoodItemId &&
+        revision.revisionCode === params.revisionCode
+      ) {
+        return cloneRoutingRevision(revision);
+      }
+    }
+    return null;
+  }
+
+  async saveOperationProgress(progress: ProductionOperationProgress): Promise<void> {
+    this.operationProgress.set(this.key(progress.tenantId, progress.id), { ...progress });
+  }
+
+  async getOperationProgressById(
+    tenantId: TenantId,
+    id: ManufacturingId
+  ): Promise<ProductionOperationProgress | null> {
+    const progress = this.operationProgress.get(this.key(tenantId, id));
+    return progress ? { ...progress } : null;
+  }
+
+  async getOperationProgress(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+  }): Promise<ProductionOperationProgress[]> {
+    return Array.from(this.operationProgress.values())
+      .filter(
+        (progress) =>
+          progress.tenantId === params.tenantId &&
+          progress.productionOrderId === params.productionOrderId
+      )
+      .map((progress) => ({ ...progress }));
   }
 
   async saveBOMRevision(revision: BOMRevision): Promise<void> {
@@ -222,6 +307,13 @@ function cloneProductionOrder(order: ProductionOrder): ProductionOrder {
   return {
     ...order,
     lines: order.lines.map((line) => ({ ...line })),
+  };
+}
+
+function cloneRoutingRevision(revision: RoutingRevision): RoutingRevision {
+  return {
+    ...revision,
+    operations: revision.operations.map((operation) => ({ ...operation })),
   };
 }
 
