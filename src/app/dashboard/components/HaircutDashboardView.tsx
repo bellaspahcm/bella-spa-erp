@@ -212,10 +212,7 @@ export function HaircutDashboardView() {
         getMonthlyPerformance(),
         getDashboardWidgetAlerts(),
       ]);
-      setTopKTVs((ktvsData || []).map((ktv) => ({
-        ...ktv,
-        rating: Number(ktv.rating) || 0,
-      })));
+      setTopKTVs(ktvsData || []);
       setPerformanceData(perfData || []);
       setAlerts(alertsData || []);
     } catch (error) {

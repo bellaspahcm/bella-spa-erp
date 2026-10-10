@@ -97,6 +97,16 @@ export interface KtvPerformanceViewModel {
   bonus: string;
 }
 
+export interface CustomerRatingDistributionViewModel {
+  star: 1 | 2 | 3 | 4 | 5;
+  count: number;
+  percentage: number;
+}
+
+interface CustomerRatingDistributionRow {
+  rating: number | null;
+}
+
 export interface CompletedSessionDBRow {
   id: string;
   end_time: string | null;
@@ -312,6 +322,54 @@ export async function getDashboardStats(
   } catch (e) {
     throw e instanceof Error ? e : new Error('Failed to fetch dashboard stats');
   }
+}
+
+export async function getCustomerRatingDistribution(
+  startDate?: string,
+  endDate?: string
+): Promise<CustomerRatingDistributionViewModel[]> {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+  const tenantId = requireDashboardTenant(currentUser);
+
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const monthStart = startDate || (today.substring(0, 7) + '-01');
+  const monthEnd = endDate || monthRange(monthStart).end;
+
+  const { data, error } = await supabase
+    .from('session_reviews')
+    .select('rating')
+    .eq('tenant_id', tenantId)
+    .eq('status', 'approved')
+    .gte('created_at', monthStart)
+    .lt('created_at', monthEnd);
+
+  if (error) {
+    throw new Error(`Failed to fetch customer rating distribution: ${error.message}`);
+  }
+
+  const counts: Record<1 | 2 | 3 | 4 | 5, number> = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+  };
+
+  for (const review of ((data as CustomerRatingDistributionRow[] | null) || [])) {
+    const star = Number(review.rating);
+    if (star >= 1 && star <= 5 && Number.isInteger(star)) {
+      counts[star as 1 | 2 | 3 | 4 | 5] += 1;
+    }
+  }
+
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  return ([5, 4, 3, 2, 1] as const).map((star) => ({
+    star,
+    count: counts[star],
+    percentage: total > 0 ? Math.round((counts[star] / total) * 100) : 0,
+  }));
 }
 
 // ─── getUpcomingSessions ──────────────────────────────────────────────────────
@@ -551,13 +609,19 @@ export async function getTopTechnicians(): Promise<KtvPerformanceViewModel[]> {
 
     const leaderData = (data as unknown as KtvLeaderboardRow[]) || [];
 
-    return leaderData.slice(0, 3).map((u) => ({
-      name: u.full_name,
-      sessions: Number(u.sessions || 0),
-      rating: Number(u.average_rating || 0).toFixed(1),
-      status: Number(u.average_rating || 0) >= 4.8 ? 'Xuất Sắc' : 'Tốt',
-      bonus: formatCurrency(Number(u.total_kpi_bonus || 0))
-    }));
+    return leaderData.slice(0, 3).map((u) => {
+      const averageRating = u.average_rating === null || u.average_rating === undefined
+        ? null
+        : Number(u.average_rating);
+
+      return {
+        name: u.full_name,
+        sessions: Number(u.sessions || 0),
+        rating: averageRating === null ? '—' : averageRating.toFixed(1),
+        status: averageRating === null ? 'Chưa có dữ liệu' : averageRating >= 4.8 ? 'Xuất Sắc' : 'Tốt',
+        bonus: formatCurrency(Number(u.total_kpi_bonus || 0))
+      };
+    });
   } catch (e) {
     throw e instanceof Error ? e : new Error('Failed to fetch top technicians');
   }
@@ -969,14 +1033,16 @@ export async function getDashboardPrimaryData(
   statsData: Awaited<ReturnType<typeof getDashboardStats>>;
   sessionsData: DashboardSessionViewModel[];
   inventorySummary: InventorySummaryViewModel;
+  customerRatingDistribution: CustomerRatingDistributionViewModel[];
 }> {
-  const [statsData, sessionsData, inventorySummary] = await Promise.all([
+  const [statsData, sessionsData, inventorySummary, customerRatingDistribution] = await Promise.all([
     getDashboardStats(startDate, endDate, todayDate),
     getUpcomingSessions(todayDate),
     getDashboardInventorySummary(),
+    getCustomerRatingDistribution(startDate, endDate),
   ]);
 
-  return { statsData, sessionsData, inventorySummary };
+  return { statsData, sessionsData, inventorySummary, customerRatingDistribution };
 }
 
 export async function getDashboardSecondaryData(): Promise<{

@@ -1,8 +1,10 @@
 import {
   getDashboardInventorySummary,
+  getCustomerRatingDistribution,
   getDashboardStats,
   getImportantAlerts,
   getMonthlyPerformance,
+  getTopTechnicians,
   getUpcomingSessions,
 } from '../core/services/analytics/dashboard-actions';
 
@@ -22,6 +24,14 @@ jest.mock('../lib/supabase-server', () => ({
     from: mockFrom,
     rpc: mockRpc,
   })),
+}));
+
+jest.mock('../lib/redis-cache', () => ({
+  getCache: jest.fn(() => Promise.resolve(null)),
+  setCache: jest.fn(() => Promise.resolve(undefined)),
+  CacheTTL: {
+    medium: 300,
+  },
 }));
 
 class MockQueryBuilder {
@@ -146,6 +156,57 @@ describe('dashboard read actions', () => {
     await expect(getDashboardInventorySummary()).rejects.toThrow(
       'Failed to fetch dashboard inventory summary: inventory blocked'
     );
+  });
+
+  it('keeps null KTV leaderboard rating as no-data instead of coercing it to zero', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        {
+          full_name: 'KTV Demo Body',
+          sessions: 0,
+          average_rating: null,
+          total_kpi_bonus: 0,
+        },
+      ],
+      error: null,
+    });
+
+    await expect(getTopTechnicians()).resolves.toEqual([
+      {
+        name: 'KTV Demo Body',
+        sessions: 0,
+        rating: '—',
+        status: 'Chưa có dữ liệu',
+        bonus: '+0',
+      },
+    ]);
+  });
+
+  it('builds customer rating distribution from approved session reviews', async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'session_reviews') {
+        return new MockQueryBuilder([
+          { rating: 5 },
+          { rating: 5 },
+          { rating: 4 },
+          { rating: 3 },
+        ]);
+      }
+      return new MockQueryBuilder([]);
+    });
+
+    await expect(getCustomerRatingDistribution('2026-10-01', '2026-11-01')).resolves.toEqual([
+      { star: 5, count: 2, percentage: 50 },
+      { star: 4, count: 1, percentage: 25 },
+      { star: 3, count: 1, percentage: 25 },
+      { star: 2, count: 0, percentage: 0 },
+      { star: 1, count: 0, percentage: 0 },
+    ]);
+
+    expect(queryFilters).toEqual(expect.arrayContaining([
+      { column: 'tenant_id', value: 'tenant-1' },
+      { column: 'status', value: 'approved' },
+    ]));
   });
 
   it('loads today sessions through a direct tenant-scoped day query without excluding completed tabs', async () => {

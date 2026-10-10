@@ -27,6 +27,7 @@ import type {
   PerformanceDataPointViewModel,
   InventorySummaryViewModel,
   DashboardAlert,
+  CustomerRatingDistributionViewModel,
 } from '@/core/services/analytics/dashboard-actions';
 
 interface BeautySpaV2DashboardViewProps {
@@ -35,6 +36,7 @@ interface BeautySpaV2DashboardViewProps {
   topKTVs: KtvPerformanceViewModel[];
   alerts: DashboardAlert[];
   performanceData: PerformanceDataPointViewModel[];
+  customerRatingDistribution: CustomerRatingDistributionViewModel[];
   inventorySummary: InventorySummaryViewModel;
   selectedMonth: number;
   setSelectedMonth: (m: number) => void;
@@ -207,6 +209,7 @@ export function BeautySpaV2DashboardView({
   topKTVs,
   alerts,
   performanceData,
+  customerRatingDistribution,
   inventorySummary,
   selectedMonth,
   setSelectedMonth,
@@ -225,6 +228,11 @@ export function BeautySpaV2DashboardView({
   const [activePerfTab, setActivePerfTab] = useState<PerformanceTab>('revenue');
   const [activeAlertFilter, setActiveAlertFilter] = useState<AlertFilter>('all');
   const visibleSessions = sessions.filter((session) => matchesAppointmentTab(session, activeAppointmentTab));
+  const customerRatingValue = stats.find(s => s.iconName === 'Star')?.value || '—';
+  const hasCustomerRating = customerRatingValue !== '—';
+  const ratingDistribution = customerRatingDistribution.length > 0
+    ? customerRatingDistribution
+    : ([5, 4, 3, 2, 1] as const).map((star) => ({ star, count: 0, percentage: 0 }));
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
   const monthSelectOptions = Array.from({ length: 12 }, (_, index) => ({
@@ -752,24 +760,29 @@ export function BeautySpaV2DashboardView({
 
             <div className="flex items-center gap-4 my-4">
               <div className="text-center">
-                <div className="text-4xl font-black text-slate-900">{stats.find(s => s.iconName === 'Star')?.value || '4.8'}</div>
+                <div className="text-4xl font-black text-slate-900">{customerRatingValue}</div>
                 <div className="text-xs text-slate-400 font-semibold mt-0.5">/ 5</div>
                 <div className="flex items-center justify-center gap-0.5 mt-1">
-                  {[1,2,3,4,5].map(n => <Star key={n} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
+                  {[1,2,3,4,5].map(n => (
+                    <Star
+                      key={n}
+                      className={`w-3.5 h-3.5 ${hasCustomerRating ? 'fill-amber-400 text-amber-400' : 'fill-slate-100 text-slate-200'}`}
+                    />
+                  ))}
                 </div>
               </div>
               <div className="flex-1 space-y-1.5">
-                {[[5, 82], [4, 12], [3, 4], [2, 1], [1, 1]].map(([star, pct]) => (
+                {ratingDistribution.map(({ star, percentage }) => (
                   <div key={star} className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-500 w-4 text-right shrink-0">{star}</span>
                     <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
                     <div className="flex-1 bg-slate-100 rounded-full h-1.5">
                       <div
                         className="bg-amber-400 h-1.5 rounded-full"
-                        style={{ width: `${pct}%` }}
+                        style={{ width: `${percentage}%` }}
                       />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-400 w-6 text-right shrink-0">{pct}%</span>
+                    <span className="text-[10px] font-bold text-slate-400 w-6 text-right shrink-0">{percentage}%</span>
                   </div>
                 ))}
               </div>
