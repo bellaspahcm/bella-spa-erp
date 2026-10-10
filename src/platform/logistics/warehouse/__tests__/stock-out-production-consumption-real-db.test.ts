@@ -280,7 +280,6 @@ describeWithRealDb('Logistics production consumption stock-out real DB idempoten
       location_type: 'WAREHOUSE',
       quantity_on_hand: quantity,
       quantity_reserved: 0,
-      quantity_available: quantity,
       lot_number: `${marker}-lot`,
       serial_number: null,
       status: 'AVAILABLE',
@@ -294,6 +293,7 @@ describeWithRealDb('Logistics production consumption stock-out real DB idempoten
     const result = await admin.query<TableColumn>(
       `
         SELECT column_name, data_type, udt_name, is_nullable, column_default
+             , is_generated
         FROM information_schema.columns
         WHERE table_schema = $1 AND table_name = $2
         ORDER BY ordinal_position
@@ -309,6 +309,7 @@ describeWithRealDb('Logistics production consumption stock-out real DB idempoten
   ): Record<string, unknown> {
     const row: Record<string, unknown> = {};
     for (const column of columns) {
+      if (column.is_generated === 'ALWAYS') continue;
       if (column.column_name in provided) {
         row[column.column_name] = provided[column.column_name];
       } else if (column.is_nullable === 'NO' && !column.column_default) {
@@ -403,7 +404,14 @@ describeWithRealDb('Logistics production consumption stock-out real DB idempoten
       ids.tenant,
       ids.location,
     ]);
-    await admin.query('DELETE FROM public.tenants WHERE id = $1::uuid', [ids.tenant]);
+    await admin
+      .query('DELETE FROM public.tenants WHERE id = $1::uuid', [ids.tenant])
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(
+          `[Logistics production consumption Real DB cleanup] retained tenant shell because public.timeline_events is append-only and may hold tenant FK rows: ${ids.tenant}. ${message}`
+        );
+      });
   }
 });
 
@@ -413,6 +421,7 @@ interface TableColumn extends QueryResultRow {
   udt_name: string;
   is_nullable: 'YES' | 'NO';
   column_default: string | null;
+  is_generated: 'ALWAYS' | 'NEVER';
 }
 
 function fallbackValue(column: TableColumn): unknown {
