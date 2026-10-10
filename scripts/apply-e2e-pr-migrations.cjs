@@ -19,6 +19,10 @@ const PRESCHOOL_GUARDIAN_AUTHORIZATION_MIGRATION =
   'supabase/migrations/20260927010000_preschool_guardian_pickup_authorizations.sql';
 const USER_ORG_UNIT_ACCESS_PROJECTION_MIGRATION =
   'supabase/migrations/20260914_create_user_org_unit_access_projection.sql';
+const LOGISTICS_DOMAIN_KERNEL_MIGRATION =
+  'migrations/logistics/20260822_logistics_os_domain_kernel.sql';
+const LOGISTICS_RUNTIME_PRIVILEGES_MIGRATION =
+  'supabase/migrations/20261007090000_platform_logistics_runtime_privileges.sql';
 const PLATFORM_RULE_DOMAIN_TYPE_SQL = `
 DO $$ BEGIN
   CREATE TYPE public.platform_rule_domain AS ENUM (
@@ -160,6 +164,48 @@ async function relationExists(client, schemaName, relationName) {
   return result.rows[0]?.exists === true;
 }
 
+async function schemaExists(client, schemaName) {
+  const result = await client.query(
+    'SELECT to_regnamespace($1) IS NOT NULL AS exists',
+    [schemaName],
+  );
+  return result.rows[0]?.exists === true;
+}
+
+async function hasTablePrivilege(client, roleName, schemaName, tableName, privilege) {
+  const result = await client.query(
+    'SELECT has_table_privilege($1, $2, $3) AS has_privilege',
+    [roleName, `${schemaName}.${tableName}`, privilege],
+  );
+  return result.rows[0]?.has_privilege === true;
+}
+
+async function hasSchemaPrivilege(client, roleName, schemaName, privilege) {
+  const result = await client.query(
+    'SELECT has_schema_privilege($1, $2, $3) AS has_privilege',
+    [roleName, schemaName, privilege],
+  );
+  return result.rows[0]?.has_privilege === true;
+}
+
+async function policyUsesAuthTenant(client, schemaName, tableName, policyName) {
+  const result = await client.query(
+    `
+      SELECT qual, with_check
+      FROM pg_policies
+      WHERE schemaname = $1
+        AND tablename = $2
+        AND policyname = $3
+      LIMIT 1
+    `,
+    [schemaName, tableName, policyName],
+  );
+  const row = result.rows[0];
+  if (!row) return false;
+  return String(row.qual || '').includes('get_auth_tenant_id')
+    && String(row.with_check || '').includes('get_auth_tenant_id');
+}
+
 async function columnExists(client, schemaName, tableName, columnName) {
   const result = await client.query(
     `
@@ -262,6 +308,65 @@ function needsPreschoolAdmissionBaseline(migrations) {
   return migrations.some((migration) => migration.sql.includes('preschool_chain_'));
 }
 
+function needsLogisticsRuntimeBaseline(migrations) {
+  return migrations.some((migration) => (
+    migration.sql.includes('logistics.')
+    || migration.sql.includes("to_regnamespace('logistics')")
+  ));
+}
+
+async function logisticsRuntimePrivilegesAreNeeded(client) {
+  const requiredTables = [
+    'items',
+    'locations',
+    'inventory',
+    'inventory_movements',
+    'traceability',
+  ];
+
+  if (!(await schemaExists(client, 'logistics'))) {
+    return false;
+  }
+
+  for (const table of requiredTables) {
+    if (!(await relationExists(client, 'logistics', table))) {
+      return false;
+    }
+  }
+
+  if (!(await hasSchemaPrivilege(client, 'authenticated', 'logistics', 'USAGE'))) {
+    return true;
+  }
+
+  const privilegeChecks = [
+    ['items', 'SELECT'],
+    ['locations', 'SELECT'],
+    ['inventory', 'SELECT'],
+    ['inventory', 'INSERT'],
+    ['inventory', 'UPDATE'],
+    ['inventory_movements', 'SELECT'],
+    ['inventory_movements', 'INSERT'],
+    ['traceability', 'SELECT'],
+    ['traceability', 'INSERT'],
+    ['traceability', 'UPDATE'],
+  ];
+
+  for (const [table, privilege] of privilegeChecks) {
+    if (!(await hasTablePrivilege(client, 'authenticated', 'logistics', table, privilege))) {
+      return true;
+    }
+  }
+
+  for (const table of requiredTables) {
+    const policyName = `${table === 'inventory_movements' ? 'movements' : table}_tenant_isolation`;
+    if (!(await policyUsesAuthTenant(client, 'logistics', table, policyName))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 async function canonicalMigrationIsNeeded(client, file) {
   if (file === FOUNDATION_ORG_PEOPLE_SCHEMA_MIGRATION) {
     return !(await relationExists(client, 'public', 'org_units'))
@@ -299,6 +404,10 @@ async function canonicalMigrationIsNeeded(client, file) {
 
   if (file === USER_ORG_UNIT_ACCESS_PROJECTION_MIGRATION) {
     return !(await relationExists(client, 'public', 'user_org_unit_access'));
+  }
+
+  if (file === LOGISTICS_RUNTIME_PRIVILEGES_MIGRATION) {
+    return await logisticsRuntimePrivilegesAreNeeded(client);
   }
 
   throw new Error(`Unsupported E2E baseline repair migration: ${file}`);
@@ -409,6 +518,42 @@ async function applyCanonicalBaselineMigration(client, file, reason) {
   await recordMigration(client, migration);
 }
 
+async function ensureLogisticsDomainKernelBaseline(client) {
+  const requiredTables = [
+    'items',
+    'locations',
+    'inventory',
+    'inventory_movements',
+    'traceability',
+  ];
+  const existingSchema = await schemaExists(client, 'logistics');
+  const existingTables = [];
+
+  for (const table of requiredTables) {
+    if (await relationExists(client, 'logistics', table)) {
+      existingTables.push(table);
+    }
+  }
+
+  if (existingTables.length === requiredTables.length) {
+    return;
+  }
+
+  if (existingSchema || existingTables.length > 0) {
+    throw new Error(
+      'Refusing to repair isolated E2E Logistics baseline from a partial logistics schema. '
+      + `Found ${existingTables.length}/${requiredTables.length} required tables. `
+      + 'Reset/provision the canonical E2E Logistics baseline before running Logistics runtime proof.',
+    );
+  }
+
+  console.log(
+    `Repairing isolated E2E baseline with canonical Logistics domain kernel ${LOGISTICS_DOMAIN_KERNEL_MIGRATION}: `
+    + 'required by current Logistics runtime ports and production-consumption Real DB proof.',
+  );
+  await client.query(readFileSync(LOGISTICS_DOMAIN_KERNEL_MIGRATION, 'utf8'));
+}
+
 async function ensureRequiredE2eBaseline(client, migrations) {
   if (needsEducationRuntimeBaseline(migrations)) {
     await applyCanonicalBaselineMigration(
@@ -456,6 +601,15 @@ async function ensureRequiredE2eBaseline(client, migrations) {
       client,
       USER_ORG_UNIT_ACCESS_PROJECTION_MIGRATION,
       'required by Platform branch authorization read-back',
+    );
+  }
+
+  if (needsLogisticsRuntimeBaseline(migrations)) {
+    await ensureLogisticsDomainKernelBaseline(client);
+    await applyCanonicalBaselineMigration(
+      client,
+      LOGISTICS_RUNTIME_PRIVILEGES_MIGRATION,
+      'required by canonical Logistics runtime tables and authenticated RLS proof',
     );
   }
 }
