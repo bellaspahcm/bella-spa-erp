@@ -40,6 +40,13 @@ const executionCompletionMigrationSql = readFileSync(
   ),
   'utf8'
 );
+const qualityDispositionMigrationSql = readFileSync(
+  path.resolve(
+    __dirname,
+    '../../../../supabase/migrations/20261010050000_create_manufacturing_quality_dispositions.sql'
+  ),
+  'utf8'
+);
 
 const describeWithRealDb =
   isRunnableDbUrl(dbUrl) && isAllowedE2eProject() && isAllowedE2eDbUrl(dbUrl) ? describe : describe.skip;
@@ -108,6 +115,7 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
     await admin.connect();
     await admin.query(migrationSql);
     await admin.query(executionCompletionMigrationSql);
+    await admin.query(qualityDispositionMigrationSql);
     await seedTenant(ids.tenantA, `${marker} Tenant A`);
     await seedTenant(ids.tenantB, `${marker} Tenant B`);
     await seedUser(ids.tenantA, ids.userA, ids.personA, ids.factoryA, ids.factoryADenied, 'a');
@@ -133,6 +141,7 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
       'manufacturing_material_requirements',
       'manufacturing_production_executions',
       'manufacturing_production_order_completions',
+      'manufacturing_quality_dispositions',
       'manufacturing_command_idempotency',
     ];
 
@@ -167,6 +176,7 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         'manufacturing_production_orders_factory_access',
         'manufacturing_production_executions_order_access',
         'manufacturing_production_completions_order_access',
+        'manufacturing_quality_dispositions_order_access',
         'manufacturing_command_idempotency_factory_access',
       ])
     );
@@ -413,6 +423,64 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
       expect(duplicateExecution.isDuplicate).toBe(true);
       expect(duplicateExecution.value.id).toBe(execution.value.id);
 
+      const rejectedDisposition = await service.recordQualityDisposition(actor, {
+        idempotencyKey: `${marker}-quality-reject`,
+        productionOrderId: order.value.id,
+        productionOrderLineId: line.id,
+        productionExecutionId: execution.value.id,
+        sourceQuantityType: 'rejected',
+        disposition: 'discard_reject',
+        quantity: 1,
+        acceptedOutputQuantity: 0,
+        reasonCode: 'FAILED_INSPECTION',
+        evidenceReference: `${marker}-qc-report`,
+        finalHandlingDecision: true,
+      });
+      const duplicateRejectedDisposition = await service.recordQualityDisposition(actor, {
+        idempotencyKey: `${marker}-quality-reject`,
+        productionOrderId: order.value.id,
+        productionOrderLineId: line.id,
+        productionExecutionId: execution.value.id,
+        sourceQuantityType: 'rejected',
+        disposition: 'discard_reject',
+        quantity: 1,
+        acceptedOutputQuantity: 0,
+        reasonCode: 'FAILED_INSPECTION',
+        evidenceReference: `${marker}-qc-report`,
+        finalHandlingDecision: true,
+      });
+      await service.recordQualityDisposition(actor, {
+        idempotencyKey: `${marker}-quality-scrap`,
+        productionOrderId: order.value.id,
+        productionOrderLineId: line.id,
+        productionExecutionId: execution.value.id,
+        sourceQuantityType: 'scrap',
+        disposition: 'scrap',
+        quantity: 1,
+        acceptedOutputQuantity: 0,
+        reasonCode: 'DAMAGED_OUTPUT',
+        evidenceReference: `${marker}-qc-photo`,
+      });
+
+      expect(rejectedDisposition.isDuplicate).toBe(false);
+      expect(duplicateRejectedDisposition.isDuplicate).toBe(true);
+      expect(duplicateRejectedDisposition.value.id).toBe(rejectedDisposition.value.id);
+      await expect(
+        service.recordQualityDisposition(actor, {
+          idempotencyKey: `${marker}-quality-reject`,
+          productionOrderId: order.value.id,
+          productionOrderLineId: line.id,
+          productionExecutionId: execution.value.id,
+          sourceQuantityType: 'rejected',
+          disposition: 'discard_reject',
+          quantity: 0.5,
+          acceptedOutputQuantity: 0,
+          reasonCode: 'FAILED_INSPECTION',
+          evidenceReference: `${marker}-qc-report`,
+          finalHandlingDecision: true,
+        })
+      ).rejects.toThrow();
+
       const completion = await service.completeProductionOrder(actor, {
         idempotencyKey: `${marker}-execution-complete`,
         productionOrderId: order.value.id,
@@ -431,6 +499,10 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         completedQuantity: 8,
         rejectedQuantity: 1,
         scrapQuantity: 1,
+        qualityDispositionEvidence: expect.arrayContaining([
+          expect.objectContaining({ disposition: 'discard_reject', terminal: true }),
+          expect.objectContaining({ disposition: 'scrap', terminal: true }),
+        ]),
       });
       await expectCountWhere(
         'manufacturing_production_executions',
@@ -439,10 +511,132 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         1
       );
       await expectCountWhere(
+        'manufacturing_quality_dispositions',
+        'tenant_id = $1::uuid AND production_order_id = $2::uuid',
+        [ids.tenantA, order.value.id],
+        2
+      );
+      await expectCountWhere(
         'manufacturing_production_order_completions',
         'tenant_id = $1::uuid AND production_order_id = $2::uuid',
         [ids.tenantA, order.value.id],
         1
+      );
+    } finally {
+      await client.end();
+    }
+  });
+
+  it('blocks production completion when rework quality disposition remains open on real DB', async () => {
+    const { service, client } = await createRealDbService(ids.userA, ids.tenantA);
+    const actor = createActor(ids.tenantA, ids.userA, ids.factoryA);
+
+    try {
+      const { order, line, execution } = await createExecutedOrder({
+        service,
+        actor,
+        suffix: 'quality-rework',
+        acceptedQuantity: 9,
+        rejectedQuantity: 1,
+        scrapQuantity: 0,
+      });
+
+      await service.recordQualityDisposition(actor, {
+        idempotencyKey: `${marker}-quality-rework`,
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        productionExecutionId: execution.id,
+        sourceQuantityType: 'rejected',
+        disposition: 'rework',
+        quantity: 1,
+        acceptedOutputQuantity: 0,
+      });
+
+      await expect(
+        service.completeProductionOrder(actor, {
+          idempotencyKey: `${marker}-complete-quality-rework`,
+          productionOrderId: order.id,
+          receiptEvidence: [{
+            productionOrderLineId: line.id,
+            receiptDocumentId: `${marker}-fgr-quality-rework`,
+            receiptLineId: `${marker}-fgr-line-quality-rework`,
+            acceptedQuantity: 9,
+            rejectedQuantity: 1,
+            pendingQuantity: 0,
+          }],
+        })
+      ).rejects.toThrow();
+
+      await expectCountWhere(
+        'manufacturing_quality_dispositions',
+        'tenant_id = $1::uuid AND production_order_id = $2::uuid',
+        [ids.tenantA, order.id],
+        1
+      );
+      await expectCountWhere(
+        'manufacturing_production_order_completions',
+        'tenant_id = $1::uuid AND production_order_id = $2::uuid',
+        [ids.tenantA, order.id],
+        0
+      );
+    } finally {
+      await client.end();
+    }
+  });
+
+  it('blocks production completion when pending quality disposition remains open on real DB', async () => {
+    const { service, client } = await createRealDbService(ids.userA, ids.tenantA);
+    const actor = createActor(ids.tenantA, ids.userA, ids.factoryA);
+
+    try {
+      const { order, line, execution } = await createExecutedOrder({
+        service,
+        actor,
+        suffix: 'quality-pending',
+        acceptedQuantity: 10,
+        rejectedQuantity: 0,
+        scrapQuantity: 0,
+      });
+
+      await service.recordQualityDisposition(actor, {
+        idempotencyKey: `${marker}-quality-pending`,
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        productionExecutionId: execution.id,
+        receiptDocumentId: `${marker}-fgr-quality-pending`,
+        receiptLineId: `${marker}-fgr-line-quality-pending`,
+        sourceQuantityType: 'pending',
+        disposition: 'pending',
+        quantity: 1,
+        acceptedOutputQuantity: 0,
+      });
+
+      await expect(
+        service.completeProductionOrder(actor, {
+          idempotencyKey: `${marker}-complete-quality-pending`,
+          productionOrderId: order.id,
+          receiptEvidence: [{
+            productionOrderLineId: line.id,
+            receiptDocumentId: `${marker}-fgr-quality-pending`,
+            receiptLineId: `${marker}-fgr-line-quality-pending`,
+            acceptedQuantity: 10,
+            rejectedQuantity: 0,
+            pendingQuantity: 1,
+          }],
+        })
+      ).rejects.toThrow();
+
+      await expectCountWhere(
+        'manufacturing_quality_dispositions',
+        'tenant_id = $1::uuid AND production_order_id = $2::uuid',
+        [ids.tenantA, order.id],
+        1
+      );
+      await expectCountWhere(
+        'manufacturing_production_order_completions',
+        'tenant_id = $1::uuid AND production_order_id = $2::uuid',
+        [ids.tenantA, order.id],
+        0
       );
     } finally {
       await client.end();
@@ -467,6 +661,7 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
           'manufacturing:material_requirement:calculate',
           'manufacturing:availability:read',
           'manufacturing:execution:record',
+          'manufacturing:quality_disposition:record',
         ],
         [ids.userB]: ['manufacturing:production_order:write'],
       }
@@ -486,6 +681,61 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         new FixedManufacturingClock()
       ),
     };
+  }
+
+  async function createExecutedOrder(params: {
+    service: ManufacturingSlice1Service;
+    actor: ManufacturingActor;
+    suffix: string;
+    acceptedQuantity: number;
+    rejectedQuantity: number;
+    scrapQuantity: number;
+  }) {
+    const targetQuantity = params.acceptedQuantity + params.rejectedQuantity + params.scrapQuantity;
+    const order = await params.service.createProductionOrder(params.actor, {
+      idempotencyKey: `${marker}-${params.suffix}-order`,
+      orderNumber: `${marker}-PO-${params.suffix}`,
+      finishedGoodItemId: `finished_good_${params.suffix}`,
+      targetQuantity,
+      uom: 'EA',
+    });
+    const bom = await params.service.createBOMRevision(params.actor, {
+      idempotencyKey: `${marker}-${params.suffix}-bom`,
+      finishedGoodItemId: `finished_good_${params.suffix}`,
+      revisionCode: `REV-${params.suffix}`,
+      components: [{ componentItemId: `component_${params.suffix}`, quantityPerUnit: 1, uom: 'EA' }],
+    });
+    const approvedBom = await params.service.approveBOMRevision(params.actor, {
+      idempotencyKey: `${marker}-${params.suffix}-approve-bom`,
+      bomRevisionId: bom.value.id,
+    });
+    await params.service.calculateMaterialRequirements(params.actor, {
+      idempotencyKey: `${marker}-${params.suffix}-calc-req`,
+      productionOrderId: order.value.id,
+      bomRevisionId: approvedBom.value.id,
+      sourceLocationId: `warehouse-${params.suffix}`,
+    });
+    const released = await params.service.releaseProductionOrder(params.actor, {
+      idempotencyKey: `${marker}-${params.suffix}-release`,
+      productionOrderId: order.value.id,
+      bomRevisionId: approvedBom.value.id,
+    });
+    const line = released.value.lines[0];
+    if (!line) throw new Error('Expected production order line');
+    const execution = await params.service.recordProductionExecution(params.actor, {
+      idempotencyKey: `${marker}-${params.suffix}-execution`,
+      productionOrderId: order.value.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: `${marker}-issue-doc-${params.suffix}`,
+      materialIssueMovementId: `${marker}-issue-movement-${params.suffix}`,
+      actualQuantity: targetQuantity,
+      acceptedQuantity: params.acceptedQuantity,
+      rejectedQuantity: params.rejectedQuantity,
+      scrapQuantity: params.scrapQuantity,
+      uom: 'EA',
+    });
+
+    return { order: order.value, line, execution: execution.value };
   }
 
   async function seedTenant(tenantId: string, name: string): Promise<void> {
@@ -607,6 +857,9 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
   async function cleanupFixtures(): Promise<void> {
     await admin.query('SET row_security = off');
     await admin.query('DELETE FROM public.manufacturing_production_order_completions WHERE tenant_id = ANY($1::uuid[])', [
+      [ids.tenantA, ids.tenantB],
+    ]);
+    await admin.query('DELETE FROM public.manufacturing_quality_dispositions WHERE tenant_id = ANY($1::uuid[])', [
       [ids.tenantA, ids.tenantB],
     ]);
     await admin.query('DELETE FROM public.manufacturing_production_executions WHERE tenant_id = ANY($1::uuid[])', [

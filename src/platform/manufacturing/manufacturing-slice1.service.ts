@@ -16,8 +16,10 @@ import type {
   MaterialRequirement,
   ProductionCompletion,
   ProductionExecution,
+  QualityDispositionEvidence,
   ReleaseProductionOrderCommand,
   RecordProductionExecutionCommand,
+  RecordQualityDispositionCommand,
   ProductionOrder,
 } from './domain/types';
 import type {
@@ -390,6 +392,87 @@ export class ManufacturingSlice1Service {
     });
   }
 
+  async recordQualityDisposition(
+    actor: ManufacturingActor,
+    command: RecordQualityDispositionCommand
+  ): Promise<IdempotentCommandResult<QualityDispositionEvidence>> {
+    this.assertPositiveQuantity(command.quantity, 'quantity');
+    this.assertNonNegativeQuantity(command.acceptedOutputQuantity, 'acceptedOutputQuantity');
+    if (command.acceptedOutputQuantity > command.quantity) {
+      throw new ManufacturingValidationError('Quality disposition accepted output cannot exceed disposition quantity');
+    }
+    if ((command.receiptDocumentId && !command.receiptLineId) || (!command.receiptDocumentId && command.receiptLineId)) {
+      throw new ManufacturingValidationError('Quality disposition receipt evidence requires both document and line references');
+    }
+
+    return this.runIdempotent({
+      actor,
+      operation: 'manufacturing.quality_disposition.record',
+      businessKey: command.idempotencyKey,
+      payload: command,
+      execute: async (repository) => {
+        await this.authorization.ensureAllowed({
+          actor,
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: actor.factoryOrgUnitId,
+          permission: 'manufacturing:quality_disposition:record',
+        });
+
+        const order = await this.requireProductionOrder(repository, actor.tenantId, command.productionOrderId);
+        this.assertSameFactory(actor, order.factoryOrgUnitId);
+        if (order.status !== 'in_progress') {
+          throw new ManufacturingStateError('Quality disposition requires in-progress production execution');
+        }
+
+        const line = await repository.getProductionOrderLine({
+          tenantId: actor.tenantId,
+          productionOrderId: order.id,
+          productionOrderLineId: command.productionOrderLineId,
+        });
+        if (!line) {
+          throw new ManufacturingNotFoundError('ProductionOrderLine', command.productionOrderLineId);
+        }
+
+        const executions = await repository.getProductionExecutions({
+          tenantId: actor.tenantId,
+          productionOrderId: order.id,
+        });
+        const execution = executions.find((candidate) => candidate.id === command.productionExecutionId);
+        if (!execution || execution.productionOrderLineId !== line.id) {
+          throw new ManufacturingStateError('Quality disposition must reference execution evidence from the order line');
+        }
+
+        this.assertDispositionQuantityWithinSource(execution, command);
+        const terminal = this.resolveQualityDispositionTerminal(command);
+        const evidence: QualityDispositionEvidence = {
+          id: this.ids.next('mfg_qd'),
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: order.factoryOrgUnitId,
+          productionOrderId: order.id,
+          productionOrderLineId: line.id,
+          productionExecutionId: execution.id,
+          receiptDocumentId: command.receiptDocumentId,
+          receiptLineId: command.receiptLineId,
+          sourceQuantityType: command.sourceQuantityType,
+          disposition: command.disposition,
+          quantity: this.roundQuantity(command.quantity),
+          acceptedOutputQuantity: this.roundQuantity(command.acceptedOutputQuantity),
+          reasonCode: command.reasonCode,
+          reasonText: command.reasonText,
+          evidenceReference: command.evidenceReference,
+          finalHandlingDecision: command.finalHandlingDecision,
+          conditionalAcceptPolicyApproved: command.conditionalAcceptPolicyApproved,
+          terminal,
+          decidedBy: actor.userId,
+          decidedAt: this.clock.now(),
+        };
+
+        await repository.saveQualityDisposition(evidence);
+        return evidence;
+      },
+    });
+  }
+
   async completeProductionOrder(
     actor: ManufacturingActor,
     command: CompleteProductionOrderCommand
@@ -437,7 +520,16 @@ export class ManufacturingSlice1Service {
           throw new ManufacturingStateError('Production order completion requires recorded execution');
         }
 
-        const reconciliation = this.reconcileCompletion(order, executions, command.receiptEvidence);
+        const qualityDispositionEvidence = await repository.getQualityDispositions({
+          tenantId: actor.tenantId,
+          productionOrderId: order.id,
+        });
+        const reconciliation = this.reconcileCompletion(
+          order,
+          executions,
+          command.receiptEvidence,
+          qualityDispositionEvidence
+        );
         const completedAt = this.clock.now();
         const completion: ProductionCompletion = {
           id: this.ids.next('mfg_completion'),
@@ -449,6 +541,7 @@ export class ManufacturingSlice1Service {
           scrapQuantity: reconciliation.scrapQuantity,
           uom: order.uom,
           receiptEvidence: command.receiptEvidence.map((receipt) => ({ ...receipt })),
+          qualityDispositionEvidence: qualityDispositionEvidence.map((evidence) => ({ ...evidence })),
           completedBy: actor.userId,
           completedAt,
         };
@@ -570,10 +663,88 @@ export class ManufacturingSlice1Service {
     }
   }
 
+  private assertDispositionQuantityWithinSource(
+    execution: ProductionExecution,
+    command: RecordQualityDispositionCommand
+  ): void {
+    if (command.sourceQuantityType === 'pending') {
+      if (!command.receiptDocumentId || !command.receiptLineId) {
+        throw new ManufacturingValidationError('Pending quality disposition requires FGR receipt evidence');
+      }
+      return;
+    }
+
+    const sourceQuantity = this.getExecutionSourceQuantity(execution, command.sourceQuantityType);
+    if (this.roundQuantity(command.quantity) > sourceQuantity) {
+      throw new ManufacturingValidationError('Quality disposition quantity exceeds source execution quantity');
+    }
+  }
+
+  private resolveQualityDispositionTerminal(command: RecordQualityDispositionCommand): boolean {
+    switch (command.disposition) {
+      case 'accepted':
+        if (command.acceptedOutputQuantity !== command.quantity) {
+          throw new ManufacturingValidationError('Accepted disposition must fully count as accepted output');
+        }
+        return true;
+      case 'conditional_accept':
+        if (!command.conditionalAcceptPolicyApproved || !command.evidenceReference?.trim()) {
+          throw new ManufacturingValidationError('Conditional accept requires policy approval evidence');
+        }
+        return true;
+      case 'rework':
+        this.assertNoAcceptedOutput(command, 'Rework is not accepted output');
+        return false;
+      case 'scrap':
+        this.requireReasonAndEvidence(command, 'Scrap disposition requires reason and evidence');
+        this.assertNoAcceptedOutput(command, 'Scrap is not accepted output');
+        return true;
+      case 'discard_reject':
+        this.requireReasonAndEvidence(command, 'Discard/reject disposition requires reason and evidence');
+        if (!command.finalHandlingDecision) {
+          throw new ManufacturingValidationError('Discard/reject disposition requires a final handling decision');
+        }
+        this.assertNoAcceptedOutput(command, 'Discard/reject is not accepted output');
+        return true;
+      case 'pending':
+        this.assertNoAcceptedOutput(command, 'Pending quality disposition is not accepted output');
+        return false;
+    }
+  }
+
+  private assertNoAcceptedOutput(command: RecordQualityDispositionCommand, message: string): void {
+    if (command.acceptedOutputQuantity !== 0) {
+      throw new ManufacturingValidationError(message);
+    }
+  }
+
+  private requireReasonAndEvidence(command: RecordQualityDispositionCommand, message: string): void {
+    if (!command.reasonCode?.trim() || !command.evidenceReference?.trim()) {
+      throw new ManufacturingValidationError(message);
+    }
+  }
+
+  private getExecutionSourceQuantity(
+    execution: ProductionExecution,
+    sourceQuantityType: RecordQualityDispositionCommand['sourceQuantityType']
+  ): number {
+    switch (sourceQuantityType) {
+      case 'accepted':
+        return execution.acceptedQuantity;
+      case 'rejected':
+        return execution.rejectedQuantity;
+      case 'scrap':
+        return execution.scrapQuantity;
+      case 'pending':
+        return 0;
+    }
+  }
+
   private reconcileCompletion(
     order: ProductionOrder,
     executions: ProductionExecution[],
-    receipts: CompleteProductionOrderCommand['receiptEvidence']
+    receipts: CompleteProductionOrderCommand['receiptEvidence'],
+    qualityDispositions: QualityDispositionEvidence[]
   ): { acceptedQuantity: number; rejectedQuantity: number; scrapQuantity: number } {
     let acceptedQuantity = 0;
     let rejectedQuantity = 0;
@@ -611,16 +782,89 @@ export class ManufacturingSlice1Service {
       if (receiptPending !== 0) {
         throw new ManufacturingStateError('Production order completion requires no pending finished goods quantity');
       }
-      if (receiptAccepted !== accepted || receiptRejected !== rejected) {
+      const lineDispositions = qualityDispositions.filter(
+        (evidence) => evidence.productionOrderLineId === line.id
+      );
+      const qualityReconciliation = this.reconcileQualityDispositions({
+        lineDispositions,
+        accepted,
+        rejected,
+        scrap,
+        receiptPending,
+      });
+      const expectedReceiptAccepted = this.roundQuantity(accepted + qualityReconciliation.acceptedAdjustment);
+      const expectedReceiptRejected = this.roundQuantity(rejected - qualityReconciliation.acceptedAdjustment);
+      if (receiptAccepted !== expectedReceiptAccepted || receiptRejected !== expectedReceiptRejected) {
         throw new ManufacturingStateError('Finished goods receipt evidence must reconcile with production execution');
       }
 
-      acceptedQuantity = this.roundQuantity(acceptedQuantity + accepted);
-      rejectedQuantity = this.roundQuantity(rejectedQuantity + rejected);
+      acceptedQuantity = this.roundQuantity(acceptedQuantity + expectedReceiptAccepted);
+      rejectedQuantity = this.roundQuantity(rejectedQuantity + expectedReceiptRejected);
       scrapQuantity = this.roundQuantity(scrapQuantity + scrap);
     }
 
     return { acceptedQuantity, rejectedQuantity, scrapQuantity };
+  }
+
+  private reconcileQualityDispositions(params: {
+    lineDispositions: QualityDispositionEvidence[];
+    accepted: number;
+    rejected: number;
+    scrap: number;
+    receiptPending: number;
+  }): { acceptedAdjustment: number } {
+    if (params.lineDispositions.some((evidence) => !evidence.terminal)) {
+      throw new ManufacturingStateError('Production order completion requires terminal quality dispositions');
+    }
+
+    const dispositionAccepted = this.sumQuantities(
+      params.lineDispositions
+        .filter((evidence) => evidence.sourceQuantityType === 'accepted')
+        .map((evidence) => evidence.quantity)
+    );
+    const dispositionRejected = this.sumQuantities(
+      params.lineDispositions
+        .filter((evidence) => evidence.sourceQuantityType === 'rejected')
+        .map((evidence) => evidence.quantity)
+    );
+    const dispositionScrap = this.sumQuantities(
+      params.lineDispositions
+        .filter((evidence) => evidence.sourceQuantityType === 'scrap')
+        .map((evidence) => evidence.quantity)
+    );
+    const dispositionPending = this.sumQuantities(
+      params.lineDispositions
+        .filter((evidence) => evidence.sourceQuantityType === 'pending')
+        .map((evidence) => evidence.quantity)
+    );
+
+    if (dispositionAccepted > params.accepted) {
+      throw new ManufacturingStateError('Quality disposition accepted quantity exceeds execution accepted quantity');
+    }
+    if (params.rejected > 0 && dispositionRejected !== params.rejected) {
+      throw new ManufacturingStateError('Rejected production quantity requires terminal quality disposition');
+    }
+    if (params.scrap > 0 && dispositionScrap !== params.scrap) {
+      throw new ManufacturingStateError('Scrap production quantity requires terminal quality disposition');
+    }
+    if (dispositionPending > params.receiptPending) {
+      throw new ManufacturingStateError('Pending quality disposition exceeds FGR pending quantity');
+    }
+
+    const acceptedAdjustment = this.sumQuantities(
+      params.lineDispositions
+        .filter(
+          (evidence) =>
+            evidence.sourceQuantityType === 'rejected' &&
+            evidence.disposition === 'conditional_accept'
+        )
+        .map((evidence) => evidence.acceptedOutputQuantity)
+    );
+    if (acceptedAdjustment > params.rejected) {
+      throw new ManufacturingStateError('Conditional accepted output exceeds rejected execution quantity');
+    }
+
+    return { acceptedAdjustment };
   }
 
   private sumQuantities(values: number[]): number {
