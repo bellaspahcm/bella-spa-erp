@@ -191,6 +191,16 @@ const cases = [
     },
   },
   {
+    name: 'RUN real database E2E when Manufacturing Slice 1 Real DB proof changes',
+    files: ['src/platform/manufacturing/__tests__/manufacturing-slice1-real-db.test.ts'],
+    expect(result) {
+      assert.equal(result.scope_status, 'ALLOW');
+      assert.equal(result.needs_tests, true);
+      assert.equal(result.needs_real_db_e2e, true);
+      assert.equal(result.has_real_db_test_file, true);
+    },
+  },
+  {
     name: 'RUN real database E2E when Hospitality maintenance real-db test changes',
     files: ['src/products/bella-hospitality/__tests__/maintenance-real-db.test.ts'],
     expect(result) {
