@@ -5,16 +5,18 @@ export type TenantId = string;
 export type UserId = string;
 export type FactoryOrgUnitId = string;
 
-export type ProductionOrderStatus = 'draft' | 'released' | 'cancelled';
+export type ProductionOrderStatus = 'draft' | 'released' | 'in_progress' | 'completed' | 'cancelled';
 export type BOMRevisionStatus = 'draft' | 'approved' | 'archived';
 export type MaterialRequirementStatus = 'not_checked' | 'available' | 'shortage' | 'not_proven';
 export type ManufacturingPermission =
   | 'manufacturing:production_order:write'
   | 'manufacturing:production_order:release'
+  | 'manufacturing:production_order:complete'
   | 'manufacturing:bom:write'
   | 'manufacturing:bom:approve'
   | 'manufacturing:material_requirement:calculate'
-  | 'manufacturing:availability:read';
+  | 'manufacturing:availability:read'
+  | 'manufacturing:execution:record';
 
 export interface ManufacturingActor {
   tenantId: TenantId;
@@ -32,11 +34,23 @@ export interface ProductionOrder {
   targetQuantity: Quantity;
   uom: string;
   status: ProductionOrderStatus;
+  lines: ProductionOrderLine[];
   bomRevisionId?: ManufacturingId;
   createdBy: UserId;
   createdAt: string;
   releasedBy?: UserId;
   releasedAt?: string;
+  completedBy?: UserId;
+  completedAt?: string;
+}
+
+export interface ProductionOrderLine {
+  id: ManufacturingId;
+  tenantId: TenantId;
+  productionOrderId: ManufacturingId;
+  finishedGoodItemId: ItemId;
+  targetQuantity: Quantity;
+  uom: string;
 }
 
 export interface BOMRevision {
@@ -71,6 +85,47 @@ export interface MaterialRequirement {
   availableQuantity?: Quantity;
   status: MaterialRequirementStatus;
   checkedAt?: string;
+}
+
+export interface ProductionExecution {
+  id: ManufacturingId;
+  tenantId: TenantId;
+  factoryOrgUnitId: FactoryOrgUnitId;
+  productionOrderId: ManufacturingId;
+  productionOrderLineId: ManufacturingId;
+  materialIssueDocumentId: string;
+  materialIssueMovementId: string;
+  materialRequirementId?: ManufacturingId;
+  actualQuantity: Quantity;
+  acceptedQuantity: Quantity;
+  rejectedQuantity: Quantity;
+  scrapQuantity: Quantity;
+  uom: string;
+  recordedBy: UserId;
+  recordedAt: string;
+}
+
+export interface FinishedGoodsReceiptEvidence {
+  productionOrderLineId: ManufacturingId;
+  receiptDocumentId: string;
+  receiptLineId: string;
+  acceptedQuantity: Quantity;
+  rejectedQuantity?: Quantity;
+  pendingQuantity?: Quantity;
+}
+
+export interface ProductionCompletion {
+  id: ManufacturingId;
+  tenantId: TenantId;
+  factoryOrgUnitId: FactoryOrgUnitId;
+  productionOrderId: ManufacturingId;
+  completedQuantity: Quantity;
+  rejectedQuantity: Quantity;
+  scrapQuantity: Quantity;
+  uom: string;
+  receiptEvidence: FinishedGoodsReceiptEvidence[];
+  completedBy: UserId;
+  completedAt: string;
 }
 
 export interface CommandLogEntry<T = unknown> {
@@ -119,6 +174,26 @@ export interface ReleaseProductionOrderCommand {
   idempotencyKey: string;
   productionOrderId: ManufacturingId;
   bomRevisionId: ManufacturingId;
+}
+
+export interface RecordProductionExecutionCommand {
+  idempotencyKey: string;
+  productionOrderId: ManufacturingId;
+  productionOrderLineId: ManufacturingId;
+  materialIssueDocumentId: string;
+  materialIssueMovementId: string;
+  materialRequirementId?: ManufacturingId;
+  actualQuantity: Quantity;
+  acceptedQuantity: Quantity;
+  rejectedQuantity?: Quantity;
+  scrapQuantity?: Quantity;
+  uom: string;
+}
+
+export interface CompleteProductionOrderCommand {
+  idempotencyKey: string;
+  productionOrderId: ManufacturingId;
+  receiptEvidence: FinishedGoodsReceiptEvidence[];
 }
 
 export interface IdempotentCommandResult<T> {

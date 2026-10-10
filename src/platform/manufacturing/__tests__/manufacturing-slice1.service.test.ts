@@ -43,10 +43,12 @@ function createService(availability: MaterialAvailabilityPort = createAvailabili
       'planner-1': [
         'manufacturing:production_order:write',
         'manufacturing:production_order:release',
+        'manufacturing:production_order:complete',
         'manufacturing:bom:write',
         'manufacturing:bom:approve',
         'manufacturing:material_requirement:calculate',
         'manufacturing:availability:read',
+        'manufacturing:execution:record',
       ],
     }
   );
@@ -279,6 +281,153 @@ describe('Manufacturing Slice 1', () => {
       service.approveBOMRevision(actor, {
         idempotencyKey: 'approve-bom-again',
         bomRevisionId: bom.value.id,
+      })
+    ).rejects.toThrow(ManufacturingStateError);
+  });
+
+  it('records production execution from material issue evidence and completes only after FGR reconciliation', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service, repository } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-execution',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-po-execution',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+
+    const execution = await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-execution-1',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-1',
+      materialIssueMovementId: 'issue-movement-1',
+      actualQuantity: 10,
+      acceptedQuantity: 8,
+      rejectedQuantity: 1,
+      scrapQuantity: 1,
+      uom: 'EA',
+    });
+
+    expect(execution.value).toMatchObject({
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-1',
+      materialIssueMovementId: 'issue-movement-1',
+      actualQuantity: 10,
+      acceptedQuantity: 8,
+      rejectedQuantity: 1,
+      scrapQuantity: 1,
+    });
+    await expect(repository.getProductionOrder(actor.tenantId, order.id)).resolves.toMatchObject({
+      status: 'in_progress',
+    });
+
+    const completion = await service.completeProductionOrder(actor, {
+      idempotencyKey: 'complete-po-1',
+      productionOrderId: order.id,
+      receiptEvidence: [{
+        productionOrderLineId: line.id,
+        receiptDocumentId: 'fgr-1',
+        receiptLineId: 'fgr-line-1',
+        acceptedQuantity: 8,
+        rejectedQuantity: 1,
+        pendingQuantity: 0,
+      }],
+    });
+
+    expect(completion.value).toMatchObject({
+      productionOrderId: order.id,
+      completedQuantity: 8,
+      rejectedQuantity: 1,
+      scrapQuantity: 1,
+    });
+    await expect(repository.getProductionOrder(actor.tenantId, order.id)).resolves.toMatchObject({
+      status: 'completed',
+      completedBy: actor.userId,
+    });
+  });
+
+  it('rejects completion when execution and FGR evidence do not reconcile', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-mismatch',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-po-mismatch',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-execution-mismatch',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-mismatch',
+      materialIssueMovementId: 'issue-movement-mismatch',
+      actualQuantity: 10,
+      acceptedQuantity: 9,
+      rejectedQuantity: 1,
+      uom: 'EA',
+    });
+
+    await expect(
+      service.completeProductionOrder(actor, {
+        idempotencyKey: 'complete-po-mismatch',
+        productionOrderId: order.id,
+        receiptEvidence: [{
+          productionOrderLineId: line.id,
+          receiptDocumentId: 'fgr-mismatch',
+          receiptLineId: 'fgr-line-mismatch',
+          acceptedQuantity: 8,
+          rejectedQuantity: 1,
+          pendingQuantity: 0,
+        }],
+      })
+    ).rejects.toThrow(ManufacturingStateError);
+  });
+
+  it('does not complete an order from FGR evidence alone', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-no-exec',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-po-no-exec',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+
+    await expect(
+      service.completeProductionOrder(actor, {
+        idempotencyKey: 'complete-po-no-exec',
+        productionOrderId: order.id,
+        receiptEvidence: [{
+          productionOrderLineId: line.id,
+          receiptDocumentId: 'fgr-no-exec',
+          receiptLineId: 'fgr-line-no-exec',
+          acceptedQuantity: 10,
+        }],
       })
     ).rejects.toThrow(ManufacturingStateError);
   });
