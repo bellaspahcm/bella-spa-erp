@@ -114,6 +114,33 @@ export interface ProductionExecution {
   recordedAt: string;
 }
 
+export interface MaterialIssueLogisticsEvidence {
+  issueDocumentId: string;
+  movementId: string;
+  traceabilityEventId: string;
+  itemId: ItemId;
+  locationId: LocationId;
+  quantity: Quantity;
+  productionOrderId: ManufacturingId;
+  productionOrderLineId: ManufacturingId;
+  materialRequirementId?: ManufacturingId;
+}
+
+export interface FinishedGoodsReceiptLogisticsEvidence {
+  receiptDocumentId: string;
+  receiptLineId: string;
+  movementId: string;
+  traceabilityEventId: string;
+  itemId: ItemId;
+  locationId: LocationId;
+  quantity: Quantity;
+  productionOrderId: ManufacturingId;
+  productionOrderLineId: ManufacturingId;
+  acceptedQuantity: Quantity;
+  rejectedQuantity?: Quantity;
+  pendingQuantity?: Quantity;
+}
+
 export interface FinishedGoodsReceiptEvidence {
   productionOrderLineId: ManufacturingId;
   receiptDocumentId: string;
@@ -121,6 +148,7 @@ export interface FinishedGoodsReceiptEvidence {
   acceptedQuantity: Quantity;
   rejectedQuantity?: Quantity;
   pendingQuantity?: Quantity;
+  logisticsEvidence: FinishedGoodsReceiptLogisticsEvidence;
 }
 
 export interface QualityDispositionEvidence {
@@ -215,6 +243,7 @@ export interface RecordProductionExecutionCommand {
   productionOrderLineId: ManufacturingId;
   materialIssueDocumentId: string;
   materialIssueMovementId: string;
+  materialIssueEvidence: MaterialIssueLogisticsEvidence;
   materialRequirementId?: ManufacturingId;
   actualQuantity: Quantity;
   acceptedQuantity: Quantity;
