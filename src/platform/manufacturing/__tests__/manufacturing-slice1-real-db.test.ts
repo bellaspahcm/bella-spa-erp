@@ -50,6 +50,13 @@ const qualityDispositionMigrationSql = readFileSync(
   ),
   'utf8'
 );
+const routingProgressMigrationSql = readFileSync(
+  path.resolve(
+    __dirname,
+    '../../../../supabase/migrations/20261011010000_create_manufacturing_routing_progress.sql'
+  ),
+  'utf8'
+);
 
 const describeWithRealDb =
   isRunnableDbUrl(dbUrl) && isAllowedE2eProject() && isAllowedE2eDbUrl(dbUrl) ? describe : describe.skip;
@@ -119,6 +126,7 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
     await admin.query(migrationSql);
     await admin.query(executionCompletionMigrationSql);
     await admin.query(qualityDispositionMigrationSql);
+    await admin.query(routingProgressMigrationSql);
     await seedTenant(ids.tenantA, `${marker} Tenant A`);
     await seedTenant(ids.tenantB, `${marker} Tenant B`);
     await seedUser(ids.tenantA, ids.userA, ids.personA, ids.factoryA, ids.factoryADenied, 'a');
@@ -145,6 +153,10 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
       'manufacturing_production_executions',
       'manufacturing_production_order_completions',
       'manufacturing_quality_dispositions',
+      'manufacturing_work_centers',
+      'manufacturing_routing_revisions',
+      'manufacturing_routing_operations',
+      'manufacturing_operation_progress',
       'manufacturing_command_idempotency',
     ];
 
@@ -180,6 +192,10 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         'manufacturing_production_executions_order_access',
         'manufacturing_production_completions_order_access',
         'manufacturing_quality_dispositions_order_access',
+        'manufacturing_work_centers_factory_access',
+        'manufacturing_routing_revisions_factory_access',
+        'manufacturing_routing_operations_revision_access',
+        'manufacturing_operation_progress_order_access',
         'manufacturing_command_idempotency_factory_access',
       ])
     );
@@ -543,6 +559,133 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
     }
   });
 
+  it('persists routing progress, enforces idempotency, and blocks completion until routed operations complete', async () => {
+    const { service, client } = await createRealDbService(ids.userA, ids.tenantA);
+    const actor = createActor(ids.tenantA, ids.userA, ids.factoryA);
+
+    try {
+      const { order, line } = await createExecutedOrder({
+        service,
+        actor,
+        suffix: 'routing-progress',
+        acceptedQuantity: 10,
+        rejectedQuantity: 0,
+        scrapQuantity: 0,
+      });
+      const workCenter = await service.createWorkCenter(actor, {
+        idempotencyKey: `${marker}-routing-wc`,
+        code: `${marker}-WC-ROUTING`,
+        name: `${marker} routing work center`,
+      });
+      const routing = await service.createRoutingRevision(actor, {
+        idempotencyKey: `${marker}-routing-revision`,
+        finishedGoodItemId: line.finishedGoodItemId,
+        revisionCode: `${marker}-ROUTE-1`,
+        operations: [
+          {
+            sequence: 10,
+            operationCode: `${marker}-CUT`,
+            operationName: 'Cutting',
+            workCenterId: workCenter.value.id,
+          },
+        ],
+      });
+      const approvedRouting = await service.approveRoutingRevision(actor, {
+        idempotencyKey: `${marker}-routing-approve`,
+        routingRevisionId: routing.value.id,
+      });
+      const applied = await service.applyRoutingRevision(actor, {
+        idempotencyKey: `${marker}-routing-apply`,
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        routingRevisionId: approvedRouting.value.id,
+      });
+      const duplicateApply = await service.applyRoutingRevision(actor, {
+        idempotencyKey: `${marker}-routing-apply`,
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        routingRevisionId: approvedRouting.value.id,
+      });
+
+      expect(applied.isDuplicate).toBe(false);
+      expect(duplicateApply.isDuplicate).toBe(true);
+      expect(applied.value).toHaveLength(1);
+      await expectCountWhere(
+        'manufacturing_operation_progress',
+        'tenant_id = $1::uuid AND production_order_id = $2::uuid',
+        [ids.tenantA, order.id],
+        1
+      );
+      const tenantBClient = new Client({ connectionString: dbUrl, ssl: sslConfig() });
+      await tenantBClient.connect();
+      try {
+        const tenantB = new AuthenticatedManufacturingSqlClient(tenantBClient, {
+          userId: ids.userB,
+          tenantId: ids.tenantB,
+        });
+        const tenantBRepository = new PostgresManufacturingRepository(tenantB);
+        const hiddenProgress = await tenantBRepository.withTransaction((repository) =>
+          repository.getOperationProgressById(ids.tenantA, applied.value[0].id)
+        );
+        expect(hiddenProgress).toBeNull();
+      } finally {
+        await tenantBClient.end();
+      }
+
+      const receipt = receiptEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        receiptDocumentId: `${marker}-fgr-routing-progress`,
+        receiptLineId: `${marker}-fgr-line-routing-progress`,
+        acceptedQuantity: 10,
+        rejectedQuantity: 0,
+        pendingQuantity: 0,
+      });
+      await expect(
+        service.completeProductionOrder(actor, {
+          idempotencyKey: `${marker}-complete-routing-incomplete`,
+          productionOrderId: order.id,
+          receiptEvidence: [receipt],
+        })
+      ).rejects.toThrow();
+      await expectCountWhere(
+        'manufacturing_production_order_completions',
+        'tenant_id = $1::uuid AND production_order_id = $2::uuid',
+        [ids.tenantA, order.id],
+        0
+      );
+
+      const ready = await service.updateOperationProgress(actor, {
+        idempotencyKey: `${marker}-routing-ready`,
+        operationProgressId: applied.value[0].id,
+        status: 'ready',
+      });
+      const started = await service.updateOperationProgress(actor, {
+        idempotencyKey: `${marker}-routing-start`,
+        operationProgressId: applied.value[0].id,
+        status: 'in_progress',
+      });
+      const completed = await service.updateOperationProgress(actor, {
+        idempotencyKey: `${marker}-routing-complete`,
+        operationProgressId: applied.value[0].id,
+        status: 'completed',
+      });
+
+      expect(ready.value.status).toBe('ready');
+      expect(started.value.startedAt).toBeDefined();
+      expect(completed.value.completedAt).toBeDefined();
+
+      const completion = await service.completeProductionOrder(actor, {
+        idempotencyKey: `${marker}-complete-routing-finished`,
+        productionOrderId: order.id,
+        receiptEvidence: [receipt],
+      });
+      expect(completion.value.completedQuantity).toBe(10);
+    } finally {
+      await client.end();
+    }
+  });
+
   it('blocks production completion when rework quality disposition remains open on real DB', async () => {
     const { service, client } = await createRealDbService(ids.userA, ids.tenantA);
     const actor = createActor(ids.tenantA, ids.userA, ids.factoryA);
@@ -680,6 +823,11 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
           'manufacturing:availability:read',
           'manufacturing:execution:record',
           'manufacturing:quality_disposition:record',
+          'manufacturing:work_center:write',
+          'manufacturing:routing:write',
+          'manufacturing:routing:approve',
+          'manufacturing:routing:apply',
+          'manufacturing:operation_progress:update',
         ],
         [ids.userB]: ['manufacturing:production_order:write'],
       }
@@ -962,6 +1110,9 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
     await admin.query('DELETE FROM public.manufacturing_production_order_completions WHERE tenant_id = ANY($1::uuid[])', [
       [ids.tenantA, ids.tenantB],
     ]);
+    await admin.query('DELETE FROM public.manufacturing_operation_progress WHERE tenant_id = ANY($1::uuid[])', [
+      [ids.tenantA, ids.tenantB],
+    ]);
     await admin.query('DELETE FROM public.manufacturing_quality_dispositions WHERE tenant_id = ANY($1::uuid[])', [
       [ids.tenantA, ids.tenantB],
     ]);
@@ -978,6 +1129,15 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
       [ids.tenantA, ids.tenantB],
     ]);
     await admin.query('DELETE FROM public.manufacturing_bom_revisions WHERE tenant_id = ANY($1::uuid[])', [
+      [ids.tenantA, ids.tenantB],
+    ]);
+    await admin.query('DELETE FROM public.manufacturing_routing_operations WHERE tenant_id = ANY($1::uuid[])', [
+      [ids.tenantA, ids.tenantB],
+    ]);
+    await admin.query('DELETE FROM public.manufacturing_routing_revisions WHERE tenant_id = ANY($1::uuid[])', [
+      [ids.tenantA, ids.tenantB],
+    ]);
+    await admin.query('DELETE FROM public.manufacturing_work_centers WHERE tenant_id = ANY($1::uuid[])', [
       [ids.tenantA, ids.tenantB],
     ]);
     await admin.query('DELETE FROM public.manufacturing_production_order_lines WHERE tenant_id = ANY($1::uuid[])', [

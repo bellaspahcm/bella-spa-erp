@@ -6,21 +6,30 @@ import {
 } from './domain/errors';
 import type {
   ApproveBOMRevisionCommand,
+  ApproveRoutingRevisionCommand,
   BOMRevision,
+  CreateRoutingRevisionCommand,
   CalculateMaterialRequirementsCommand,
   CompleteProductionOrderCommand,
   CreateBOMRevisionCommand,
   CreateProductionOrderCommand,
+  CreateWorkCenterCommand,
   IdempotentCommandResult,
   ManufacturingActor,
+  OperationProgressStatus,
   MaterialRequirement,
+  ProductionOperationProgress,
   ProductionCompletion,
   ProductionExecution,
   QualityDispositionEvidence,
+  ApplyRoutingRevisionCommand,
   ReleaseProductionOrderCommand,
   RecordProductionExecutionCommand,
   RecordQualityDispositionCommand,
+  RoutingRevision,
+  UpdateOperationProgressCommand,
   ProductionOrder,
+  WorkCenter,
 } from './domain/types';
 import type {
   ManufacturingAuthorizationPort,
@@ -92,6 +101,303 @@ export class ManufacturingSlice1Service {
         order.lines = order.lines.map((line) => ({ ...line, productionOrderId: order.id }));
         await repository.saveProductionOrder(order);
         return order;
+      },
+    });
+  }
+
+  async createWorkCenter(
+    actor: ManufacturingActor,
+    command: CreateWorkCenterCommand
+  ): Promise<IdempotentCommandResult<WorkCenter>> {
+    if (!command.code.trim() || !command.name.trim()) {
+      throw new ManufacturingValidationError('Work center requires code and name');
+    }
+
+    return this.runIdempotent({
+      actor,
+      operation: 'manufacturing.work_center.create',
+      businessKey: command.idempotencyKey,
+      payload: command,
+      execute: async (repository) => {
+        await this.authorization.ensureAllowed({
+          actor,
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: actor.factoryOrgUnitId,
+          permission: 'manufacturing:work_center:write',
+        });
+
+        const existing = await repository.findWorkCenterByCode({
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: actor.factoryOrgUnitId,
+          code: command.code,
+        });
+        if (existing) {
+          throw new ManufacturingValidationError('Work center code already exists for factory');
+        }
+
+        const workCenter: WorkCenter = {
+          id: this.ids.next('mfg_wc'),
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: actor.factoryOrgUnitId,
+          code: command.code,
+          name: command.name,
+          status: 'active',
+          createdBy: actor.userId,
+          createdAt: this.clock.now(),
+        };
+        await repository.saveWorkCenter(workCenter);
+        return workCenter;
+      },
+    });
+  }
+
+  async createRoutingRevision(
+    actor: ManufacturingActor,
+    command: CreateRoutingRevisionCommand
+  ): Promise<IdempotentCommandResult<RoutingRevision>> {
+    if (!command.finishedGoodItemId.trim() || !command.revisionCode.trim()) {
+      throw new ManufacturingValidationError('Routing revision requires finished good and revision code');
+    }
+    if (command.operations.length === 0) {
+      throw new ManufacturingValidationError('Routing revision requires at least one operation');
+    }
+    const sequences = new Set<number>();
+    const operationCodes = new Set<string>();
+    for (const operation of command.operations) {
+      if (!Number.isInteger(operation.sequence) || operation.sequence <= 0) {
+        throw new ManufacturingValidationError('Routing operation sequence must be a positive integer');
+      }
+      if (sequences.has(operation.sequence)) {
+        throw new ManufacturingValidationError('Routing operation sequence must be unique');
+      }
+      sequences.add(operation.sequence);
+      if (!operation.operationCode.trim() || !operation.operationName.trim()) {
+        throw new ManufacturingValidationError('Routing operation requires code and name');
+      }
+      if (operationCodes.has(operation.operationCode)) {
+        throw new ManufacturingValidationError('Routing operation code must be unique within revision');
+      }
+      operationCodes.add(operation.operationCode);
+    }
+
+    return this.runIdempotent({
+      actor,
+      operation: 'manufacturing.routing_revision.create',
+      businessKey: command.idempotencyKey,
+      payload: command,
+      execute: async (repository) => {
+        await this.authorization.ensureAllowed({
+          actor,
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: actor.factoryOrgUnitId,
+          permission: 'manufacturing:routing:write',
+        });
+
+        const existing = await repository.findRoutingRevisionByCode({
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: actor.factoryOrgUnitId,
+          finishedGoodItemId: command.finishedGoodItemId,
+          revisionCode: command.revisionCode,
+        });
+        if (existing) {
+          throw new ManufacturingValidationError('Routing revision code already exists for finished good');
+        }
+
+        for (const operation of command.operations) {
+          const workCenter = await this.requireWorkCenter(repository, actor.tenantId, operation.workCenterId);
+          this.assertSameFactory(actor, workCenter.factoryOrgUnitId);
+          if (workCenter.status !== 'active') {
+            throw new ManufacturingStateError('Routing operation requires an active work center');
+          }
+        }
+
+        const routingRevisionId = this.ids.next('mfg_route');
+        const revision: RoutingRevision = {
+          id: routingRevisionId,
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: actor.factoryOrgUnitId,
+          finishedGoodItemId: command.finishedGoodItemId,
+          revisionCode: command.revisionCode,
+          status: 'draft',
+          operations: command.operations
+            .slice()
+            .sort((left, right) => left.sequence - right.sequence)
+            .map((operation) => ({
+              id: this.ids.next('mfg_route_op'),
+              tenantId: actor.tenantId,
+              routingRevisionId,
+              sequence: operation.sequence,
+              operationCode: operation.operationCode,
+              operationName: operation.operationName,
+              workCenterId: operation.workCenterId,
+              required: operation.required ?? true,
+            })),
+          createdBy: actor.userId,
+          createdAt: this.clock.now(),
+        };
+        await repository.saveRoutingRevision(revision);
+        return revision;
+      },
+    });
+  }
+
+  async approveRoutingRevision(
+    actor: ManufacturingActor,
+    command: ApproveRoutingRevisionCommand
+  ): Promise<IdempotentCommandResult<RoutingRevision>> {
+    return this.runIdempotent({
+      actor,
+      operation: 'manufacturing.routing_revision.approve',
+      businessKey: command.idempotencyKey,
+      payload: command,
+      execute: async (repository) => {
+        await this.authorization.ensureAllowed({
+          actor,
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: actor.factoryOrgUnitId,
+          permission: 'manufacturing:routing:approve',
+        });
+
+        const revision = await this.requireRoutingRevision(repository, actor.tenantId, command.routingRevisionId);
+        this.assertSameFactory(actor, revision.factoryOrgUnitId);
+        if (revision.status !== 'draft') {
+          throw new ManufacturingStateError('Only draft routing revisions can be approved');
+        }
+
+        const approved: RoutingRevision = {
+          ...revision,
+          status: 'approved',
+          approvedBy: actor.userId,
+          approvedAt: this.clock.now(),
+        };
+        await repository.saveRoutingRevision(approved);
+        return approved;
+      },
+    });
+  }
+
+  async applyRoutingRevision(
+    actor: ManufacturingActor,
+    command: ApplyRoutingRevisionCommand
+  ): Promise<IdempotentCommandResult<ProductionOperationProgress[]>> {
+    return this.runIdempotent({
+      actor,
+      operation: 'manufacturing.routing_revision.apply',
+      businessKey: command.idempotencyKey,
+      payload: command,
+      execute: async (repository) => {
+        await this.authorization.ensureAllowed({
+          actor,
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: actor.factoryOrgUnitId,
+          permission: 'manufacturing:routing:apply',
+        });
+
+        const order = await this.requireProductionOrder(repository, actor.tenantId, command.productionOrderId);
+        this.assertSameFactory(actor, order.factoryOrgUnitId);
+        if (order.status === 'completed' || order.status === 'cancelled') {
+          throw new ManufacturingStateError('Routing cannot be applied to completed or cancelled orders');
+        }
+        const line = await repository.getProductionOrderLine({
+          tenantId: actor.tenantId,
+          productionOrderId: order.id,
+          productionOrderLineId: command.productionOrderLineId,
+        });
+        if (!line) {
+          throw new ManufacturingNotFoundError('ProductionOrderLine', command.productionOrderLineId);
+        }
+
+        const revision = await this.requireRoutingRevision(repository, actor.tenantId, command.routingRevisionId);
+        this.assertSameFactory(actor, revision.factoryOrgUnitId);
+        if (revision.status !== 'approved') {
+          throw new ManufacturingStateError('Routing application requires an approved routing revision');
+        }
+        if (revision.finishedGoodItemId !== line.finishedGoodItemId) {
+          throw new ManufacturingValidationError('Routing finished good does not match production order line');
+        }
+
+        const existingProgress = await repository.getOperationProgress({
+          tenantId: actor.tenantId,
+          productionOrderId: order.id,
+        });
+        if (existingProgress.some((progress) => progress.productionOrderLineId === line.id)) {
+          throw new ManufacturingStateError('Routing progress already exists for production order line');
+        }
+
+        const now = this.clock.now();
+        const progress = revision.operations.map((operation) => ({
+          id: this.ids.next('mfg_op_progress'),
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: order.factoryOrgUnitId,
+          productionOrderId: order.id,
+          productionOrderLineId: line.id,
+          routingRevisionId: revision.id,
+          routingOperationId: operation.id,
+          workCenterId: operation.workCenterId,
+          required: operation.required,
+          status: 'planned' as const,
+          updatedBy: actor.userId,
+          updatedAt: now,
+        }));
+        for (const item of progress) {
+          await repository.saveOperationProgress(item);
+        }
+        return progress;
+      },
+    });
+  }
+
+  async updateOperationProgress(
+    actor: ManufacturingActor,
+    command: UpdateOperationProgressCommand
+  ): Promise<IdempotentCommandResult<ProductionOperationProgress>> {
+    if (command.status === 'blocked' && !command.blockedReason?.trim()) {
+      throw new ManufacturingValidationError('Blocked operation progress requires a reason');
+    }
+
+    return this.runIdempotent({
+      actor,
+      operation: 'manufacturing.operation_progress.update',
+      businessKey: command.idempotencyKey,
+      payload: command,
+      execute: async (repository) => {
+        const existing = await repository.getOperationProgressById(
+          actor.tenantId,
+          command.operationProgressId
+        );
+        if (!existing) {
+          throw new ManufacturingNotFoundError('ProductionOperationProgress', command.operationProgressId);
+        }
+
+        await this.authorization.ensureAllowed({
+          actor,
+          tenantId: actor.tenantId,
+          factoryOrgUnitId: existing.factoryOrgUnitId,
+          permission: 'manufacturing:operation_progress:update',
+        });
+        this.assertSameFactory(actor, existing.factoryOrgUnitId);
+
+        const order = await this.requireProductionOrder(repository, actor.tenantId, existing.productionOrderId);
+        if (order.status === 'completed' || order.status === 'cancelled') {
+          throw new ManufacturingStateError('Operation progress cannot change after production order is closed');
+        }
+        this.assertOperationProgressTransition(existing.status, command.status);
+
+        const now = this.clock.now();
+        const updated: ProductionOperationProgress = {
+          ...existing,
+          status: command.status,
+          blockedReason: command.status === 'blocked' ? command.blockedReason : undefined,
+          startedAt:
+            command.status === 'in_progress' && !existing.startedAt
+              ? now
+              : existing.startedAt,
+          completedAt: command.status === 'completed' ? now : existing.completedAt,
+          updatedBy: actor.userId,
+          updatedAt: now,
+        };
+        await repository.saveOperationProgress(updated);
+        return updated;
       },
     });
   }
@@ -534,6 +840,7 @@ export class ManufacturingSlice1Service {
           command.receiptEvidence,
           qualityDispositionEvidence
         );
+        await this.assertAppliedRoutingComplete(repository, order);
         const completedAt = this.clock.now();
         const completion: ProductionCompletion = {
           id: this.ids.next('mfg_completion'),
@@ -630,9 +937,45 @@ export class ManufacturingSlice1Service {
     return revision;
   }
 
+  private async requireWorkCenter(
+    repository: ManufacturingRepository,
+    tenantId: string,
+    id: string
+  ): Promise<WorkCenter> {
+    const workCenter = await repository.getWorkCenter(tenantId, id);
+    if (!workCenter) throw new ManufacturingNotFoundError('WorkCenter', id);
+    return workCenter;
+  }
+
+  private async requireRoutingRevision(
+    repository: ManufacturingRepository,
+    tenantId: string,
+    id: string
+  ): Promise<RoutingRevision> {
+    const revision = await repository.getRoutingRevision(tenantId, id);
+    if (!revision) throw new ManufacturingNotFoundError('RoutingRevision', id);
+    return revision;
+  }
+
   private assertSameFactory(actor: ManufacturingActor, factoryOrgUnitId: string): void {
     if (actor.factoryOrgUnitId !== factoryOrgUnitId) {
       throw new ManufacturingStateError('Actor factory scope does not match production order factory');
+    }
+  }
+
+  private assertOperationProgressTransition(
+    current: OperationProgressStatus,
+    next: OperationProgressStatus
+  ): void {
+    const allowed: Record<OperationProgressStatus, OperationProgressStatus[]> = {
+      planned: ['ready', 'blocked'],
+      ready: ['in_progress', 'blocked'],
+      in_progress: ['completed', 'blocked'],
+      blocked: ['ready'],
+      completed: [],
+    };
+    if (!allowed[current].includes(next)) {
+      throw new ManufacturingStateError(`Invalid operation progress transition from ${current} to ${next}`);
     }
   }
 
@@ -723,6 +1066,34 @@ export class ManufacturingSlice1Service {
         productionOrderId: order.id,
         receipt,
       });
+    }
+  }
+
+  private async assertAppliedRoutingComplete(
+    repository: ManufacturingRepository,
+    order: ProductionOrder
+  ): Promise<void> {
+    const progress = await repository.getOperationProgress({
+      tenantId: order.tenantId,
+      productionOrderId: order.id,
+    });
+    if (progress.length === 0) return;
+
+    const progressByLine = new Map<string, ProductionOperationProgress[]>();
+    for (const item of progress) {
+      const existing = progressByLine.get(item.productionOrderLineId) ?? [];
+      existing.push(item);
+      progressByLine.set(item.productionOrderLineId, existing);
+    }
+
+    for (const line of order.lines) {
+      const lineProgress = progressByLine.get(line.id);
+      if (!lineProgress || lineProgress.length === 0) continue;
+      if (lineProgress.some((item) => item.required && item.status !== 'completed')) {
+        throw new ManufacturingStateError(
+          'Production order completion requires all applied routing operations to be completed'
+        );
+      }
     }
   }
 

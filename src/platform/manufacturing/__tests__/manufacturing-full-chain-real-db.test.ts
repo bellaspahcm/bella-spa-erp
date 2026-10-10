@@ -64,6 +64,13 @@ const qualityDispositionMigrationSql = readFileSync(
   ),
   'utf8'
 );
+const routingProgressMigrationSql = readFileSync(
+  path.resolve(
+    __dirname,
+    '../../../../supabase/migrations/20261011010000_create_manufacturing_routing_progress.sql'
+  ),
+  'utf8'
+);
 
 const describeWithRealDb =
   isRunnableDbUrl(dbUrl) && isAllowedE2eProject() && isAllowedE2eDbUrl(dbUrl) ? describe : describe.skip;
@@ -139,6 +146,7 @@ describeWithRealDb('Manufacturing full operational chain evidence binding real D
     await admin.query(stockInIdempotencyMigrationSql);
     await admin.query(executionCompletionMigrationSql);
     await admin.query(qualityDispositionMigrationSql);
+    await admin.query(routingProgressMigrationSql);
     await assertRuntimeTablesExist();
     await seedTenant(ids.tenantA, `${marker} Tenant A`);
     await seedTenant(ids.tenantB, `${marker} Tenant B`);
@@ -678,10 +686,14 @@ describeWithRealDb('Manufacturing full operational chain evidence binding real D
           'manufacturing_production_executions',
           'manufacturing_production_order_completions',
           'manufacturing_quality_dispositions',
+          'manufacturing_work_centers',
+          'manufacturing_routing_revisions',
+          'manufacturing_routing_operations',
+          'manufacturing_operation_progress',
         ],
       ]
     );
-    expect(Number(result.rows[0].count)).toBe(11);
+    expect(Number(result.rows[0].count)).toBe(15);
   }
 
   async function seedTenant(tenantId: string, name: string): Promise<void> {
@@ -947,6 +959,9 @@ describeWithRealDb('Manufacturing full operational chain evidence binding real D
     await admin.query('DELETE FROM public.manufacturing_production_order_completions WHERE tenant_id = ANY($1::uuid[])', [
       [ids.tenantA, ids.tenantB],
     ]);
+    await admin.query('DELETE FROM public.manufacturing_operation_progress WHERE tenant_id = ANY($1::uuid[])', [
+      [ids.tenantA, ids.tenantB],
+    ]);
     await admin.query('DELETE FROM public.manufacturing_quality_dispositions WHERE tenant_id = ANY($1::uuid[])', [
       [ids.tenantA, ids.tenantB],
     ]);
@@ -963,6 +978,15 @@ describeWithRealDb('Manufacturing full operational chain evidence binding real D
       [ids.tenantA, ids.tenantB],
     ]);
     await admin.query('DELETE FROM public.manufacturing_bom_revisions WHERE tenant_id = ANY($1::uuid[])', [
+      [ids.tenantA, ids.tenantB],
+    ]);
+    await admin.query('DELETE FROM public.manufacturing_routing_operations WHERE tenant_id = ANY($1::uuid[])', [
+      [ids.tenantA, ids.tenantB],
+    ]);
+    await admin.query('DELETE FROM public.manufacturing_routing_revisions WHERE tenant_id = ANY($1::uuid[])', [
+      [ids.tenantA, ids.tenantB],
+    ]);
+    await admin.query('DELETE FROM public.manufacturing_work_centers WHERE tenant_id = ANY($1::uuid[])', [
       [ids.tenantA, ids.tenantB],
     ]);
     await admin.query('DELETE FROM public.manufacturing_production_order_lines WHERE tenant_id = ANY($1::uuid[])', [

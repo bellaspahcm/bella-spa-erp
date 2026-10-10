@@ -7,12 +7,16 @@ import type {
   FinishedGoodsReceiptEvidence,
   ManufacturingId,
   MaterialRequirement,
+  ProductionOperationProgress,
   ProductionCompletion,
   ProductionExecution,
   ProductionOrder,
   ProductionOrderLine,
   QualityDispositionEvidence,
+  RoutingOperation,
+  RoutingRevision,
   TenantId,
+  WorkCenter,
 } from './domain/types';
 import type { ManufacturingRepository } from './ports';
 
@@ -48,6 +52,59 @@ type ProductionOrderLineRow = QueryResultRow & {
   finished_good_item_id: string;
   target_quantity: string | number;
   uom: string;
+};
+
+type WorkCenterRow = QueryResultRow & {
+  id: string;
+  tenant_id: string;
+  factory_org_unit_id: string;
+  code: string;
+  name: string;
+  status: WorkCenter['status'];
+  created_by: string;
+  created_at: string | Date;
+};
+
+type RoutingRevisionRow = QueryResultRow & {
+  id: string;
+  tenant_id: string;
+  factory_org_unit_id: string;
+  finished_good_item_id: string;
+  revision_code: string;
+  status: RoutingRevision['status'];
+  created_by: string;
+  created_at: string | Date;
+  approved_by: string | null;
+  approved_at: string | Date | null;
+};
+
+type RoutingOperationRow = QueryResultRow & {
+  id: string;
+  tenant_id: string;
+  routing_revision_id: string;
+  sequence: string | number;
+  operation_code: string;
+  operation_name: string;
+  work_center_id: string;
+  required: boolean;
+};
+
+type OperationProgressRow = QueryResultRow & {
+  id: string;
+  tenant_id: string;
+  factory_org_unit_id: string;
+  production_order_id: string;
+  production_order_line_id: string;
+  routing_revision_id: string;
+  routing_operation_id: string;
+  work_center_id: string;
+  required: boolean;
+  status: ProductionOperationProgress['status'];
+  blocked_reason: string | null;
+  started_at: string | Date | null;
+  completed_at: string | Date | null;
+  updated_by: string;
+  updated_at: string | Date;
 };
 
 type BOMRevisionRow = QueryResultRow & {
@@ -267,6 +324,210 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
       [params.tenantId, params.productionOrderId, params.productionOrderLineId]
     );
     return result.rows[0] ? this.mapProductionOrderLine(result.rows[0]) : null;
+  }
+
+  async saveWorkCenter(workCenter: WorkCenter): Promise<void> {
+    await this.db.query(
+      `
+        INSERT INTO public.manufacturing_work_centers (
+          id, tenant_id, factory_org_unit_id, code, name, status, created_by, created_at, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+        ON CONFLICT (tenant_id, id)
+        DO UPDATE SET
+          name = EXCLUDED.name,
+          status = EXCLUDED.status,
+          updated_at = NOW()
+      `,
+      [
+        workCenter.id,
+        workCenter.tenantId,
+        workCenter.factoryOrgUnitId,
+        workCenter.code,
+        workCenter.name,
+        workCenter.status,
+        workCenter.createdBy,
+        workCenter.createdAt,
+      ]
+    );
+  }
+
+  async getWorkCenter(tenantId: TenantId, id: ManufacturingId): Promise<WorkCenter | null> {
+    const result = await this.db.query<WorkCenterRow>(
+      'SELECT * FROM public.manufacturing_work_centers WHERE tenant_id = $1 AND id = $2',
+      [tenantId, id]
+    );
+    return result.rows[0] ? this.mapWorkCenter(result.rows[0]) : null;
+  }
+
+  async findWorkCenterByCode(params: {
+    tenantId: TenantId;
+    factoryOrgUnitId: string;
+    code: string;
+  }): Promise<WorkCenter | null> {
+    const result = await this.db.query<WorkCenterRow>(
+      `
+        SELECT *
+        FROM public.manufacturing_work_centers
+        WHERE tenant_id = $1 AND factory_org_unit_id = $2 AND code = $3
+      `,
+      [params.tenantId, params.factoryOrgUnitId, params.code]
+    );
+    return result.rows[0] ? this.mapWorkCenter(result.rows[0]) : null;
+  }
+
+  async saveRoutingRevision(revision: RoutingRevision): Promise<void> {
+    await this.db.query(
+      `
+        INSERT INTO public.manufacturing_routing_revisions (
+          id, tenant_id, factory_org_unit_id, finished_good_item_id, revision_code, status,
+          created_by, created_at, approved_by, approved_at, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+        ON CONFLICT (tenant_id, id)
+        DO UPDATE SET
+          status = EXCLUDED.status,
+          approved_by = EXCLUDED.approved_by,
+          approved_at = EXCLUDED.approved_at,
+          updated_at = NOW()
+      `,
+      [
+        revision.id,
+        revision.tenantId,
+        revision.factoryOrgUnitId,
+        revision.finishedGoodItemId,
+        revision.revisionCode,
+        revision.status,
+        revision.createdBy,
+        revision.createdAt,
+        revision.approvedBy ?? null,
+        revision.approvedAt ?? null,
+      ]
+    );
+
+    await this.db.query(
+      'DELETE FROM public.manufacturing_routing_operations WHERE tenant_id = $1 AND routing_revision_id = $2',
+      [revision.tenantId, revision.id]
+    );
+    for (const operation of revision.operations) {
+      await this.db.query(
+        `
+          INSERT INTO public.manufacturing_routing_operations (
+            id, tenant_id, routing_revision_id, operation_sequence, operation_code,
+            operation_name, work_center_id, required
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `,
+        [
+          operation.id,
+          operation.tenantId,
+          operation.routingRevisionId,
+          operation.sequence,
+          operation.operationCode,
+          operation.operationName,
+          operation.workCenterId,
+          operation.required,
+        ]
+      );
+    }
+  }
+
+  async getRoutingRevision(tenantId: TenantId, id: ManufacturingId): Promise<RoutingRevision | null> {
+    const result = await this.db.query<RoutingRevisionRow>(
+      'SELECT * FROM public.manufacturing_routing_revisions WHERE tenant_id = $1 AND id = $2',
+      [tenantId, id]
+    );
+    return result.rows[0]
+      ? this.mapRoutingRevision(result.rows[0], await this.getRoutingOperations(tenantId, id))
+      : null;
+  }
+
+  async findRoutingRevisionByCode(params: {
+    tenantId: TenantId;
+    factoryOrgUnitId: string;
+    finishedGoodItemId: string;
+    revisionCode: string;
+  }): Promise<RoutingRevision | null> {
+    const result = await this.db.query<RoutingRevisionRow>(
+      `
+        SELECT *
+        FROM public.manufacturing_routing_revisions
+        WHERE tenant_id = $1
+          AND factory_org_unit_id = $2
+          AND finished_good_item_id = $3
+          AND revision_code = $4
+      `,
+      [params.tenantId, params.factoryOrgUnitId, params.finishedGoodItemId, params.revisionCode]
+    );
+    return result.rows[0]
+      ? this.mapRoutingRevision(result.rows[0], await this.getRoutingOperations(params.tenantId, result.rows[0].id))
+      : null;
+  }
+
+  async saveOperationProgress(progress: ProductionOperationProgress): Promise<void> {
+    await this.db.query(
+      `
+        INSERT INTO public.manufacturing_operation_progress (
+          id, tenant_id, factory_org_unit_id, production_order_id, production_order_line_id,
+          routing_revision_id, routing_operation_id, work_center_id, required, status,
+          blocked_reason, started_at, completed_at, updated_by, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        ON CONFLICT (tenant_id, id)
+        DO UPDATE SET
+          required = EXCLUDED.required,
+          status = EXCLUDED.status,
+          blocked_reason = EXCLUDED.blocked_reason,
+          started_at = EXCLUDED.started_at,
+          completed_at = EXCLUDED.completed_at,
+          updated_by = EXCLUDED.updated_by,
+          updated_at = EXCLUDED.updated_at
+      `,
+      [
+        progress.id,
+        progress.tenantId,
+        progress.factoryOrgUnitId,
+        progress.productionOrderId,
+        progress.productionOrderLineId,
+        progress.routingRevisionId,
+        progress.routingOperationId,
+        progress.workCenterId,
+        progress.required,
+        progress.status,
+        progress.blockedReason ?? null,
+        progress.startedAt ?? null,
+        progress.completedAt ?? null,
+        progress.updatedBy,
+        progress.updatedAt,
+      ]
+    );
+  }
+
+  async getOperationProgressById(
+    tenantId: TenantId,
+    id: ManufacturingId
+  ): Promise<ProductionOperationProgress | null> {
+    const result = await this.db.query<OperationProgressRow>(
+      'SELECT * FROM public.manufacturing_operation_progress WHERE tenant_id = $1 AND id = $2',
+      [tenantId, id]
+    );
+    return result.rows[0] ? this.mapOperationProgress(result.rows[0]) : null;
+  }
+
+  async getOperationProgress(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+  }): Promise<ProductionOperationProgress[]> {
+    const result = await this.db.query<OperationProgressRow>(
+      `
+        SELECT *
+        FROM public.manufacturing_operation_progress
+        WHERE tenant_id = $1 AND production_order_id = $2
+        ORDER BY routing_revision_id, routing_operation_id, id
+      `,
+      [params.tenantId, params.productionOrderId]
+    );
+    return result.rows.map((row) => this.mapOperationProgress(row));
   }
 
   async saveBOMRevision(revision: BOMRevision): Promise<void> {
@@ -643,6 +904,23 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
     return result.rows.map((row) => this.mapProductionOrderLine(row));
   }
 
+  private async getRoutingOperations(
+    tenantId: TenantId,
+    routingRevisionId: ManufacturingId
+  ): Promise<RoutingOperation[]> {
+    const result = await this.db.query<RoutingOperationRow>(
+      `
+        SELECT id, tenant_id, routing_revision_id, operation_sequence AS sequence, operation_code,
+               operation_name, work_center_id, required
+        FROM public.manufacturing_routing_operations
+        WHERE tenant_id = $1 AND routing_revision_id = $2
+        ORDER BY operation_sequence, id
+      `,
+      [tenantId, routingRevisionId]
+    );
+    return result.rows.map((row) => this.mapRoutingOperation(row));
+  }
+
   private mapProductionOrder(row: ProductionOrderRow, lines: ProductionOrderLine[]): ProductionOrder {
     return {
       id: row.id,
@@ -672,6 +950,68 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
       finishedGoodItemId: row.finished_good_item_id,
       targetQuantity: toNumber(row.target_quantity),
       uom: row.uom,
+    };
+  }
+
+  private mapWorkCenter(row: WorkCenterRow): WorkCenter {
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      factoryOrgUnitId: row.factory_org_unit_id,
+      code: row.code,
+      name: row.name,
+      status: row.status,
+      createdBy: row.created_by,
+      createdAt: toTimestamp(row.created_at),
+    };
+  }
+
+  private mapRoutingRevision(row: RoutingRevisionRow, operations: RoutingOperation[]): RoutingRevision {
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      factoryOrgUnitId: row.factory_org_unit_id,
+      finishedGoodItemId: row.finished_good_item_id,
+      revisionCode: row.revision_code,
+      status: row.status,
+      operations,
+      createdBy: row.created_by,
+      createdAt: toTimestamp(row.created_at),
+      approvedBy: row.approved_by ?? undefined,
+      approvedAt: row.approved_at ? toTimestamp(row.approved_at) : undefined,
+    };
+  }
+
+  private mapRoutingOperation(row: RoutingOperationRow): RoutingOperation {
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      routingRevisionId: row.routing_revision_id,
+      sequence: toNumber(row.sequence),
+      operationCode: row.operation_code,
+      operationName: row.operation_name,
+      workCenterId: row.work_center_id,
+      required: row.required,
+    };
+  }
+
+  private mapOperationProgress(row: OperationProgressRow): ProductionOperationProgress {
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      factoryOrgUnitId: row.factory_org_unit_id,
+      productionOrderId: row.production_order_id,
+      productionOrderLineId: row.production_order_line_id,
+      routingRevisionId: row.routing_revision_id,
+      routingOperationId: row.routing_operation_id,
+      workCenterId: row.work_center_id,
+      required: row.required,
+      status: row.status,
+      blockedReason: row.blocked_reason ?? undefined,
+      startedAt: row.started_at ? toTimestamp(row.started_at) : undefined,
+      completedAt: row.completed_at ? toTimestamp(row.completed_at) : undefined,
+      updatedBy: row.updated_by,
+      updatedAt: toTimestamp(row.updated_at),
     };
   }
 
