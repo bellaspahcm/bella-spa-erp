@@ -13,6 +13,7 @@ import type {
   ProductionExecution,
   ProductionOrder,
   ProductionOrderLine,
+  QualityDispositionEvidence,
   TenantId,
 } from './domain/types';
 
@@ -53,6 +54,11 @@ export interface ManufacturingRepository {
     tenantId: TenantId;
     productionOrderId: ManufacturingId;
   }): Promise<ProductionExecution[]>;
+  saveQualityDisposition(evidence: QualityDispositionEvidence): Promise<void>;
+  getQualityDispositions(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+  }): Promise<QualityDispositionEvidence[]>;
   saveProductionCompletion(completion: ProductionCompletion): Promise<void>;
   getProductionCompletion(tenantId: TenantId, productionOrderId: ManufacturingId): Promise<ProductionCompletion | null>;
   getCommandLog<T = unknown>(params: {

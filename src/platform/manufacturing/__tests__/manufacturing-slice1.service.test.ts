@@ -49,6 +49,7 @@ function createService(availability: MaterialAvailabilityPort = createAvailabili
         'manufacturing:material_requirement:calculate',
         'manufacturing:availability:read',
         'manufacturing:execution:record',
+        'manufacturing:quality_disposition:record',
       ],
     }
   );
@@ -330,6 +331,32 @@ describe('Manufacturing Slice 1', () => {
       status: 'in_progress',
     });
 
+    await service.recordQualityDisposition(actor, {
+      idempotencyKey: 'quality-reject-1',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      productionExecutionId: execution.value.id,
+      sourceQuantityType: 'rejected',
+      disposition: 'discard_reject',
+      quantity: 1,
+      acceptedOutputQuantity: 0,
+      reasonCode: 'FAILED_INSPECTION',
+      evidenceReference: 'qc-report-1',
+      finalHandlingDecision: true,
+    });
+    await service.recordQualityDisposition(actor, {
+      idempotencyKey: 'quality-scrap-1',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      productionExecutionId: execution.value.id,
+      sourceQuantityType: 'scrap',
+      disposition: 'scrap',
+      quantity: 1,
+      acceptedOutputQuantity: 0,
+      reasonCode: 'DAMAGED_OUTPUT',
+      evidenceReference: 'qc-photo-1',
+    });
+
     const completion = await service.completeProductionOrder(actor, {
       idempotencyKey: 'complete-po-1',
       productionOrderId: order.id,
@@ -348,6 +375,10 @@ describe('Manufacturing Slice 1', () => {
       completedQuantity: 8,
       rejectedQuantity: 1,
       scrapQuantity: 1,
+      qualityDispositionEvidence: expect.arrayContaining([
+        expect.objectContaining({ disposition: 'discard_reject', terminal: true }),
+        expect.objectContaining({ disposition: 'scrap', terminal: true }),
+      ]),
     });
     await expect(repository.getProductionOrder(actor.tenantId, order.id)).resolves.toMatchObject({
       status: 'completed',
@@ -372,7 +403,7 @@ describe('Manufacturing Slice 1', () => {
       bomRevisionId: bom.id,
     });
     const [line] = released.value.lines;
-    await service.recordProductionExecution(actor, {
+    const execution = await service.recordProductionExecution(actor, {
       idempotencyKey: 'record-execution-mismatch',
       productionOrderId: order.id,
       productionOrderLineId: line.id,
@@ -382,6 +413,19 @@ describe('Manufacturing Slice 1', () => {
       acceptedQuantity: 9,
       rejectedQuantity: 1,
       uom: 'EA',
+    });
+    await service.recordQualityDisposition(actor, {
+      idempotencyKey: 'quality-mismatch-reject',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      productionExecutionId: execution.value.id,
+      sourceQuantityType: 'rejected',
+      disposition: 'discard_reject',
+      quantity: 1,
+      acceptedOutputQuantity: 0,
+      reasonCode: 'FAILED_INSPECTION',
+      evidenceReference: 'qc-report-mismatch',
+      finalHandlingDecision: true,
     });
 
     await expect(
@@ -398,6 +442,225 @@ describe('Manufacturing Slice 1', () => {
         }],
       })
     ).rejects.toThrow(ManufacturingStateError);
+  });
+
+  it('blocks completion until rejected and scrap quantities have terminal quality disposition', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-quality-required',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-quality-required',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-quality-required',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-quality-required',
+      materialIssueMovementId: 'issue-movement-quality-required',
+      actualQuantity: 10,
+      acceptedQuantity: 8,
+      rejectedQuantity: 1,
+      scrapQuantity: 1,
+      uom: 'EA',
+    });
+
+    await expect(
+      service.completeProductionOrder(actor, {
+        idempotencyKey: 'complete-quality-required',
+        productionOrderId: order.id,
+        receiptEvidence: [{
+          productionOrderLineId: line.id,
+          receiptDocumentId: 'fgr-quality-required',
+          receiptLineId: 'fgr-line-quality-required',
+          acceptedQuantity: 8,
+          rejectedQuantity: 1,
+          pendingQuantity: 0,
+        }],
+      })
+    ).rejects.toThrow(ManufacturingStateError);
+  });
+
+  it('keeps rework open and prevents production order completion', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-quality-rework',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-quality-rework',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    const execution = await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-quality-rework',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-quality-rework',
+      materialIssueMovementId: 'issue-movement-quality-rework',
+      actualQuantity: 10,
+      acceptedQuantity: 9,
+      rejectedQuantity: 1,
+      uom: 'EA',
+    });
+    await service.recordQualityDisposition(actor, {
+      idempotencyKey: 'quality-rework-open',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      productionExecutionId: execution.value.id,
+      sourceQuantityType: 'rejected',
+      disposition: 'rework',
+      quantity: 1,
+      acceptedOutputQuantity: 0,
+    });
+
+    await expect(
+      service.completeProductionOrder(actor, {
+        idempotencyKey: 'complete-quality-rework',
+        productionOrderId: order.id,
+        receiptEvidence: [{
+          productionOrderLineId: line.id,
+          receiptDocumentId: 'fgr-quality-rework',
+          receiptLineId: 'fgr-line-quality-rework',
+          acceptedQuantity: 9,
+          rejectedQuantity: 1,
+          pendingQuantity: 0,
+        }],
+      })
+    ).rejects.toThrow(ManufacturingStateError);
+  });
+
+  it('allows policy-approved conditional accept to contribute to completed accepted output', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-conditional',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-conditional',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    const execution = await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-conditional',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-conditional',
+      materialIssueMovementId: 'issue-movement-conditional',
+      actualQuantity: 10,
+      acceptedQuantity: 9,
+      rejectedQuantity: 1,
+      uom: 'EA',
+    });
+    await service.recordQualityDisposition(actor, {
+      idempotencyKey: 'quality-conditional',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      productionExecutionId: execution.value.id,
+      sourceQuantityType: 'rejected',
+      disposition: 'conditional_accept',
+      quantity: 1,
+      acceptedOutputQuantity: 1,
+      evidenceReference: 'quality-manager-approval',
+      conditionalAcceptPolicyApproved: true,
+    });
+
+    const completion = await service.completeProductionOrder(actor, {
+      idempotencyKey: 'complete-conditional',
+      productionOrderId: order.id,
+      receiptEvidence: [{
+        productionOrderLineId: line.id,
+        receiptDocumentId: 'fgr-conditional',
+        receiptLineId: 'fgr-line-conditional',
+        acceptedQuantity: 10,
+        rejectedQuantity: 0,
+        pendingQuantity: 0,
+      }],
+    });
+
+    expect(completion.value).toMatchObject({
+      completedQuantity: 10,
+      rejectedQuantity: 0,
+      scrapQuantity: 0,
+    });
+  });
+
+  it('replays duplicate quality disposition commands and rejects conflicting payloads', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-quality-idempotent',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-quality-idempotent',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    const execution = await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-quality-idempotent',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-quality-idempotent',
+      materialIssueMovementId: 'issue-movement-quality-idempotent',
+      actualQuantity: 10,
+      acceptedQuantity: 9,
+      rejectedQuantity: 1,
+      uom: 'EA',
+    });
+    const command = {
+      idempotencyKey: 'quality-idempotent',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      productionExecutionId: execution.value.id,
+      sourceQuantityType: 'rejected' as const,
+      disposition: 'discard_reject' as const,
+      quantity: 1,
+      acceptedOutputQuantity: 0,
+      reasonCode: 'FAILED_INSPECTION',
+      evidenceReference: 'qc-report-idempotent',
+      finalHandlingDecision: true,
+    };
+
+    const first = await service.recordQualityDisposition(actor, command);
+    const retry = await service.recordQualityDisposition(actor, command);
+
+    expect(first.isDuplicate).toBe(false);
+    expect(retry.isDuplicate).toBe(true);
+    expect(retry.value.id).toBe(first.value.id);
+
+    await expect(
+      service.recordQualityDisposition(actor, {
+        ...command,
+        quantity: 0.5,
+      })
+    ).rejects.toThrow(ManufacturingIdempotencyConflictError);
   });
 
   it('does not complete an order from FGR evidence alone', async () => {

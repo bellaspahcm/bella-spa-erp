@@ -8,6 +8,14 @@ export type FactoryOrgUnitId = string;
 export type ProductionOrderStatus = 'draft' | 'released' | 'in_progress' | 'completed' | 'cancelled';
 export type BOMRevisionStatus = 'draft' | 'approved' | 'archived';
 export type MaterialRequirementStatus = 'not_checked' | 'available' | 'shortage' | 'not_proven';
+export type QualityDisposition =
+  | 'accepted'
+  | 'conditional_accept'
+  | 'rework'
+  | 'scrap'
+  | 'discard_reject'
+  | 'pending';
+export type QualityDispositionSourceQuantityType = 'accepted' | 'rejected' | 'scrap' | 'pending';
 export type ManufacturingPermission =
   | 'manufacturing:production_order:write'
   | 'manufacturing:production_order:release'
@@ -16,7 +24,8 @@ export type ManufacturingPermission =
   | 'manufacturing:bom:approve'
   | 'manufacturing:material_requirement:calculate'
   | 'manufacturing:availability:read'
-  | 'manufacturing:execution:record';
+  | 'manufacturing:execution:record'
+  | 'manufacturing:quality_disposition:record';
 
 export interface ManufacturingActor {
   tenantId: TenantId;
@@ -114,6 +123,29 @@ export interface FinishedGoodsReceiptEvidence {
   pendingQuantity?: Quantity;
 }
 
+export interface QualityDispositionEvidence {
+  id: ManufacturingId;
+  tenantId: TenantId;
+  factoryOrgUnitId: FactoryOrgUnitId;
+  productionOrderId: ManufacturingId;
+  productionOrderLineId: ManufacturingId;
+  productionExecutionId: ManufacturingId;
+  receiptDocumentId?: string;
+  receiptLineId?: string;
+  sourceQuantityType: QualityDispositionSourceQuantityType;
+  disposition: QualityDisposition;
+  quantity: Quantity;
+  acceptedOutputQuantity: Quantity;
+  reasonCode?: string;
+  reasonText?: string;
+  evidenceReference?: string;
+  finalHandlingDecision?: boolean;
+  conditionalAcceptPolicyApproved?: boolean;
+  terminal: boolean;
+  decidedBy: UserId;
+  decidedAt: string;
+}
+
 export interface ProductionCompletion {
   id: ManufacturingId;
   tenantId: TenantId;
@@ -124,6 +156,7 @@ export interface ProductionCompletion {
   scrapQuantity: Quantity;
   uom: string;
   receiptEvidence: FinishedGoodsReceiptEvidence[];
+  qualityDispositionEvidence: QualityDispositionEvidence[];
   completedBy: UserId;
   completedAt: string;
 }
@@ -188,6 +221,24 @@ export interface RecordProductionExecutionCommand {
   rejectedQuantity?: Quantity;
   scrapQuantity?: Quantity;
   uom: string;
+}
+
+export interface RecordQualityDispositionCommand {
+  idempotencyKey: string;
+  productionOrderId: ManufacturingId;
+  productionOrderLineId: ManufacturingId;
+  productionExecutionId: ManufacturingId;
+  receiptDocumentId?: string;
+  receiptLineId?: string;
+  sourceQuantityType: QualityDispositionSourceQuantityType;
+  disposition: QualityDisposition;
+  quantity: Quantity;
+  acceptedOutputQuantity: Quantity;
+  reasonCode?: string;
+  reasonText?: string;
+  evidenceReference?: string;
+  finalHandlingDecision?: boolean;
+  conditionalAcceptPolicyApproved?: boolean;
 }
 
 export interface CompleteProductionOrderCommand {

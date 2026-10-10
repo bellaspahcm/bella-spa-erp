@@ -14,6 +14,7 @@ import type {
   ProductionExecution,
   ProductionOrder,
   ProductionOrderLine,
+  QualityDispositionEvidence,
   TenantId,
 } from './domain/types';
 import type {
@@ -46,6 +47,7 @@ export class InMemoryManufacturingRepository implements ManufacturingRepository 
   private readonly bomRevisions = new Map<string, BOMRevision>();
   private readonly materialRequirements = new Map<string, MaterialRequirement>();
   private readonly productionExecutions = new Map<string, ProductionExecution>();
+  private readonly qualityDispositions = new Map<string, QualityDispositionEvidence>();
   private readonly productionCompletions = new Map<string, ProductionCompletion>();
   private readonly commandLogs = new Map<string, CommandLogEntry<unknown>>();
 
@@ -150,10 +152,28 @@ export class InMemoryManufacturingRepository implements ManufacturingRepository 
       .map((execution) => ({ ...execution }));
   }
 
+  async saveQualityDisposition(evidence: QualityDispositionEvidence): Promise<void> {
+    this.qualityDispositions.set(this.key(evidence.tenantId, evidence.id), { ...evidence });
+  }
+
+  async getQualityDispositions(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+  }): Promise<QualityDispositionEvidence[]> {
+    return Array.from(this.qualityDispositions.values())
+      .filter(
+        (evidence) =>
+          evidence.tenantId === params.tenantId &&
+          evidence.productionOrderId === params.productionOrderId
+      )
+      .map((evidence) => ({ ...evidence }));
+  }
+
   async saveProductionCompletion(completion: ProductionCompletion): Promise<void> {
     this.productionCompletions.set(this.key(completion.tenantId, completion.productionOrderId), {
       ...completion,
       receiptEvidence: completion.receiptEvidence.map((receipt) => ({ ...receipt })),
+      qualityDispositionEvidence: completion.qualityDispositionEvidence.map((evidence) => ({ ...evidence })),
     });
   }
 
@@ -163,7 +183,11 @@ export class InMemoryManufacturingRepository implements ManufacturingRepository 
   ): Promise<ProductionCompletion | null> {
     const completion = this.productionCompletions.get(this.key(tenantId, productionOrderId));
     return completion
-      ? { ...completion, receiptEvidence: completion.receiptEvidence.map((receipt) => ({ ...receipt })) }
+      ? {
+          ...completion,
+          receiptEvidence: completion.receiptEvidence.map((receipt) => ({ ...receipt })),
+          qualityDispositionEvidence: completion.qualityDispositionEvidence.map((evidence) => ({ ...evidence })),
+        }
       : null;
   }
 

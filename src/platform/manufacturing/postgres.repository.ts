@@ -11,6 +11,7 @@ import type {
   ProductionExecution,
   ProductionOrder,
   ProductionOrderLine,
+  QualityDispositionEvidence,
   TenantId,
 } from './domain/types';
 import type { ManufacturingRepository } from './ports';
@@ -110,8 +111,32 @@ type ProductionCompletionRow = QueryResultRow & {
   scrap_quantity: string | number;
   uom: string;
   receipt_evidence: FinishedGoodsReceiptEvidence[];
+  quality_disposition_evidence: QualityDispositionEvidence[];
   completed_by: string;
   completed_at: string | Date;
+};
+
+type QualityDispositionRow = QueryResultRow & {
+  id: string;
+  tenant_id: string;
+  factory_org_unit_id: string;
+  production_order_id: string;
+  production_order_line_id: string;
+  production_execution_id: string;
+  receipt_document_id: string | null;
+  receipt_line_id: string | null;
+  source_quantity_type: QualityDispositionEvidence['sourceQuantityType'];
+  disposition: QualityDispositionEvidence['disposition'];
+  quantity: string | number;
+  accepted_output_quantity: string | number;
+  reason_code: string | null;
+  reason_text: string | null;
+  evidence_reference: string | null;
+  final_handling_decision: boolean | null;
+  conditional_accept_policy_approved: boolean | null;
+  terminal: boolean;
+  decided_by: string;
+  decided_at: string | Date;
 };
 
 type CommandLogRow<T> = QueryResultRow & {
@@ -426,15 +451,82 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
     return result.rows.map((row) => this.mapProductionExecution(row));
   }
 
+  async saveQualityDisposition(evidence: QualityDispositionEvidence): Promise<void> {
+    await this.db.query(
+      `
+        INSERT INTO public.manufacturing_quality_dispositions (
+          id, tenant_id, factory_org_unit_id, production_order_id, production_order_line_id,
+          production_execution_id, receipt_document_id, receipt_line_id, source_quantity_type,
+          disposition, quantity, accepted_output_quantity, reason_code, reason_text,
+          evidence_reference, final_handling_decision, conditional_accept_policy_approved,
+          terminal, decided_by, decided_at
+        )
+        VALUES (
+          $1, $2, $3, $4, $5,
+          $6, $7, $8, $9,
+          $10, $11, $12, $13, $14,
+          $15, $16, $17,
+          $18, $19, $20
+        )
+        ON CONFLICT (tenant_id, id)
+        DO UPDATE SET
+          receipt_document_id = EXCLUDED.receipt_document_id,
+          receipt_line_id = EXCLUDED.receipt_line_id,
+          reason_code = EXCLUDED.reason_code,
+          reason_text = EXCLUDED.reason_text,
+          evidence_reference = EXCLUDED.evidence_reference,
+          terminal = EXCLUDED.terminal
+      `,
+      [
+        evidence.id,
+        evidence.tenantId,
+        evidence.factoryOrgUnitId,
+        evidence.productionOrderId,
+        evidence.productionOrderLineId,
+        evidence.productionExecutionId,
+        evidence.receiptDocumentId ?? null,
+        evidence.receiptLineId ?? null,
+        evidence.sourceQuantityType,
+        evidence.disposition,
+        evidence.quantity,
+        evidence.acceptedOutputQuantity,
+        evidence.reasonCode ?? null,
+        evidence.reasonText ?? null,
+        evidence.evidenceReference ?? null,
+        evidence.finalHandlingDecision ?? null,
+        evidence.conditionalAcceptPolicyApproved ?? null,
+        evidence.terminal,
+        evidence.decidedBy,
+        evidence.decidedAt,
+      ]
+    );
+  }
+
+  async getQualityDispositions(params: {
+    tenantId: TenantId;
+    productionOrderId: ManufacturingId;
+  }): Promise<QualityDispositionEvidence[]> {
+    const result = await this.db.query<QualityDispositionRow>(
+      `
+        SELECT *
+        FROM public.manufacturing_quality_dispositions
+        WHERE tenant_id = $1 AND production_order_id = $2
+        ORDER BY decided_at, id
+      `,
+      [params.tenantId, params.productionOrderId]
+    );
+    return result.rows.map((row) => this.mapQualityDisposition(row));
+  }
+
   async saveProductionCompletion(completion: ProductionCompletion): Promise<void> {
     await this.db.query(
       `
         INSERT INTO public.manufacturing_production_order_completions (
           id, tenant_id, factory_org_unit_id, production_order_id,
           completed_quantity, rejected_quantity, scrap_quantity, uom,
-          receipt_evidence, completed_by, completed_at
+          receipt_evidence, quality_disposition_evidence, completed_by, completed_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb, $11, $12)
       `,
       [
         completion.id,
@@ -446,6 +538,7 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
         completion.scrapQuantity,
         completion.uom,
         JSON.stringify(completion.receiptEvidence),
+        JSON.stringify(completion.qualityDispositionEvidence),
         completion.completedBy,
         completion.completedAt,
       ]
@@ -632,6 +725,31 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
     };
   }
 
+  private mapQualityDisposition(row: QualityDispositionRow): QualityDispositionEvidence {
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      factoryOrgUnitId: row.factory_org_unit_id,
+      productionOrderId: row.production_order_id,
+      productionOrderLineId: row.production_order_line_id,
+      productionExecutionId: row.production_execution_id,
+      receiptDocumentId: row.receipt_document_id ?? undefined,
+      receiptLineId: row.receipt_line_id ?? undefined,
+      sourceQuantityType: row.source_quantity_type,
+      disposition: row.disposition,
+      quantity: toNumber(row.quantity),
+      acceptedOutputQuantity: toNumber(row.accepted_output_quantity),
+      reasonCode: row.reason_code ?? undefined,
+      reasonText: row.reason_text ?? undefined,
+      evidenceReference: row.evidence_reference ?? undefined,
+      finalHandlingDecision: row.final_handling_decision ?? undefined,
+      conditionalAcceptPolicyApproved: row.conditional_accept_policy_approved ?? undefined,
+      terminal: row.terminal,
+      decidedBy: row.decided_by,
+      decidedAt: toTimestamp(row.decided_at),
+    };
+  }
+
   private mapProductionCompletion(row: ProductionCompletionRow): ProductionCompletion {
     return {
       id: row.id,
@@ -643,6 +761,7 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
       scrapQuantity: toNumber(row.scrap_quantity),
       uom: row.uom,
       receiptEvidence: row.receipt_evidence.map((receipt) => ({ ...receipt })),
+      qualityDispositionEvidence: row.quality_disposition_evidence.map((evidence) => ({ ...evidence })),
       completedBy: row.completed_by,
       completedAt: toTimestamp(row.completed_at),
     };
