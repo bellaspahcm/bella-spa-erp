@@ -24,8 +24,12 @@ import { completeSession, saveSessionNote } from '@/core/services/order';
 import {
 getDashboardPrimaryData,
 getMonthlyPerformance,
-getTopTechnicians
 } from '@/core/services/analytics/dashboard-actions';
+import {
+  getBeautyDashboardCustomerRatingDistribution,
+  getBeautyDashboardTopTechnicians,
+  type CustomerRatingDistributionViewModel,
+} from '@/app/dashboard/beauty-dashboard-rating-actions';
 import { getDashboardWidgetAlerts } from '@/components/common/dashboard-widget-actions';
 import type {
   DashboardStatsViewModel,
@@ -33,7 +37,7 @@ import type {
   KtvPerformanceViewModel,
   PerformanceDataPointViewModel,
   InventorySummaryViewModel,
-  DashboardAlert
+  DashboardAlert,
 } from '@/core/services/analytics/dashboard-actions';
 import { markNotificationAsRead } from '@/core/services/notification/notification-actions';
 import AdminNotificationBell from '@/components/common/AdminNotificationBell';
@@ -100,6 +104,7 @@ function StandardDashboardPage() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [performanceData, setPerformanceData] = useState<PerformanceDataPointViewModel[]>([]);
   const [inventorySummary, setInventorySummary] = useState<InventorySummaryViewModel>({ totalItems: 0, lowStockCount: 0, totalValue: 0 });
+  const [customerRatingDistribution, setCustomerRatingDistribution] = useState<CustomerRatingDistributionViewModel[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isLoading, setIsLoading] = useState(true);
@@ -196,12 +201,18 @@ function StandardDashboardPage() {
       const now = new Date();
       const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      const { statsData, sessionsData, inventorySummary: nextInventorySummary } =
-        await getDashboardPrimaryData(startDate, endDate, localToday);
+      const [
+        { statsData, sessionsData, inventorySummary: nextInventorySummary },
+        nextRatingDistribution,
+      ] = await Promise.all([
+        getDashboardPrimaryData(startDate, endDate, localToday),
+        getBeautyDashboardCustomerRatingDistribution(startDate, endDate),
+      ]);
 
       setStats(buildDashboardStats(statsData));
       setSessions(sessionsData || []);
       setInventorySummary(nextInventorySummary || { totalItems: 0, lowStockCount: 0, totalValue: 0 });
+      setCustomerRatingDistribution(nextRatingDistribution || []);
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard primary data:', error);
@@ -220,14 +231,11 @@ function StandardDashboardPage() {
     setIsSecondaryLoading(true);
     try {
       const [ktvsData, perfData, alertsData] = await Promise.all([
-        getTopTechnicians(),
+        getBeautyDashboardTopTechnicians(),
         getMonthlyPerformance(),
         getDashboardWidgetAlerts(),
       ]);
-      setTopKTVs((ktvsData || []).map((ktv) => ({
-        ...ktv,
-        rating: Number(ktv.rating) || 0,
-      })));
+      setTopKTVs(ktvsData || []);
       setPerformanceData(perfData || []);
       setAlerts(alertsData || []);
     } catch (error) {
@@ -412,6 +420,7 @@ function StandardDashboardPage() {
           topKTVs={topKTVs}
           alerts={alerts}
           performanceData={performanceData}
+          customerRatingDistribution={customerRatingDistribution}
           inventorySummary={inventorySummary}
           selectedMonth={selectedMonth}
           setSelectedMonth={setSelectedMonth}
