@@ -101,6 +101,9 @@ type OperationProgressRow = QueryResultRow & {
   required: boolean;
   status: ProductionOperationProgress['status'];
   blocked_reason: string | null;
+  production_execution_id: string | null;
+  completed_quantity: string | number | null;
+  quantity_uom: string | null;
   started_at: string | Date | null;
   completed_at: string | Date | null;
   updated_by: string;
@@ -470,14 +473,18 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
         INSERT INTO public.manufacturing_operation_progress (
           id, tenant_id, factory_org_unit_id, production_order_id, production_order_line_id,
           routing_revision_id, routing_operation_id, work_center_id, required, status,
-          blocked_reason, started_at, completed_at, updated_by, updated_at
+          blocked_reason, production_execution_id, completed_quantity, quantity_uom,
+          started_at, completed_at, updated_by, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
         ON CONFLICT (tenant_id, id)
         DO UPDATE SET
           required = EXCLUDED.required,
           status = EXCLUDED.status,
           blocked_reason = EXCLUDED.blocked_reason,
+          production_execution_id = EXCLUDED.production_execution_id,
+          completed_quantity = EXCLUDED.completed_quantity,
+          quantity_uom = EXCLUDED.quantity_uom,
           started_at = EXCLUDED.started_at,
           completed_at = EXCLUDED.completed_at,
           updated_by = EXCLUDED.updated_by,
@@ -495,6 +502,9 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
         progress.required,
         progress.status,
         progress.blockedReason ?? null,
+        progress.productionExecutionId ?? null,
+        progress.completedQuantity ?? null,
+        progress.quantityUom ?? null,
         progress.startedAt ?? null,
         progress.completedAt ?? null,
         progress.updatedBy,
@@ -1008,6 +1018,9 @@ export class PostgresManufacturingRepository implements ManufacturingRepository 
       required: row.required,
       status: row.status,
       blockedReason: row.blocked_reason ?? undefined,
+      productionExecutionId: row.production_execution_id ?? undefined,
+      completedQuantity: row.completed_quantity === null ? undefined : toNumber(row.completed_quantity),
+      quantityUom: row.quantity_uom ?? undefined,
       startedAt: row.started_at ? toTimestamp(row.started_at) : undefined,
       completedAt: row.completed_at ? toTimestamp(row.completed_at) : undefined,
       updatedBy: row.updated_by,
