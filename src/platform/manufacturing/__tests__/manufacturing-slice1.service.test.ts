@@ -6,6 +6,7 @@ import {
   ManufacturingIdempotencyConflictError,
   ManufacturingSlice1Service,
   ManufacturingStateError,
+  ManufacturingValidationError,
   SequentialManufacturingIdFactory,
   StaticManufacturingAuthorization,
   type FinishedGoodsReceiptEvidence,
@@ -878,6 +879,22 @@ describe('Manufacturing Slice 1', () => {
     });
     const [line] = released.value.lines;
     const { routing, workCenter } = await createApprovedRouting(service, actor, 'A');
+    const execution = await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-routing',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-routing',
+      materialIssueMovementId: 'issue-movement-routing',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-routing',
+        movementId: 'issue-movement-routing',
+      }),
+      actualQuantity: 10,
+      acceptedQuantity: 10,
+      uom: 'EA',
+    });
 
     const applied = await service.applyRoutingRevision(actor, {
       idempotencyKey: 'apply-routing',
@@ -918,12 +935,16 @@ describe('Manufacturing Slice 1', () => {
       idempotencyKey: 'progress-complete',
       operationProgressId: applied.value[0].id,
       status: 'completed',
+      productionExecutionId: execution.value.id,
+      completedQuantity: 10,
     });
 
     expect(ready.value.status).toBe('ready');
     expect(started.value.status).toBe('in_progress');
     expect(started.value.startedAt).toBeDefined();
     expect(completed.value.status).toBe('completed');
+    expect(completed.value.productionExecutionId).toBe(execution.value.id);
+    expect(completed.value.completedQuantity).toBe(10);
     expect(completed.value.completedAt).toBeDefined();
   });
 
@@ -957,6 +978,8 @@ describe('Manufacturing Slice 1', () => {
         idempotencyKey: 'progress-invalid-complete',
         operationProgressId: applied.value[0].id,
         status: 'completed',
+        productionExecutionId: 'execution-not-needed-for-transition-check',
+        completedQuantity: 10,
       })
     ).rejects.toThrow(ManufacturingStateError);
 
@@ -1105,7 +1128,7 @@ describe('Manufacturing Slice 1', () => {
       productionOrderLineId: line.id,
       routingRevisionId: routing.id,
     });
-    await service.recordProductionExecution(actor, {
+    const execution = await service.recordProductionExecution(actor, {
       idempotencyKey: 'record-routing-complete',
       productionOrderId: order.id,
       productionOrderLineId: line.id,
@@ -1151,6 +1174,8 @@ describe('Manufacturing Slice 1', () => {
       idempotencyKey: 'progress-routing-completed',
       operationProgressId: applied.value[0].id,
       status: 'completed',
+      productionExecutionId: execution.value.id,
+      completedQuantity: 10,
     });
 
     const completion = await service.completeProductionOrder(actor, {
@@ -1214,7 +1239,7 @@ describe('Manufacturing Slice 1', () => {
       productionOrderLineId: line.id,
       routingRevisionId: approved.value.id,
     });
-    await service.recordProductionExecution(actor, {
+    const execution = await service.recordProductionExecution(actor, {
       idempotencyKey: 'record-routing-optional',
       productionOrderId: order.id,
       productionOrderLineId: line.id,
@@ -1248,6 +1273,8 @@ describe('Manufacturing Slice 1', () => {
       idempotencyKey: 'progress-optional-required-complete',
       operationProgressId: requiredProgress.id,
       status: 'completed',
+      productionExecutionId: execution.value.id,
+      completedQuantity: 10,
     });
 
     const completion = await service.completeProductionOrder(actor, {
@@ -1262,5 +1289,177 @@ describe('Manufacturing Slice 1', () => {
       })],
     });
     expect(completion.value.completedQuantity).toBe(10);
+  });
+
+  it('rejects later required operation progress until prior required operations are completed', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-routing-sequence',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-routing-sequence',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    const workCenter = await service.createWorkCenter(actor, {
+      idempotencyKey: 'create-wc-sequence',
+      code: 'WC-SEQUENCE',
+      name: 'Sequenced Operation Cell',
+    });
+    const routing = await service.createRoutingRevision(actor, {
+      idempotencyKey: 'create-route-sequence',
+      finishedGoodItemId: 'finished_good_a',
+      revisionCode: 'ROUTE-SEQUENCE',
+      operations: [
+        {
+          sequence: 10,
+          operationCode: 'OP-FIRST',
+          operationName: 'First operation',
+          workCenterId: workCenter.value.id,
+        },
+        {
+          sequence: 20,
+          operationCode: 'OP-SECOND',
+          operationName: 'Second operation',
+          workCenterId: workCenter.value.id,
+        },
+      ],
+    });
+    const approved = await service.approveRoutingRevision(actor, {
+      idempotencyKey: 'approve-route-sequence',
+      routingRevisionId: routing.value.id,
+    });
+    const applied = await service.applyRoutingRevision(actor, {
+      idempotencyKey: 'apply-route-sequence',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      routingRevisionId: approved.value.id,
+    });
+    const execution = await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-routing-sequence',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-routing-sequence',
+      materialIssueMovementId: 'issue-movement-routing-sequence',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-routing-sequence',
+        movementId: 'issue-movement-routing-sequence',
+      }),
+      actualQuantity: 10,
+      acceptedQuantity: 10,
+      uom: 'EA',
+    });
+    const first = applied.value.find((progress) => progress.routingOperationId === approved.value.operations[0].id);
+    const second = applied.value.find((progress) => progress.routingOperationId === approved.value.operations[1].id);
+    if (!first || !second) throw new Error('Expected two applied routing operations');
+
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-second-ready',
+      operationProgressId: second.id,
+      status: 'ready',
+    });
+    await expect(
+      service.updateOperationProgress(actor, {
+        idempotencyKey: 'progress-second-start-too-early',
+        operationProgressId: second.id,
+        status: 'in_progress',
+      })
+    ).rejects.toThrow(ManufacturingStateError);
+
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-first-ready',
+      operationProgressId: first.id,
+      status: 'ready',
+    });
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-first-start',
+      operationProgressId: first.id,
+      status: 'in_progress',
+    });
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-first-complete',
+      operationProgressId: first.id,
+      status: 'completed',
+      productionExecutionId: execution.value.id,
+      completedQuantity: 10,
+    });
+    const secondStarted = await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-second-start',
+      operationProgressId: second.id,
+      status: 'in_progress',
+    });
+
+    expect(secondStarted.value.status).toBe('in_progress');
+  });
+
+  it('rejects completed operation progress quantity that exceeds execution evidence', async () => {
+    const availability = createAvailability({ component_a: 25 });
+    const { service } = createService(availability);
+    const actor = createActor();
+    const { order, bom } = await createApprovedBomAndOrder(service, actor);
+    await service.calculateMaterialRequirements(actor, {
+      idempotencyKey: 'calc-req-routing-quantity',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+      sourceLocationId: 'warehouse-bin-a',
+    });
+    const released = await service.releaseProductionOrder(actor, {
+      idempotencyKey: 'release-routing-quantity',
+      productionOrderId: order.id,
+      bomRevisionId: bom.id,
+    });
+    const [line] = released.value.lines;
+    const { routing } = await createApprovedRouting(service, actor, 'QTY');
+    const applied = await service.applyRoutingRevision(actor, {
+      idempotencyKey: 'apply-routing-quantity',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      routingRevisionId: routing.id,
+    });
+    const execution = await service.recordProductionExecution(actor, {
+      idempotencyKey: 'record-routing-quantity',
+      productionOrderId: order.id,
+      productionOrderLineId: line.id,
+      materialIssueDocumentId: 'issue-doc-routing-quantity',
+      materialIssueMovementId: 'issue-movement-routing-quantity',
+      materialIssueEvidence: materialIssueEvidence({
+        productionOrderId: order.id,
+        productionOrderLineId: line.id,
+        issueDocumentId: 'issue-doc-routing-quantity',
+        movementId: 'issue-movement-routing-quantity',
+      }),
+      actualQuantity: 10,
+      acceptedQuantity: 10,
+      uom: 'EA',
+    });
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-quantity-ready',
+      operationProgressId: applied.value[0].id,
+      status: 'ready',
+    });
+    await service.updateOperationProgress(actor, {
+      idempotencyKey: 'progress-quantity-start',
+      operationProgressId: applied.value[0].id,
+      status: 'in_progress',
+    });
+
+    await expect(
+      service.updateOperationProgress(actor, {
+        idempotencyKey: 'progress-quantity-too-high',
+        operationProgressId: applied.value[0].id,
+        status: 'completed',
+        productionExecutionId: execution.value.id,
+        completedQuantity: 11,
+      })
+    ).rejects.toThrow(ManufacturingValidationError);
   });
 });

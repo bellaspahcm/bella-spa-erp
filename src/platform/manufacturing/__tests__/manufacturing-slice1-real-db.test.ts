@@ -57,6 +57,13 @@ const routingProgressMigrationSql = readFileSync(
   ),
   'utf8'
 );
+const operationProgressEvidenceMigrationSql = readFileSync(
+  path.resolve(
+    __dirname,
+    '../../../../supabase/migrations/20261011020000_bind_manufacturing_operation_progress_evidence.sql'
+  ),
+  'utf8'
+);
 
 const describeWithRealDb =
   isRunnableDbUrl(dbUrl) && isAllowedE2eProject() && isAllowedE2eDbUrl(dbUrl) ? describe : describe.skip;
@@ -127,6 +134,7 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
     await admin.query(executionCompletionMigrationSql);
     await admin.query(qualityDispositionMigrationSql);
     await admin.query(routingProgressMigrationSql);
+    await admin.query(operationProgressEvidenceMigrationSql);
     await seedTenant(ids.tenantA, `${marker} Tenant A`);
     await seedTenant(ids.tenantB, `${marker} Tenant B`);
     await seedUser(ids.tenantA, ids.userA, ids.personA, ids.factoryA, ids.factoryADenied, 'a');
@@ -208,6 +216,38 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
       `
     );
     expect(Number(lineUniqueness.rows[0].count)).toBe(1);
+
+    const progressEvidenceColumns = await admin.query<QueryResultRow & { column_name: string }>(
+      `
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'manufacturing_operation_progress'
+          AND column_name IN ('production_execution_id', 'completed_quantity', 'quantity_uom')
+      `
+    );
+    expect(progressEvidenceColumns.rows.map((row) => row.column_name)).toEqual(
+      expect.arrayContaining(['production_execution_id', 'completed_quantity', 'quantity_uom'])
+    );
+
+    const progressEvidenceConstraints = await admin.query<QueryResultRow & { conname: string }>(
+      `
+        SELECT conname
+        FROM pg_constraint
+        WHERE conname IN (
+          'uq_manufacturing_production_executions_line_id',
+          'fk_manufacturing_operation_progress_execution_line',
+          'ck_manufacturing_operation_progress_completed_evidence'
+        )
+      `
+    );
+    expect(progressEvidenceConstraints.rows.map((row) => row.conname)).toEqual(
+      expect.arrayContaining([
+        'uq_manufacturing_production_executions_line_id',
+        'fk_manufacturing_operation_progress_execution_line',
+        'ck_manufacturing_operation_progress_completed_evidence',
+      ])
+    );
   });
 
   it('persists order, BOM, requirements, release state, and idempotency through authenticated RLS', async () => {
@@ -564,7 +604,7 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
     const actor = createActor(ids.tenantA, ids.userA, ids.factoryA);
 
     try {
-      const { order, line } = await createExecutedOrder({
+      const { order, line, execution } = await createExecutedOrder({
         service,
         actor,
         suffix: 'routing-progress',
@@ -588,6 +628,12 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
             operationName: 'Cutting',
             workCenterId: workCenter.value.id,
           },
+          {
+            sequence: 20,
+            operationCode: `${marker}-ASSEMBLE`,
+            operationName: 'Assembly',
+            workCenterId: workCenter.value.id,
+          },
         ],
       });
       const approvedRouting = await service.approveRoutingRevision(actor, {
@@ -609,13 +655,20 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
 
       expect(applied.isDuplicate).toBe(false);
       expect(duplicateApply.isDuplicate).toBe(true);
-      expect(applied.value).toHaveLength(1);
+      expect(applied.value).toHaveLength(2);
       await expectCountWhere(
         'manufacturing_operation_progress',
         'tenant_id = $1::uuid AND production_order_id = $2::uuid',
         [ids.tenantA, order.id],
-        1
+        2
       );
+      const firstProgress = applied.value.find(
+        (progress) => progress.routingOperationId === approvedRouting.value.operations[0].id
+      );
+      const secondProgress = applied.value.find(
+        (progress) => progress.routingOperationId === approvedRouting.value.operations[1].id
+      );
+      if (!firstProgress || !secondProgress) throw new Error('Expected routed operation progress rows');
       const tenantBClient = new Client({ connectionString: dbUrl, ssl: sslConfig() });
       await tenantBClient.connect();
       try {
@@ -625,7 +678,7 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         });
         const tenantBRepository = new PostgresManufacturingRepository(tenantB);
         const hiddenProgress = await tenantBRepository.withTransaction((repository) =>
-          repository.getOperationProgressById(ids.tenantA, applied.value[0].id)
+          repository.getOperationProgressById(ids.tenantA, firstProgress.id)
         );
         expect(hiddenProgress).toBeNull();
       } finally {
@@ -655,25 +708,64 @@ describeWithRealDb('Manufacturing Slice 1 real DB verification', () => {
         0
       );
 
+      await service.updateOperationProgress(actor, {
+        idempotencyKey: `${marker}-routing-second-ready`,
+        operationProgressId: secondProgress.id,
+        status: 'ready',
+      });
+      await expect(
+        service.updateOperationProgress(actor, {
+          idempotencyKey: `${marker}-routing-second-start-too-early`,
+          operationProgressId: secondProgress.id,
+          status: 'in_progress',
+        })
+      ).rejects.toThrow();
+
       const ready = await service.updateOperationProgress(actor, {
         idempotencyKey: `${marker}-routing-ready`,
-        operationProgressId: applied.value[0].id,
+        operationProgressId: firstProgress.id,
         status: 'ready',
       });
       const started = await service.updateOperationProgress(actor, {
         idempotencyKey: `${marker}-routing-start`,
-        operationProgressId: applied.value[0].id,
+        operationProgressId: firstProgress.id,
         status: 'in_progress',
       });
+      await expect(
+        service.updateOperationProgress(actor, {
+          idempotencyKey: `${marker}-routing-complete-too-much`,
+          operationProgressId: firstProgress.id,
+          status: 'completed',
+          productionExecutionId: execution.id,
+          completedQuantity: 11,
+        })
+      ).rejects.toThrow();
       const completed = await service.updateOperationProgress(actor, {
         idempotencyKey: `${marker}-routing-complete`,
-        operationProgressId: applied.value[0].id,
+        operationProgressId: firstProgress.id,
         status: 'completed',
+        productionExecutionId: execution.id,
+        completedQuantity: 10,
       });
 
       expect(ready.value.status).toBe('ready');
       expect(started.value.startedAt).toBeDefined();
       expect(completed.value.completedAt).toBeDefined();
+      expect(completed.value.productionExecutionId).toBe(execution.id);
+      expect(completed.value.completedQuantity).toBe(10);
+
+      await service.updateOperationProgress(actor, {
+        idempotencyKey: `${marker}-routing-second-start`,
+        operationProgressId: secondProgress.id,
+        status: 'in_progress',
+      });
+      await service.updateOperationProgress(actor, {
+        idempotencyKey: `${marker}-routing-second-complete`,
+        operationProgressId: secondProgress.id,
+        status: 'completed',
+        productionExecutionId: execution.id,
+        completedQuantity: 10,
+      });
 
       const completion = await service.completeProductionOrder(actor, {
         idempotencyKey: `${marker}-complete-routing-finished`,

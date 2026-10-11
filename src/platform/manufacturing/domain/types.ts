@@ -245,6 +245,9 @@ export interface ProductionOperationProgress {
   required: boolean;
   status: OperationProgressStatus;
   blockedReason?: string;
+  productionExecutionId?: ManufacturingId;
+  completedQuantity?: Quantity;
+  quantityUom?: string;
   startedAt?: string;
   completedAt?: string;
   updatedBy: UserId;
@@ -297,6 +300,8 @@ export interface UpdateOperationProgressCommand {
   operationProgressId: ManufacturingId;
   status: OperationProgressStatus;
   blockedReason?: string;
+  productionExecutionId?: ManufacturingId;
+  completedQuantity?: Quantity;
 }
 
 export interface CreateProductionOrderCommand {

@@ -354,6 +354,12 @@ export class ManufacturingSlice1Service {
     if (command.status === 'blocked' && !command.blockedReason?.trim()) {
       throw new ManufacturingValidationError('Blocked operation progress requires a reason');
     }
+    if (command.status === 'completed') {
+      if (!command.productionExecutionId?.trim()) {
+        throw new ManufacturingValidationError('Completed operation progress requires production execution evidence');
+      }
+      this.assertPositiveQuantity(command.completedQuantity ?? 0, 'completedQuantity');
+    }
 
     return this.runIdempotent({
       actor,
@@ -382,12 +388,21 @@ export class ManufacturingSlice1Service {
           throw new ManufacturingStateError('Operation progress cannot change after production order is closed');
         }
         this.assertOperationProgressTransition(existing.status, command.status);
+        await this.assertPriorRequiredOperationsComplete(repository, existing, command.status);
+
+        const executionEvidence =
+          command.status === 'completed'
+            ? await this.requireOperationProgressExecutionEvidence(repository, existing, command)
+            : undefined;
 
         const now = this.clock.now();
         const updated: ProductionOperationProgress = {
           ...existing,
           status: command.status,
           blockedReason: command.status === 'blocked' ? command.blockedReason : undefined,
+          productionExecutionId: executionEvidence?.id,
+          completedQuantity: executionEvidence ? this.roundQuantity(command.completedQuantity ?? 0) : undefined,
+          quantityUom: executionEvidence?.uom,
           startedAt:
             command.status === 'in_progress' && !existing.startedAt
               ? now
@@ -979,6 +994,69 @@ export class ManufacturingSlice1Service {
     }
   }
 
+  private async assertPriorRequiredOperationsComplete(
+    repository: ManufacturingRepository,
+    progress: ProductionOperationProgress,
+    nextStatus: OperationProgressStatus
+  ): Promise<void> {
+    if (nextStatus !== 'in_progress' && nextStatus !== 'completed') return;
+
+    const routing = await this.requireRoutingRevision(repository, progress.tenantId, progress.routingRevisionId);
+    const currentOperation = routing.operations.find((operation) => operation.id === progress.routingOperationId);
+    if (!currentOperation) {
+      throw new ManufacturingStateError('Operation progress references an operation outside its routing revision');
+    }
+
+    const allProgress = await repository.getOperationProgress({
+      tenantId: progress.tenantId,
+      productionOrderId: progress.productionOrderId,
+    });
+    const lineProgress = allProgress.filter(
+      (candidate) =>
+        candidate.productionOrderLineId === progress.productionOrderLineId &&
+        candidate.routingRevisionId === progress.routingRevisionId
+    );
+
+    const earlierRequiredOperations = routing.operations.filter(
+      (operation) => operation.required && operation.sequence < currentOperation.sequence
+    );
+    for (const operation of earlierRequiredOperations) {
+      const priorProgress = lineProgress.find((candidate) => candidate.routingOperationId === operation.id);
+      if (!priorProgress || priorProgress.status !== 'completed') {
+        throw new ManufacturingStateError(
+          'Operation progress requires prior required routing operations to be completed'
+        );
+      }
+    }
+  }
+
+  private async requireOperationProgressExecutionEvidence(
+    repository: ManufacturingRepository,
+    progress: ProductionOperationProgress,
+    command: UpdateOperationProgressCommand
+  ): Promise<ProductionExecution> {
+    if (!command.productionExecutionId) {
+      throw new ManufacturingValidationError('Completed operation progress requires production execution evidence');
+    }
+    const executions = await repository.getProductionExecutions({
+      tenantId: progress.tenantId,
+      productionOrderId: progress.productionOrderId,
+    });
+    const execution = executions.find((candidate) => candidate.id === command.productionExecutionId);
+    if (!execution || execution.productionOrderLineId !== progress.productionOrderLineId) {
+      throw new ManufacturingStateError(
+        'Operation progress execution evidence must belong to the production order line'
+      );
+    }
+    const completedQuantity = this.roundQuantity(command.completedQuantity ?? 0);
+    if (completedQuantity > execution.actualQuantity) {
+      throw new ManufacturingValidationError(
+        'Operation progress completed quantity cannot exceed execution actual quantity'
+      );
+    }
+    return execution;
+  }
+
   private assertPositiveQuantity(quantity: number, field: string): void {
     if (!Number.isFinite(quantity) || quantity <= 0) {
       throw new ManufacturingValidationError(`${field} must be a positive finite quantity`);
@@ -1092,6 +1170,17 @@ export class ManufacturingSlice1Service {
       if (lineProgress.some((item) => item.required && item.status !== 'completed')) {
         throw new ManufacturingStateError(
           'Production order completion requires all applied routing operations to be completed'
+        );
+      }
+      if (
+        lineProgress.some(
+          (item) =>
+            item.required &&
+            (!item.productionExecutionId || item.completedQuantity === undefined || item.completedQuantity <= 0)
+        )
+      ) {
+        throw new ManufacturingStateError(
+          'Production order completion requires completed routing operations to carry execution evidence'
         );
       }
     }

@@ -71,6 +71,13 @@ const routingProgressMigrationSql = readFileSync(
   ),
   'utf8'
 );
+const operationProgressEvidenceMigrationSql = readFileSync(
+  path.resolve(
+    __dirname,
+    '../../../../supabase/migrations/20261011020000_bind_manufacturing_operation_progress_evidence.sql'
+  ),
+  'utf8'
+);
 
 const describeWithRealDb =
   isRunnableDbUrl(dbUrl) && isAllowedE2eProject() && isAllowedE2eDbUrl(dbUrl) ? describe : describe.skip;
@@ -147,6 +154,7 @@ describeWithRealDb('Manufacturing full operational chain evidence binding real D
     await admin.query(executionCompletionMigrationSql);
     await admin.query(qualityDispositionMigrationSql);
     await admin.query(routingProgressMigrationSql);
+    await admin.query(operationProgressEvidenceMigrationSql);
     await assertRuntimeTablesExist();
     await seedTenant(ids.tenantA, `${marker} Tenant A`);
     await seedTenant(ids.tenantB, `${marker} Tenant B`);
